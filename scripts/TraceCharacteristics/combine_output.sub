@@ -1,0 +1,14 @@
+JobBatchName   = trigger-studies_combine-trace-heatmap
+Executable     = combine_output.py
+
+error          = /cr/users/filip/condor_output/errors/trigger_studies-combine.err
+# output         = /cr/users/filip/condor_output/trigger_studies-$(ProcId).out
+# log            = /cr/users/filip/condor_output/trigger_studies-$(ProcId).log
+
+# max_idle       = 149 
+# solves max jobs per user problem
+
+request_memory = 1G
+# arguments      = $(ProcId)
+
+queue 

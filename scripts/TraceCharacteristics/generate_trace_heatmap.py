@@ -29,36 +29,29 @@ class VEMTrace():
         
         return np.array(traces)
 
-def write_to_csv(storage, data):
-
-    with open(storage,"w") as to_disk:
-
-        for row in data:
-            for column in row:
-                to_disk.write(str(column) + " ")
-            to_disk.write("\n")
-
-
-def update_array(array, traces):
-
-    for trace in traces:
-        # this will fail for too large negative samples (does that ever happen?)
-        for i, sample in enumerate(trace):
-            j = int(np.round(sample, 1) * 10)
-
-            array[i][j] += 1
-
-    return array
-
 # reduce dataset to simulations where we have trigger on + off
 datasets = np.array(os.listdir("/cr/users/filip/data/traces"), dtype = str)
 datasets = np.unique([item[:12] for item in datasets])
 
-station_file_location = "/cr/users/filip/condor_output/tmp/station_info.txt"
-background_file_location = "/cr/users/filip/condor_output/tmp/cumulative_background.csv"
-signal_file_location = "/cr/users/filip/condor_output/tmp/cumulative_signal.csv"   
+# stepsize = 500
+# start = int(sys.argv[1])      * stepsize
+# stop = (int(sys.argv[1]) + 1) * stepsize
 
-for step, simulation in enumerate(datasets):
+# try:
+#     simulations = datasets[start:stop]
+# except IndexError:
+#     simulations = datasets[start:-1]
+
+signal_bins = 600
+background_bins = 100
+time_bins = 2048
+
+heatmap_background = np.zeros((background_bins, time_bins))
+heatmap_signal = np.zeros((signal_bins, time_bins))
+
+for i, simulation in enumerate(datasets):
+
+    i % 100 == 0 and print(f"Calculating step {i}/20281")
 
     trigger_on_file = "/cr/users/filip/data/traces/" + simulation + "_adst.csv"
     trigger_off_file = "/cr/users/filip/data/traces/" + simulation + "_trigger_all_adst.csv"
@@ -77,23 +70,17 @@ for step, simulation in enumerate(datasets):
         # signal_traces = TriggerOn.get_trace_from_stations(TriggerOff == TriggerOn)        # order matters!
         background_traces = TriggerOff.get_trace_from_stations(TriggerOff != TriggerOn)     # order matters!
 
+        for trace in signal_traces:
+            bins, _, _ = np.histogram2d(trace, TriggerOn.time, bins = (signal_bins, time_bins))
+            heatmap_signal += bins
+
+        for trace in background_traces:
+            bins, _, _ = np.histogram2d(trace, TriggerOff.time, bins = (background_bins, time_bins))
+            heatmap_background += bins
+
+
     except OSError:
-        sys.exit()
+        continue
 
-    # write data to cumulative dataset(s)
-    n_sig, n_bkg = np.loadtxt("/cr/users/filip/condor_output/tmp/station_info.txt", dtype = int, unpack = True)
-    n_sig += len(signal_traces)
-    n_bkg += len(background_traces)
-
-    with open(station_file_location, "w") as station_info:
-        station_info.write(str(n_sig) + "\n" + str(n_bkg))
-
-    background_data = np.loadtxt(background_file_location, dtype = int)
-    background_data = update_array(background_data,background_traces)
-    write_to_csv(background_file_location, background_data)
-        
-    signal_data = np.loadtxt(signal_file_location, dtype = int)
-    signal_data = update_array(signal_data,signal_traces)
-    write_to_csv(signal_file_location, signal_data)
-
-    print(f"finished step {step}/{len(datasets)}")
+np.savetxt(f"/cr/users/filip/condor_output/accumulated_background.csv", heatmap_background)
+np.savetxt(f"/cr/users/filip/condor_output/accumulated_signal.csv", heatmap_signal)
