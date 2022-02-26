@@ -1,0 +1,14 @@
+JobBatchName   = trigger-studies_generate-trace-heatmap
+Executable     = generate_trace_heatmap.py
+
+error          = /cr/users/filip/condor_output/trigger_studies-generate_heatmap.err
+output         = /cr/users/filip/condor_output/trigger_studies-$(ProcId).out
+log            = /cr/users/filip/condor_output/trigger_studies-$(ProcId).log
+
+max_idle       = 150 
+# solves max jobs per user problem
+
+request_memory = 1G
+# arguments      = $(ProcId)
+
+queue
