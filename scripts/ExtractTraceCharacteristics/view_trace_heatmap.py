@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 plt.rcParams.update({'font.size': 22})
 
 
-background = np.loadtxt("/cr/users/filip/condor_output/accumulated_background.csv")
-signal = np.loadtxt("/cr/users/filip/condor_output/accumulated_signal.csv")
+background = np.loadtxt("/cr/users/filip/data/accumulated_background.csv")
+signal = np.loadtxt("/cr/users/filip/data/accumulated_signal.csv")
 
 background = np.log(background)
 background[background == -np.inf] = 0
