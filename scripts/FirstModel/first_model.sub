@@ -1,0 +1,12 @@
+JobBatchName    = trigger-studies_first_model
+Executable      = first_model.py
+
+error           = /cr/users/filip/condor_output/errors/trigger-studies-first_model.err
+output          = /cr/users/filip/condor_output/output/trigger_studies-first_model.out
+log             = /cr/users/filip/condor_output/logs/trigger_studies-first_model.log
+
+max_idle        = 150
+request_memory  = 35G
+request_machine = crc2.ikp.kit.edu
+
+queue
