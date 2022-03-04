@@ -31,7 +31,7 @@ class VEMTrace():
 # This website helped tremendously with writing a working example: shorturl.at/fFI09
 class TraceGenerator(tf.keras.utils.Sequence):
 
-    def __init__(self, train : bool, split : float, input_shape : int, fix_seed : bool = False, shuffle : bool = True) -> None:
+    def __init__(self, train : bool, split : float, input_shape : int, fix_seed : bool = False, shuffle : bool = True, verbose : bool = True ) -> None:
 
         assert 0 < split and split < 1, "PLEASE PROVIDE A VALID SPLIT: 0 <= split <= 1"
 
@@ -40,8 +40,11 @@ class TraceGenerator(tf.keras.utils.Sequence):
         self.input_shape = input_shape  # input length of the data, trace duration = 8.3 ns * length
         self.fix_seed = fix_seed        # whether or not RNG seed is fixed, for reproducibility
         self.shuffle = shuffle          # whether or not to shuffle signal files at the end of each epoch
+        self.verbose = verbose          # whether or not to print output to stdout during training
 
         self.n_events = [0, 0]          # number of background/signal traces respectively
+        self.__file_count = 0           # number of calls to __getitem__ per epoch
+        self.__epochs = 0               # number of epochs that the generator was used for
         
         self.__working_directory = "/cr/users/filip/data/first_simulation/tensorflow/signal/"
         self.__signal_files = os.listdir(self.__working_directory)
@@ -51,6 +54,7 @@ class TraceGenerator(tf.keras.utils.Sequence):
     def __getitem__(self, index) -> tuple :
 
         self.__traces, self.__labels = [], []
+        self.file_count += 1
 
         # generate mixed set of signals and baselines
         events = np.loadtxt(self.__working_directory + self.__signal_files[index])
@@ -64,6 +68,8 @@ class TraceGenerator(tf.keras.utils.Sequence):
                 self.add_event(choice, signal)      # add background event to list
                 choice = np.random.choice([0,1])    # add another background event?
             self.add_event(choice, signal)          # add signal event to list
+
+        print("[" + self.__file_count * "-" + (self.__len__() - self.__file_count) * " " + f"] Fetching file. {self.n_events} in storage" )
 
         # true batch size is not EXACTLY batch size, this should be okay
         return (np.array(self.__traces), np.array(self.__labels))
@@ -87,6 +93,11 @@ class TraceGenerator(tf.keras.utils.Sequence):
     # called by model.fit at the end of each epoch
     def on_epoch_end(self) -> None : 
         self.shuffle and np.random.shuffle(self.__signal_files)
+        self.__file_count = 0
+        self.n_events = [0, 0]
+        self.__epochs += 1
+
+        print(f" EPOCH {str(self.__epochs).zfill(3)} DONE " + 114 * "_" + "\n")
 
     # fix random number generator seed for reproducibility
     @staticmethod
@@ -117,13 +128,11 @@ class Classifier():
         self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
     # Train the model network on the provided training/validation set
-    def train(self, training_set : TraceGenerator, validation_set : TraceGenerator, epochs : int, verbose : int = 0) -> None:
+    # TODO support restarting of training from given generation
+    def train(self, training_set : TraceGenerator, validation_set : TraceGenerator, epochs : int) -> None:
         
-        # clear terminal for better overview of verbose output:
-        verbose and print("\x1B[2J\x1B[H")
-
         self.epochs += epochs
-        self.model.fit(training_set, validation_data=validation_set, epochs = epochs, verbose = verbose)
+        self.model.fit(training_set, validation_data=validation_set, epochs = epochs)
 
     # Save the model to disk
     def save(self, directory_path : str) -> None : 
@@ -146,12 +155,12 @@ if __name__=="__main__":
     trace_length = 20000            # total trace "duration", 8.3 ns/bin * 20 000 bins = 166 μs
 
     # initialize datasets (this doesn't load them into memory yet!)
-    VirtualTrainingSet = TraceGenerator(train = True, split = 0.8, input_shape = trace_length, fix_seed = True)
-    VirtualValidationSet = TraceGenerator(train = True, split = 0.2, input_shape = trace_length, fix_seed = True)
+    VirtualTrainingSet = TraceGenerator(train = True, split = 0.8, input_shape = trace_length, fix_seed = True, verbose = True)
+    VirtualValidationSet = TraceGenerator(train = True, split = 0.2, input_shape = trace_length, fix_seed = True, verbose = True)
 
     # initialize convolutional neural network model
     SignalBackgroundClassifier = Classifier()
 
     # train the classifier and save it to disk
-    SignalBackgroundClassifier.train(VirtualTrainingSet, VirtualValidationSet, 100, 1)
+    SignalBackgroundClassifier.train(VirtualTrainingSet, VirtualValidationSet, 10, 1)
     SignalBackgroundClassifier.save("/cr/users/filip/data/first_simulation/tensorflow/model/")

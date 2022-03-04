@@ -6,7 +6,7 @@ output          = /cr/users/filip/condor_output/output/trigger_studies-first_mod
 log             = /cr/users/filip/condor_output/logs/trigger_studies-first_model-train-network.log
 
 max_idle        = 150
-request_memory  = 3G
+request_memory  = 10G
 
 Requirements = (TARGET.Machine == "crc2.ikp.kit.edu")
 
