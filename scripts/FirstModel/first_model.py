@@ -33,10 +33,10 @@ class TraceGenerator(tf.keras.utils.Sequence):
 
     def __init__(self, train : bool, split : float, input_shape : int, fix_seed : bool = False, shuffle : bool = True, verbose : bool = True ) -> None:
 
-        assert 0 < split and split < 1, "PLEASE PROVIDE A VALID SPLIT: 0 <= split <= 1"
+        assert 0 < split < 1, "PLEASE PROVIDE A VALID SPLIT: 0 < split < 1"
 
         self.train = train              # wether object is used for training or validation
-        self.split = split              # 0.00 - 1.00, percentage of data for this generator
+        self.split = int(100 * split)   # 0 - 100, percentage of data for this generator
         self.input_shape = input_shape  # input length of the data, trace duration = 8.3 ns * length
         self.fix_seed = fix_seed        # whether or not RNG seed is fixed, for reproducibility
         self.shuffle = shuffle          # whether or not to shuffle signal files at the end of each epoch
@@ -47,14 +47,18 @@ class TraceGenerator(tf.keras.utils.Sequence):
         self.__epochs = 0               # number of epochs that the generator was used for
         
         self.__working_directory = "/cr/users/filip/data/first_simulation/tensorflow/signal/"
-        self.__signal_files = os.listdir(self.__working_directory)
+
+        if self.train:
+            self.__signal_files = os.listdir(self.__working_directory)[:self.split]
+        elif not self.train:
+            self.__signal_files = os.listdir(self.__working_directory)[self.split:]
 
     # generator that creates one batch, loads one signal file (~2000 events)
     # and randomly shuffles background events inbetween the signal traces
     def __getitem__(self, index) -> tuple :
 
         self.__traces, self.__labels = [], []
-        self.file_count += 1
+        self.__file_count += 1
 
         # generate mixed set of signals and baselines
         events = np.loadtxt(self.__working_directory + self.__signal_files[index])
@@ -69,15 +73,14 @@ class TraceGenerator(tf.keras.utils.Sequence):
                 choice = np.random.choice([0,1])    # add another background event?
             self.add_event(choice, signal)          # add signal event to list
 
-        print("[" + self.__file_count * "-" + (self.__len__() - self.__file_count) * " " + f"] Fetching file. {self.n_events} in storage" )
+        self.verbose and print("[" + self.__file_count * "-" + (self.__len__() - self.__file_count) * " " + f"] {self.__file_count}/{self.__len__()}" )
 
         # true batch size is not EXACTLY batch size, this should be okay
         return (np.array(self.__traces), np.array(self.__labels))
 
-    # have 100 signal files => number of steps per epoch = 100
-    # such that optimizer sees all data over an entire epoch
+    # split into validation set and training set repectively
     def __len__(self):
-        return 100
+        return self.split
 
     # add labelled trace consisting of either just baseline or baseline + signal             
     def add_event(self, choice : int, signal : np.ndarray) -> tuple:
@@ -92,12 +95,13 @@ class TraceGenerator(tf.keras.utils.Sequence):
 
     # called by model.fit at the end of each epoch
     def on_epoch_end(self) -> None : 
+
+        self.verbose and print(f" EPOCH {str(self.__epochs).zfill(3)} DONE; {self.n_events} events in buffer " + 100 * "_" + "\n")
+
         self.shuffle and np.random.shuffle(self.__signal_files)
         self.__file_count = 0
         self.n_events = [0, 0]
         self.__epochs += 1
-
-        print(f" EPOCH {str(self.__epochs).zfill(3)} DONE " + 114 * "_" + "\n")
 
     # fix random number generator seed for reproducibility
     @staticmethod
@@ -110,33 +114,34 @@ class Classifier():
 
     def __init__(self, init_from_disk : str = None) -> None:
 
-        self.epochs = 0
-        self.model = tf.keras.models.Sequential()
+        if init_from_disk is None:
 
-        # architecture of this NN is - apart from in/output - completely arbitrary, at least for now
-        # self.model.add(tf.keras.layers.Input(shape=(trace_length, ), dtype = tf.float32, name = "Input"))         # Input layer, trace_length neurons
-        self.model.add(tf.keras.layers.Dense(units = 2048, input_shape=(trace_length,), activation = 'relu'))       # 1st hidden layer 2048 neurons
-        self.model.add(tf.keras.layers.Dropout(0.2))                                                                # Dropout layer to fight overfitting
-        self.model.add(tf.keras.layers.Dense(units = 12, activation = 'relu'))                                      # 2nd hidden layer 12 neurons
-        self.model.add(tf.keras.layers.Dropout(0.2))                                                                # Dropout layer to fight overfitting
-        self.model.add(tf.keras.layers.Dense(units = 2, activation = 'softmax', name = "Output"))                   # Output layer with signal/background
+            self.__epochs = 0
+            self.model = tf.keras.models.Sequential()
+
+            # architecture of this NN is - apart from in/output - completely arbitrary, at least for now
+            self.model.add(tf.keras.layers.Dense(units = 2048, input_shape=(trace_length,), activation = 'relu'))   # 1st hidden layer 2048 neurons
+            self.model.add(tf.keras.layers.Dropout(0.2))                                                            # Dropout layer to fight overfitting
+            self.model.add(tf.keras.layers.Dense(units = 12, activation = 'relu'))                                  # 2nd hidden layer 12 neurons
+            self.model.add(tf.keras.layers.Dropout(0.2))                                                            # Dropout layer to fight overfitting
+            self.model.add(tf.keras.layers.Dense(units = 2, activation = 'softmax', name = "Output"))               # Output layer with signal/background
         
-        if init_from_disk is not None:
-            self.epochs = int(init_from_disk[init_from_disk.rfind('_') + 1:init_from_disk.rfind('.')])              # set previously run epochs as start
-            self.model = tf.keras.models.load_model(init_from_disk)                                                 # load model, doesn't work with h5py 3.x !!
-        
+        elif init_from_disk is not None:
+
+            model_save_dir = "/cr/users/filip/data/first_simulation/tensorflow/model/"
+            self.__epochs = int(init_from_disk[init_from_disk.rfind('_') + 1:])                                     # set previously run epochs as start
+            self.model = tf.keras.models.load_model(model_save_dir + init_from_disk)                                # load model, doesn't work with h5py 3.x!
+
         self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
     # Train the model network on the provided training/validation set
     # TODO support restarting of training from given generation
     def train(self, training_set : TraceGenerator, validation_set : TraceGenerator, epochs : int) -> None:
-        
-        self.epochs += epochs
-        self.model.fit(training_set, validation_data=validation_set, epochs = epochs)
+        self.model.fit(training_set, validation_data=validation_set, initial_epoch = self.__epochs, epochs = epochs)
 
     # Save the model to disk
     def save(self, directory_path : str) -> None : 
-        self.model.save(directory_path + f"first_model_{self.epochs}.SavedModel")
+        self.model.save(directory_path + f"first_model_{self.__epochs}")
 
     # Predict a batch or single trace
     def predict(self):
@@ -147,20 +152,19 @@ class Classifier():
         self.model.summary()
         return ""
 
-if __name__=="__main__":
+if __name__ == "__main__":
 
     # Have 206563 station-level traces in dataset from first_simulation, see <check_signal_size.py> 
-
     n_signal = 206563               # total number of station-level traces in dataset
     trace_length = 20000            # total trace "duration", 8.3 ns/bin * 20 000 bins = 166 μs
 
     # initialize datasets (this doesn't load them into memory yet!)
-    VirtualTrainingSet = TraceGenerator(train = True, split = 0.8, input_shape = trace_length, fix_seed = True, verbose = True)
-    VirtualValidationSet = TraceGenerator(train = True, split = 0.2, input_shape = trace_length, fix_seed = True, verbose = True)
+    VirtualTrainingSet = TraceGenerator(train = True, split = 0.8, input_shape = trace_length, fix_seed = True, verbose = False)
+    VirtualValidationSet = TraceGenerator(train = False, split = 0.2, input_shape = trace_length, fix_seed = True, verbose = False)
 
     # initialize convolutional neural network model
-    SignalBackgroundClassifier = Classifier()
+    SignalBackgroundClassifier = Classifier("first_model_10")
 
     # train the classifier and save it to disk
-    SignalBackgroundClassifier.train(VirtualTrainingSet, VirtualValidationSet, 10, 1)
+    SignalBackgroundClassifier.train(VirtualTrainingSet, VirtualValidationSet, 40)
     SignalBackgroundClassifier.save("/cr/users/filip/data/first_simulation/tensorflow/model/")
