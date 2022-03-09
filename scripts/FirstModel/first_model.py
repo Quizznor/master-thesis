@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 
-from mimetypes import init
 import typing
 import sys, os
 import numpy as np
@@ -51,7 +50,7 @@ class TraceGenerator(tf.keras.utils.Sequence):
         if self.train:
             self.__signal_files = os.listdir(self.__working_directory)[:self.split]
         elif not self.train:
-            self.__signal_files = os.listdir(self.__working_directory)[self.split:]
+            self.__signal_files = os.listdir(self.__working_directory)[-self.split:]
 
     # generator that creates one batch, loads one signal file (~2000 events)
     # and randomly shuffles background events inbetween the signal traces
@@ -135,9 +134,9 @@ class Classifier():
         self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
     # Train the model network on the provided training/validation set
-    # TODO support restarting of training from given generation
     def train(self, training_set : TraceGenerator, validation_set : TraceGenerator, epochs : int) -> None:
         self.model.fit(training_set, validation_data=validation_set, initial_epoch = self.__epochs, epochs = epochs)
+        self.__epochs = epochs
 
     # Save the model to disk
     def save(self, directory_path : str) -> None : 
@@ -163,8 +162,8 @@ if __name__ == "__main__":
     VirtualValidationSet = TraceGenerator(train = False, split = 0.2, input_shape = trace_length, fix_seed = True, verbose = False)
 
     # initialize convolutional neural network model
-    SignalBackgroundClassifier = Classifier("first_model_10")
+    SignalBackgroundClassifier = Classifier("first_model_100")
 
     # train the classifier and save it to disk
-    SignalBackgroundClassifier.train(VirtualTrainingSet, VirtualValidationSet, 40)
+    SignalBackgroundClassifier.train(VirtualTrainingSet, VirtualValidationSet, 150)
     SignalBackgroundClassifier.save("/cr/users/filip/data/first_simulation/tensorflow/model/")
