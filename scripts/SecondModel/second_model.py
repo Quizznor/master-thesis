@@ -17,58 +17,81 @@ class VEMTrace():
         
         # comparison to classical triggers: https://arxiv.org/pdf/1111.6764.pdf
 
-        # whether or not T1 trigger would have activated
-        self.T1_active = self.check_threshold_trigger(threshold = 1.75)
+        # # whether or not T1 trigger would have activated
+        # self.T1_active = self.check_absolute_threshold_trigger(threshold = 1.75)
 
-        # whether or not T2 trigger would have activated
-        self.T2_active = self.check_threshold_trigger(threshold = 3.20)
+        # # whether or not T2 trigger would have activated
+        # self.T2_active = self.check_absolute_threshold_trigger(threshold = 3.20)
 
-        # whether or not ToT trigger would have activated
-        self.ToT_active = False
+        # # whether or not ToT trigger would have activated
+        # self.ToT_active = self.check_time_over_threshold_trigger()
 
-    # method for checking T1/T2 trigger
+
+
+class Trigger():
+
     # T1 threshold = 1.75 VEM in all 3 PMTs
-    # T2 threshold = 3.20 VEM in all 3 PMTs
-    # TODO does this need to be in the same time bin? (i.e. what i wrote below?)
-    def check_threshold_trigger(self, threshold : float) -> bool :
-        
-        # hierarchy doesn't matter, since we need coincident signal anyway
-        for i in range(self.length):
+    def T1_trigger(self, Trace : VEMTrace):
+        return self.absolute_threshold_trigger(Trace, 1.75)
 
-            if self.__pmt_1[i] >= threshold:
-                if self.__pmt_2[i] >= threshold:
-                    if self.__pmt_3[i] >= threshold:
+    # T2 threshold = 3.20 VEM in all 3 PMTs
+    def T2_trigger(self, Trace : VEMTrace):
+        return self.absolute_threshold_trigger(Trace, 3.20)
+
+    # requires 2/3 PMTs have >= 13 bins over 0.2 VEM within ~ 1 μs
+    # TODO is this performant enough? I trimmed it down as good as I can
+    def ToT_trigger(self, Trace : VEMTrace, window_length : int = 120, threshold : float = 0.2) -> bool :
+
+        # count initial active bins
+        pmt1_active = len(Trace.__pmt_1[:window_length][Trace.__pmt_1[:window_length] > threshold])
+        pmt2_active = len(Trace.__pmt_2[:window_length][Trace.__pmt_2[:window_length] > threshold])
+        pmt3_active = len(Trace.__pmt_3[:window_length][Trace.__pmt_3[:window_length] > threshold])
+
+        for i in range(window_length,Trace.length):
+
+            # check if ToT conditions are met
+            ToT_trigger = [pmt1_active >= 13, pmt2_active >= 13, pmt3_active >= 13]
+
+            if ToT_trigger.count(True) >= 2:
+                return True
+
+            # overwrite oldest bin and reevaluate
+            pmt1_active += self.updated_bin_count(i, Trace.__pmt_1)
+            pmt2_active += self.updated_bin_count(i, Trace.__pmt_2)
+            pmt3_active += self.updated_bin_count(i, Trace.__pmt_3)
+
+        return False
+
+    # Helper for ToT trigger
+    @staticmethod
+    def updated_bin_count(index : int, array: np.ndarray, window_length : int = 120, threshold : float = 0.2) -> int :
+
+        # is new bin active?
+        if array[index] >= threshold:
+            updated_bin_count = 1
+        else:
+            updated_bin_count = 0
+
+        # was old bin active?
+        if array[index - window_length] >= threshold:
+            updated_bin_count -= 1
+
+        return updated_bin_count
+
+    # Check for coincident signals in all three photomultipliers
+    # TODO does this need to be in the same time bin? (i.e. what i wrote below?)
+    @staticmethod
+    def absolute_threshold_trigger(Trace, threshold : float) -> bool :
+        
+        # hierarchy doesn't (shouldn't?) matter, since we need coincident signal anyway
+        for i in range(Trace.length):
+
+            if Trace.__pmt_1[i] >= threshold:
+                if Trace.__pmt_2[i] >= threshold:
+                    if Trace.__pmt_3[i] >= threshold:
                         return True
                     else: continue
                 else: continue
             else: continue
         
         return False
-
-    # method for checking ToT trigger
-    # requires 2/3 PMTs have >= 13 bins over 0.2 VEM within ~ 1 μs
-    # TODO is this performant? Maybe only evaluate bin when it's added/removed
-    def check_time_over_threshold_trigger(self, window_length : int = 120) -> bool :
-
-        # keep <window_length> bins in buffer
-        pmt1_window = self.__pmt_1[:window_length]
-        pmt2_window = self.__pmt_2[:window_length]
-        pmt3_window = self.__pmt_3[:window_length]
-
-        for i in range(window_length, self.length):
-
-            # check if ToT conditions are met
-            pmt1_active = len(pmt1_window[pmt1_window > 0.2]) >= 13
-            pmt2_active = len(pmt2_window[pmt2_window > 0.2]) >= 13
-            pmt3_active = len(pmt3_window[pmt3_window > 0.2]) >= 13
-
-            if pmt1_active == pmt2_active == pmt3_active == True:
-                return True
-
-            # overwrite oldest bin and reevaluate
-            pmt1_window[i % window_length] = self.__pmt_1[i]
-            pmt2_window[i % window_length] = self.__pmt_2[i]
-            pmt2_window[i % window_length] = self.__pmt_3[i]
-
-        return False
-
