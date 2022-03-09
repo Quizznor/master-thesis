@@ -14,19 +14,6 @@ class VEMTrace():
         self.__pmt_1 = None
         self.__pmt_2 = None
         self.__pmt_3 = None
-        
-        # comparison to classical triggers: https://arxiv.org/pdf/1111.6764.pdf
-
-        # # whether or not T1 trigger would have activated
-        # self.T1_active = self.check_absolute_threshold_trigger(threshold = 1.75)
-
-        # # whether or not T2 trigger would have activated
-        # self.T2_active = self.check_absolute_threshold_trigger(threshold = 3.20)
-
-        # # whether or not ToT trigger would have activated
-        # self.ToT_active = self.check_time_over_threshold_trigger()
-
-
 
 class Trigger():
 
@@ -79,7 +66,6 @@ class Trigger():
         return updated_bin_count
 
     # Check for coincident signals in all three photomultipliers
-    # TODO does this need to be in the same time bin? (i.e. what i wrote below?)
     @staticmethod
     def absolute_threshold_trigger(Trace, threshold : float) -> bool :
         

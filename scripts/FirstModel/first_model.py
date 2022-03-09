@@ -32,7 +32,7 @@ class TraceGenerator(tf.keras.utils.Sequence):
 
     def __init__(self, train : bool, split : float, input_shape : int, fix_seed : bool = False, shuffle : bool = True, verbose : bool = True ) -> None:
 
-        assert 0 < split < 1, "PLEASE PROVIDE A VALID SPLIT: 0 < split < 1"
+        assert 0 <= split <= 1, "PLEASE PROVIDE A VALID SPLIT: 0 < split < 1"
 
         self.train = train              # wether object is used for training or validation
         self.split = int(100 * split)   # 0 - 100, percentage of data for this generator
@@ -162,8 +162,8 @@ if __name__ == "__main__":
     VirtualValidationSet = TraceGenerator(train = False, split = 0.2, input_shape = trace_length, fix_seed = True, verbose = False)
 
     # initialize convolutional neural network model
-    SignalBackgroundClassifier = Classifier("first_model_100")
+    SignalBackgroundClassifier = Classifier("first_model_150")
 
     # train the classifier and save it to disk
-    SignalBackgroundClassifier.train(VirtualTrainingSet, VirtualValidationSet, 150)
+    SignalBackgroundClassifier.train(VirtualTrainingSet, VirtualValidationSet, 250)
     SignalBackgroundClassifier.save("/cr/users/filip/data/first_simulation/tensorflow/model/")
