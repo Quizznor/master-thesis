@@ -5,36 +5,55 @@ import sys, os
 import numpy as np
 import tensorflow as tf
 
-class VEMTrace():
+# wrapper for easier signal/background event creation
+class Event():
 
-    # TODO overthink structure here, keep long trace baseline?
-    def __init__(self, trace_length : int, mu : float = 0, std : float = 1) -> None :
+    def __new__(cls, label : int, *args, **kwargs) -> typing.Union(Background, Signal):
 
-        self.length = trace_length
-        self.__pmt_1 = None
-        self.__pmt_2 = None
-        self.__pmt_3 = None
+        if label == 0: return Background(*args, **kwargs)
+        if label == 1: return Signal(*args, **kwargs)
 
-class Trigger():
+    # Whether or not any of the existing triggers caught this event
+    def has_triggered(self) -> bool : 
 
-    # T1 threshold = 1.75 VEM in all 3 PMTs
-    def T1_trigger(self, Trace : VEMTrace):
-        return self.absolute_threshold_trigger(Trace, 1.75)
+        # check T1 first, then ToT, for performance reasons
+        # have T2 only when T1 also triggered, so ignore it
+        T1_is_active = self.absolute_threshold_trigger(1.75)
 
-    # T2 threshold = 3.20 VEM in all 3 PMTs
-    def T2_trigger(self, Trace : VEMTrace):
-        return self.absolute_threshold_trigger(Trace, 3.20)
+        if not T1_is_active:
+            ToT_is_active = self.time_over_threshold_trigger()
+        else:
+            ToT_is_active = False
 
-    # requires 2/3 PMTs have >= 13 bins over 0.2 VEM within ~ 1 μs
-    # TODO is this performant enough? I trimmed it down as good as I can
-    def ToT_trigger(self, Trace : VEMTrace, window_length : int = 120, threshold : float = 0.2) -> bool :
+        return T1_is_active or ToT_is_active
 
+    # method to check for (coincident) absolute signal threshold
+    def absolute_threshold_trigger(self, threshold : float) -> bool : 
+
+        # hierarchy doesn't (shouldn't?) matter, since we need coincident signal anyway
+        for i in range(self.length):
+            if self.__pmt_1[i] >= threshold:
+                if self.__pmt_2[i] >= threshold:
+                    if self.__pmt_3[i] >= threshold:
+                        return True
+                    else: continue
+                else: continue
+            else: continue
+        
+        return False
+
+    # method to check for elevated baseline threshold trigger
+    def time_over_threshold_trigger(self) -> bool : 
+
+        window_length = 120      # amount of bins that are being checked
+        threshold     = 0.2      # bins above this threshold are 'active'
+        
         # count initial active bins
-        pmt1_active = len(Trace.__pmt_1[:window_length][Trace.__pmt_1[:window_length] > threshold])
-        pmt2_active = len(Trace.__pmt_2[:window_length][Trace.__pmt_2[:window_length] > threshold])
-        pmt3_active = len(Trace.__pmt_3[:window_length][Trace.__pmt_3[:window_length] > threshold])
+        pmt1_active = len(self.__pmt_1[:window_length][self.__pmt_1[:window_length] > threshold])
+        pmt2_active = len(self.__pmt_2[:window_length][self.__pmt_2[:window_length] > threshold])
+        pmt3_active = len(self.__pmt_3[:window_length][self.__pmt_3[:window_length] > threshold])
 
-        for i in range(window_length,Trace.length):
+        for i in range(window_length,self.length):
 
             # check if ToT conditions are met
             ToT_trigger = [pmt1_active >= 13, pmt2_active >= 13, pmt3_active >= 13]
@@ -43,15 +62,15 @@ class Trigger():
                 return True
 
             # overwrite oldest bin and reevaluate
-            pmt1_active += self.updated_bin_count(i, Trace.__pmt_1)
-            pmt2_active += self.updated_bin_count(i, Trace.__pmt_2)
-            pmt3_active += self.updated_bin_count(i, Trace.__pmt_3)
+            pmt1_active += self.updated_bin_count(i, self.__pmt_1, window_length, threshold)
+            pmt2_active += self.updated_bin_count(i, self.__pmt_2)
+            pmt3_active += self.updated_bin_count(i, self.__pmt_3)
 
         return False
 
-    # Helper for ToT trigger
     @staticmethod
-    def updated_bin_count(index : int, array: np.ndarray, window_length : int = 120, threshold : float = 0.2) -> int :
+    # helper method for time_over_threshold_trigger
+    def update_bin_count(index : int, array: np.ndarray, window_length : int, threshold : float) -> int : 
 
         # is new bin active?
         if array[index] >= threshold:
@@ -65,19 +84,27 @@ class Trigger():
 
         return updated_bin_count
 
-    # Check for coincident signals in all three photomultipliers
-    @staticmethod
-    def absolute_threshold_trigger(Trace, threshold : float) -> bool :
-        
-        # hierarchy doesn't (shouldn't?) matter, since we need coincident signal anyway
-        for i in range(Trace.length):
+class Background(Event):
 
-            if Trace.__pmt_1[i] >= threshold:
-                if Trace.__pmt_2[i] >= threshold:
-                    if Trace.__pmt_3[i] >= threshold:
-                        return True
-                    else: continue
-                else: continue
-            else: continue
-        
-        return False
+    def __init__(self, ):
+        pass
+
+class Signal(Event):
+
+    def __init__(self, ):
+        pass
+
+# @dataclass
+# class VEMTrace():
+
+#     # TODO overthink structure here, keep long trace baseline?
+#     def __init__(self, trace_length : int, mu : float = 0, std : float = 1) -> None :
+
+#         # TODO figure out how this will work
+#         self.length = trace_length
+#         self.__pmt_1 = None
+#         self.__pmt_2 = None
+#         self.__pmt_3 = None
+    
+
+

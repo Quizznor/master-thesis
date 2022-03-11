@@ -1,12 +1,12 @@
 JobBatchName    = trigger-studies_first_model-train
 Executable      = first_model_wrapper.sh
 
-error           = /cr/users/filip/condor_output/errors/trigger-studies-first_model-train-network-250.err
-output          = /cr/users/filip/condor_output/output/trigger_studies-first_model-train-network-250.out
-log             = /cr/users/filip/condor_output/logs/trigger_studies-first_model-train-network-250.log
+error           = /cr/users/filip/condor_output/errors/trigger-studies-first_model-train-network-500.err
+output          = /cr/users/filip/condor_output/output/trigger_studies-first_model-train-network-500.out
+log             = /cr/users/filip/condor_output/logs/trigger_studies-first_model-train-network-500.log
 
 max_idle        = 150
-request_memory  = 20G
+request_memory  = 30G
 
 Requirements = (TARGET.Machine == "crc2.ikp.kit.edu")
 

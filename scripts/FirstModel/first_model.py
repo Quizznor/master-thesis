@@ -11,13 +11,14 @@ class VEMTrace():
 
     def __init__(self, trace_length : int, mu : float = 0, std : float = 1) -> None :
 
-        self.__array = np.random.normal(mu, std, trace_length)
-
+        self.trace_length = trace_length                            # number of time bins (8.3 ns) in trace
+        self.__array = np.random.normal(mu, std, trace_length)      # gaussian baseline with mean and std
+        
     # overlay signal trace at uniformly random position of baseline
     def __iadd__(self, signal : np.array) -> object :
-        assert trace_length > len(signal), "SIGNAL DOES NOT FIT INTO BASELINE!\n"
+        assert self.trace_length > len(signal), "SIGNAL DOES NOT FIT INTO BASELINE!\n"
 
-        start = np.random.randint(-trace_length, -len(signal))
+        start = np.random.randint(-self.trace_length, -len(signal))
         self.__array[start : start + len(signal)] += signal
 
         return self
@@ -85,17 +86,17 @@ class TraceGenerator(tf.keras.utils.Sequence):
     def add_event(self, choice : int, signal : np.ndarray) -> tuple:
 
         self.n_events[choice] += 1
-        Baseline = VEMTrace(trace_length)
+        Baseline = VEMTrace(self.input_shape)
         if choice == 1: Baseline += signal
 
-        choice_encoded = tf.keras.utils.to_categorical(choice, 2)
+        choice_encoded = tf.keras.utils.to_categorical(choice, 2, dtype = int)
         self.__traces.append(Baseline.get())
         self.__labels.append(choice_encoded)
 
     # called by model.fit at the end of each epoch
     def on_epoch_end(self) -> None : 
 
-        self.verbose and print(f" EPOCH {str(self.__epochs).zfill(3)} DONE; {self.n_events} events in buffer " + 100 * "_" + "\n")
+        self.verbose and print(f"\nEPOCH {str(self.__epochs).zfill(3)} DONE; {self.n_events} events in buffer " + 100 * "_" + "\n")
 
         self.shuffle and np.random.shuffle(self.__signal_files)
         self.__file_count = 0
@@ -135,7 +136,7 @@ class Classifier():
 
     # Train the model network on the provided training/validation set
     def train(self, training_set : TraceGenerator, validation_set : TraceGenerator, epochs : int) -> None:
-        self.model.fit(training_set, validation_data=validation_set, initial_epoch = self.__epochs, epochs = epochs)
+        self.model.fit(training_set, validation_data=validation_set, initial_epoch = self.__epochs, epochs = epochs, verbose = 2)
         self.__epochs = epochs
 
     # Save the model to disk
@@ -158,12 +159,12 @@ if __name__ == "__main__":
     trace_length = 20000            # total trace "duration", 8.3 ns/bin * 20 000 bins = 166 μs
 
     # initialize datasets (this doesn't load them into memory yet!)
-    VirtualTrainingSet = TraceGenerator(train = True, split = 0.8, input_shape = trace_length, fix_seed = True, verbose = False)
+    VirtualTrainingSet = TraceGenerator(train = True, split = 0.8, input_shape = trace_length, fix_seed = True, verbose = True)
     VirtualValidationSet = TraceGenerator(train = False, split = 0.2, input_shape = trace_length, fix_seed = True, verbose = False)
 
     # initialize convolutional neural network model
-    SignalBackgroundClassifier = Classifier("first_model_150")
+    SignalBackgroundClassifier = Classifier("first_model_250")
 
     # train the classifier and save it to disk
-    SignalBackgroundClassifier.train(VirtualTrainingSet, VirtualValidationSet, 250)
+    SignalBackgroundClassifier.train(VirtualTrainingSet, VirtualValidationSet, 500)
     SignalBackgroundClassifier.save("/cr/users/filip/data/first_simulation/tensorflow/model/")

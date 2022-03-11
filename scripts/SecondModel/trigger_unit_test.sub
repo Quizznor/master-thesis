@@ -1,0 +1,11 @@
+JobBatchName    = trigger-studies_unit-tests
+Executable      = trigger_unit_test.py
+
+error           = /cr/users/filip/condor_output/errors/trigger-studies_unit-tests.err
+# output          = /cr/users/filip/condor_output/output/trigger_studies_unit-tests.out
+log             = /cr/users/filip/condor_output/logs/trigger_studies_unit-tests.log
+
+max_idle        = 150
+request_memory  = 1G
+
+queue

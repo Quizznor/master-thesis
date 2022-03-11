@@ -39,7 +39,7 @@
 using namespace std;
 using namespace utl;
 
-void ExtractDataFromAdstFiles(const string& pathToAdst)
+void ExtractDataFromAdstFiles(const string& pathToAdst, const string& pathToOutput)
 {
   // (2) start main loop
   RecEventFile     recEventFile(pathToAdst);
@@ -52,42 +52,46 @@ void ExtractDataFromAdstFiles(const string& pathToAdst)
   const auto& start = pathToAdst.rfind('/');
   const auto& stop = pathToAdst.find_last_of('.');
   const auto& fileName = pathToAdst.substr(start, stop - start);
-  ofstream trace_file("/cr/users/filip/data/" + fileName + ".csv");
 
-  for (unsigned int i = 0; i < recEventFile.GetNEvents(); ++i) 
+  for (unsigned int PMT = 1; PMT < 4; PMT++)
   {
-    // skip if event reconstruction failed
-    if (recEventFile.ReadEvent(i) != RecEventFile::eSuccess)
-      continue;
+    ofstream trace_file(pathToOutput + fileName + "_" + to_string(PMT) + ".csv");
 
-    // allocate memory for data
-    const SDEvent& sdEvent = recEvent->GetSDEvent();
-    vector<vector<float>> traces;
-
-    // loop over all stations
-    for (const auto& recStation : sdEvent.GetStationVector()) 
+    for (unsigned int i = 0; i < recEventFile.GetNEvents(); ++i) 
     {
-      // write station id to trace file
-      trace_file << recStation.GetId() << ' ';
-      traces.push_back(recStation.GetVEMTrace(1));
-    }
+      // skip if event reconstruction failed
+      if (recEventFile.ReadEvent(i) != RecEventFile::eSuccess)
+        continue;
 
-    trace_file << endl;
+      // allocate memory for data
+      const SDEvent& sdEvent = recEvent->GetSDEvent();
+      vector<vector<float>> traces;
 
-    // write VEM traces to disk
-    for (int i = 0; i < 2048; i++)
-    {
-      for (const auto &station : traces)
+      // loop over all stations
+      for (const auto& recStation : sdEvent.GetStationVector()) 
       {
-        trace_file << station[i] << ' ';
+        // write station id to trace file
+        trace_file << recStation.GetId() << ' ';
+        traces.push_back(recStation.GetVEMTrace(PMT));
       }
+
       trace_file << endl;
+
+      // write VEM traces to disk
+      for (int j = 0; j < 2048; j++)
+      {
+        for (const auto &station : traces)
+        {
+          trace_file << station[j] << ' ';
+        }
+        trace_file << endl;
+      }
     }
   }
 }
 
 int main(int argc, char** argv) 
 {
-  ExtractDataFromAdstFiles(argv[1]);
+  ExtractDataFromAdstFiles(argv[1], argv[2]);
   return 0;
 }

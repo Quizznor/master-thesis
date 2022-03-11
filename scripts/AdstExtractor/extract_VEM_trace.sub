@@ -1,16 +1,10 @@
 
 JobBatchName   = trigger-studies_extract-vem-trace
-Executable     = wrapper.sh
+Executable     = extract_VEM_trace.sub
 
-# error          = /cr/users/filip/condor_output/trigger_studies-$(ProcId).err
-# output         = /cr/users/filip/condor_output/trigger_studies-$(ProcId).out
-# log            = /cr/users/filip/condor_output/trigger_studies-$(ProcId).log
-
-max_idle       = 150 
-# solves max jobs per user problem
+error          = /cr/users/filip/condor_output/trigger-studies_extract-vem-trace.err
 
 request_memory = 500M
-arguments      = $(ProcId)
 
-queue 20281
+queue
 
