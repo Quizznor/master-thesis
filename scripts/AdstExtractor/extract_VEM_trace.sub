@@ -1,8 +1,8 @@
-
 JobBatchName   = trigger-studies_extract-vem-trace
-Executable     = extract_VEM_trace.sub
+Executable     = extract_VEM_trace.sh
 
-error          = /cr/users/filip/condor_output/trigger-studies_extract-vem-trace.err
+error          = /cr/users/filip/condor_output/errors/trigger-studies_extract-vem-trace.err
+log            = /cr/users/filip/condor_output/logs/trigger-studies_extract-vem-trace.log
 
 request_memory = 500M
 
