@@ -2,32 +2,38 @@
 
 import sys, os
 import numpy as np
-import matplotlib.pyplot as plt
 
-working_dir = "/cr/users/filip/data/second_simulation/tensorflow/signal/"
-signal_files = [working_dir + file for file in os.listdir(working_dir)]
-# heatmap = np.loadtxt("/cr/users/filip/data/second_simulation/heatmap/signal.csv")
-heatmap = np.zeros((600,2048))
-n_tot, max = np.loadtxt("/cr/users/filip/data/second_simulation/heatmap/signal_binaries.txt")
+for dataset in ["background"]:
 
-for i, file in enumerate(signal_files[:10], 1):
+    working_dir = f"/cr/data01/filip/second_simulation/tensorflow/{dataset}/"
+    signal_files = [working_dir + file for file in os.listdir(working_dir)]
+    
+    heatmap = np.zeros((600,2048))
+    n_tot, max = np.loadtxt(f"/cr/data01/filip/second_simulation/heatmap/{dataset}_binaries.txt")
 
-    i % int(len(signal_files)/100) == 0 and print(f"{i}/{len(signal_files)} done: {float(i)/len(signal_files) * 100}%")
+    for i, file in enumerate(signal_files, 1):
 
-    traces = np.loadtxt(file)
+        try:
 
-    for trace in traces:
+            i % int(len(signal_files)/100) == 0 and print(f"{i}/{len(signal_files)} done: {(float(i)/len(signal_files) * 100)}%")
 
-        max = np.max(trace) if np.max(trace) > max else max
-        indices = [round(bin) if bin > 0 else 0 for bin in trace]
+            traces = np.loadtxt(file)
 
-        for i in range(len(trace)):
-            heatmap[indices[i]][i] += 1
+            for trace in traces:
 
-        n_tot += 1
+                max = np.max(trace) if np.max(trace) > max else max
+                indices = [round(bin) if bin > 0 else 0 for bin in trace]
 
-with open("/cr/users/filip/data/second_simulation/heatmap/signal_binaries.txt","w") as file:
-    file.write(str(n_tot) + "\n")
-    file.write(str(max))
+                for i in range(len(trace)):
+                    heatmap[indices[i]][i] += 1
 
-np.savetxt("/cr/users/filip/data/second_simulation/heatmap/signal.csv", heatmap)
+                n_tot += 1
+
+        except ValueError:
+            print(file)
+
+    with open(f"/cr/data01/filip/second_simulation/heatmap/{dataset}_binaries.txt","w") as file:
+        file.write(str(n_tot) + "\n")
+        file.write(str(max))
+
+    np.savetxt(f"/cr/data01/filip/second_simulation/heatmap/{dataset}.csv", heatmap)
