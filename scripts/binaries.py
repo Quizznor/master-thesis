@@ -1,27 +1,36 @@
+import tensorflow as tf
 import numpy as np
 import typing, os
 
-# baseline shape defaults 1 VEM_peak = 61.75 ADC !
+# baseline shape defaults. 1 VEM_peak = 61.75 ADC !
 # see David's mail from 08.02 for info on magic numbers
 
 BASELINE_LENGTH = 20000                 # number of bins in baseline
 BASELINE_STD = 0.5 / 61.75              # baseline std in VEM counts
 BASELINE_MEAN = [-8.097e-3, +8.097e-3]  # mean ADC level limits [low, high]
 
+# defaults for DataSetGenerator and EventGenerator
+# fwiw, these values are picked because they SHOULD™ make sense
+
+DATASET_SPLIT = 0.8                     # fraction of training set/entire set
+DATASET_FIX_SEED = True                 # fix randomizer seed for reproducibility
+DATASET_SHUFFLE = True                  # shuffle event list at the end of generation
+
+
 # Event wrapper for measurements of a SINGLE tank with 3 PMTs
 class VEMTrace():
 
+    # TODO change kwargs to args maybe
     r'''
     :Keyword arguments:
         * *trace_length* (``int``) -- number of bins in the trace
         * *baseline_std* (``float``) -- baseline std in VEM counts
         * *baseline_mean* (``list``) -- mean ADC level limit [low, high]
         * *signal* (``str``) -- location (relative to $DATA) of signal file
+        * *dataset* (``str``) -- location (relative to $DATA) of dataset
     '''
 
     def __init__(self, label : str, **kwargs) -> None:
-
-        self.label = label              # whether trace is signal or background
 
         # set baseline length (default 166 μs = 20000 bins)
         try: self.trace_length = kwargs['trace_length']
@@ -43,7 +52,7 @@ class VEMTrace():
         if label == "signal": 
 
             # don't catch exception here, since we _need_ signal data to continue
-            vem_signals = np.loadtxt(os.environ.get('DATA') + kwargs['signal'])
+            vem_signals = np.loadtxt(os.environ.get('DATA') + kwargs['dataset'] + kwargs['signal'])
             signal_length = len(vem_signals[0])
 
             assert len(vem_signals[0]) == len(vem_signals[1]) == len(vem_signals[2]), "SIGNAL SHAPES DONT MATCH!\n"
@@ -58,6 +67,8 @@ class VEMTrace():
         else:
             pass
 
+        self.triggered = self.has_triggered()   # whether "legacy" triggers would activate
+        self.label = label                      # whether trace is signal or background
 
     # getter for easier handling of data classes
     def __call__(self) -> tuple :
@@ -135,6 +146,82 @@ class VEMTrace():
 
         return updated_bin_count
 
+# Wrapper for easier handling of EventGenerator classes
+class DataSetGenerator():
+    
+    r'''
+    :Keyword arguments:
+        * *split* (``float``) -- fraction of of training set/entire set
+        * *fix_seed* (``bool``) -- fix randomizer seed for reproducibility
+        * *shuffle* (``bool``) -- shuffle event list at the end of generation
+        * *trace_length* (``int``) -- number of bins in the trace
+        * *baseline_std* (``float``) -- baseline std in VEM counts
+        * *baseline_mean* (``list``) -- mean ADC level limit [low, high]
+        * *dataset* (``str``) -- location (relative to $DATA) of dataset
+
+
+        * *signal* (``str``) -- location (relative to $DATA) of signal file
+    '''
+
+    def __new__(**kwargs) -> tuple :
+
+        # set split between training and validation (default 0.8)
+        try: split = kwargs['split']
+        except KeyError: split = DATASET_SPLIT
+        assert 0 < split < 1, "PLEASE PROVIDE A VALID SPLIT: 0 < split < 1"
+
+        # fix RNG seed if desired (default is desired)
+        try: fix_seed = kwargs['fix_seed']
+        except KeyError: fix_seed = DATASET_FIX_SEED
+
+        # shuffle datasets if desired (default is desired)
+        try: shuffle = kwargs['shuffle']
+        except KeyError: shuffle = DATASET_SHUFFLE
+
+        # set baseline length (default 166 μs = 20000 bins)
+        try: input_shape = kwargs['trace_length']
+        except KeyError: input_shape = BASELINE_LENGTH
+
+        # set baseline std (default exactly 0.5 ADC)
+        try: baseline_std = kwargs['baseline_std']
+        except KeyError: baseline_std = BASELINE_STD
+
+        # set baseline mean (default in [-0.5, 0.5] ADC)
+        try: baseline_mean_limit = kwargs['baseline_mean']
+        except KeyError: baseline_mean_limit = BASELINE_MEAN
+
+        TrainingSet = EventGenerator(True, split, fix_seed, shuffle, input_shape, baseline_std, baseline_mean_limit)
+        ValidationSet = EventGenerator(False, split, fix_seed, shuffle, input_shape, baseline_std, baseline_mean_limit)
+
+        return TrainingSet, ValidationSet 
+
+# Generator class for NN sequential model with some additional functionalities
+# This website helped tremendously with writing a working example: shorturl.at/fFI09
+class EventGenerator(tf.keras.utils.Sequence):
+
+    def __init__(self, training, split, fix_seed, shuffle, input_shape, baseline_std, baseline_mean_limit) -> None :
+
+        print(os.listdir())
+
+
+
+
+
+
+
+
+
+    
+
 if __name__=="__main__":
 
-    test = VEMTrace("signal", signal="second_simulation/tensorflow/signal/DAT762042_00_station-12.csv")
+    import matplotlib.pyplot as plt
+
+    for i in range(100):
+        try:
+            test = VEMTrace("signal", signal=f"second_simulation/tensorflow/signal/DAT762042_00_station-{i}.csv")
+
+            for pmt in test():
+                plt.plot(range(len(pmt)),pmt)
+        except OSError:
+            plt.show()    
