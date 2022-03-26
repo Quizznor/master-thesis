@@ -150,6 +150,10 @@ class VEMTrace():
 class DataSetGenerator():
     
     r'''
+    :dataset:
+        location (relative to $DATA) of dataset
+    :type dataset: ``str``
+
     :Keyword arguments:
         * *split* (``float``) -- fraction of of training set/entire set
         * *fix_seed* (``bool``) -- fix randomizer seed for reproducibility
@@ -157,13 +161,9 @@ class DataSetGenerator():
         * *trace_length* (``int``) -- number of bins in the trace
         * *baseline_std* (``float``) -- baseline std in VEM counts
         * *baseline_mean* (``list``) -- mean ADC level limit [low, high]
-        * *dataset* (``str``) -- location (relative to $DATA) of dataset
-
-
-        * *signal* (``str``) -- location (relative to $DATA) of signal file
     '''
 
-    def __new__(**kwargs) -> tuple :
+    def __new__(self, dataset : str, **kwargs) -> tuple :
 
         # set split between training and validation (default 0.8)
         try: split = kwargs['split']
@@ -173,6 +173,7 @@ class DataSetGenerator():
         # fix RNG seed if desired (default is desired)
         try: fix_seed = kwargs['fix_seed']
         except KeyError: fix_seed = DATASET_FIX_SEED
+        fix_seed and np.random.seed(0)
 
         # shuffle datasets if desired (default is desired)
         try: shuffle = kwargs['shuffle']
@@ -188,10 +189,10 @@ class DataSetGenerator():
 
         # set baseline mean (default in [-0.5, 0.5] ADC)
         try: baseline_mean_limit = kwargs['baseline_mean']
-        except KeyError: baseline_mean_limit = BASELINE_MEAN
+        except KeyError: baseline_mean_limit = BASELINE_MEAN        
 
-        TrainingSet = EventGenerator(True, split, fix_seed, shuffle, input_shape, baseline_std, baseline_mean_limit)
-        ValidationSet = EventGenerator(False, split, fix_seed, shuffle, input_shape, baseline_std, baseline_mean_limit)
+        TrainingSet = EventGenerator(dataset, True, split, shuffle, input_shape, baseline_std, baseline_mean_limit)
+        ValidationSet = EventGenerator(dataset, False, split, shuffle, input_shape, baseline_std, baseline_mean_limit)
 
         return TrainingSet, ValidationSet 
 
@@ -199,9 +200,36 @@ class DataSetGenerator():
 # This website helped tremendously with writing a working example: shorturl.at/fFI09
 class EventGenerator(tf.keras.utils.Sequence):
 
-    def __init__(self, training, split, fix_seed, shuffle, input_shape, baseline_std, baseline_mean_limit) -> None :
+    def __init__(self, dataset, *args) -> None :
 
-        print(os.listdir())
+        # select files for specific event generator
+        unique_events = np.unique([event[:13] for event in os.listdir(os.environ.get('DATA') + dataset)])
+        start = 0 if args[0] else int(args[1] * len(unique_events))
+        stop = int(args[1] * len(unique_events)) if args[0] else -1
+
+        # specify dataset architecture
+        self.__files = unique_events[start : stop]
+        self.__shuffle, self.__shape = args[2], args[3]
+        self.__std, self.__mean = args[4], args[5]
+
+    # returns one batch of data
+    def __getitem__(self, index) -> tuple :
+
+        traces, labels = []
+        # TODO add events to above lists
+
+        return (traces, labels)
+
+    # returns the number of batches per epoch
+    def __len__(self) -> int :
+        return len(self.__files)
+
+     # called by model.fit at the end of each epoch
+    def on_epoch_end(self) -> None : 
+        self.__shuffle and np.random.shuffle(self.__files)
+
+
+
 
 
 
@@ -215,13 +243,4 @@ class EventGenerator(tf.keras.utils.Sequence):
 
 if __name__=="__main__":
 
-    import matplotlib.pyplot as plt
-
-    for i in range(100):
-        try:
-            test = VEMTrace("signal", signal=f"second_simulation/tensorflow/signal/DAT762042_00_station-{i}.csv")
-
-            for pmt in test():
-                plt.plot(range(len(pmt)),pmt)
-        except OSError:
-            plt.show()    
+    TrainingSet, ValidationSet = DataSetGenerator("second_simulation/tensorflow/signal")
