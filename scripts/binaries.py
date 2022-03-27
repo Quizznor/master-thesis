@@ -1,6 +1,10 @@
+import sys
+
+sys.dont_write_bytecode = True
+
 import tensorflow as tf
 import numpy as np
-import typing, os
+import glob, os
 
 # baseline shape defaults. 1 VEM_peak = 61.75 ADC !
 # see David's mail from 08.02 for info on magic numbers
@@ -15,34 +19,23 @@ BASELINE_MEAN = [-8.097e-3, +8.097e-3]  # mean ADC level limits [low, high]
 DATASET_SPLIT = 0.8                     # fraction of training set/entire set
 DATASET_FIX_SEED = True                 # fix randomizer seed for reproducibility
 DATASET_SHUFFLE = True                  # shuffle event list at the end of generation
+CLASS_IMBALANCE = 0.5                   # p(signal), p(background) = 1 - CLASS_IMBALANCE
 
 
 # Event wrapper for measurements of a SINGLE tank with 3 PMTs
 class VEMTrace():
 
-    # TODO change kwargs to args maybe
-    r'''
-    :Keyword arguments:
-        * *trace_length* (``int``) -- number of bins in the trace
-        * *baseline_std* (``float``) -- baseline std in VEM counts
-        * *baseline_mean* (``list``) -- mean ADC level limit [low, high]
-        * *signal* (``str``) -- location (relative to $DATA) of signal file
-        * *dataset* (``str``) -- location (relative to $DATA) of dataset
-    '''
+    def __init__(self, label : str, *args) -> None:
 
-    def __init__(self, label : str, **kwargs) -> None:
-
-        # set baseline length (default 166 μs = 20000 bins)
-        try: self.trace_length = kwargs['trace_length']
-        except KeyError: self.trace_length = BASELINE_LENGTH
+        # set trace shape characteristics first
+        # defaults are defined in DataSetGenerator
+        self.trace_length = args[0]
 
         # set baseline std (default exactly 0.5 ADC)
-        try: self.baseline_std = kwargs['baseline_std']
-        except KeyError: self.baseline_std = BASELINE_STD
+        self.baseline_std = args[1]
 
         # set baseline mean (default in [-0.5, 0.5] ADC)
-        try: self.baseline_mean = kwargs['baseline_mean']
-        except KeyError: self.baseline_mean = np.random.uniform(*BASELINE_MEAN)
+        self.baseline_mean = np.random.uniform(*args[2])
 
         # create baseline VEM trace, same mean and std (TODO different std?)
         self.__pmt_1 = np.random.normal(self.baseline_mean, self.baseline_std, self.trace_length)
@@ -52,7 +45,7 @@ class VEMTrace():
         if label == "signal": 
 
             # don't catch exception here, since we _need_ signal data to continue
-            vem_signals = np.loadtxt(os.environ.get('DATA') + kwargs['dataset'] + kwargs['signal'])
+            vem_signals = np.loadtxt(args[3])
             signal_length = len(vem_signals[0])
 
             assert len(vem_signals[0]) == len(vem_signals[1]) == len(vem_signals[2]), "SIGNAL SHAPES DONT MATCH!\n"
@@ -73,7 +66,7 @@ class VEMTrace():
     # getter for easier handling of data classes
     def __call__(self) -> tuple :
 
-        return (self.__pmt_1, self.__pmt_2, self.__pmt_3)
+        return list(self.__pmt_1) + list(self.__pmt_2) + list(self.__pmt_3)
 
     # Whether or not any of the existing triggers caught this event
     def has_triggered(self) -> bool : 
@@ -124,9 +117,9 @@ class VEMTrace():
                 return True
 
             # overwrite oldest bin and reevaluate
-            pmt1_active += self.updated_bin_count(i, self.__pmt_1, window_length, threshold)
-            pmt2_active += self.updated_bin_count(i, self.__pmt_2)
-            pmt3_active += self.updated_bin_count(i, self.__pmt_3)
+            pmt1_active += self.update_bin_count(i, self.__pmt_1, window_length, threshold)
+            pmt2_active += self.update_bin_count(i, self.__pmt_2, window_length, threshold)
+            pmt3_active += self.update_bin_count(i, self.__pmt_3, window_length, threshold)
 
         return False
 
@@ -158,6 +151,7 @@ class DataSetGenerator():
         * *split* (``float``) -- fraction of of training set/entire set
         * *fix_seed* (``bool``) -- fix randomizer seed for reproducibility
         * *shuffle* (``bool``) -- shuffle event list at the end of generation
+        * *class imbalance (``float``) -- p(signal), p(background) = 1 - CLASS_IMBALANCE
         * *trace_length* (``int``) -- number of bins in the trace
         * *baseline_std* (``float``) -- baseline std in VEM counts
         * *baseline_mean* (``list``) -- mean ADC level limit [low, high]
@@ -179,6 +173,10 @@ class DataSetGenerator():
         try: shuffle = kwargs['shuffle']
         except KeyError: shuffle = DATASET_SHUFFLE
 
+        # set class imbalance (default no imbalance, 50/50 )
+        try: class_imbalance = kwargs['class_imbalance']
+        except KeyError: class_imbalance = CLASS_IMBALANCE    
+
         # set baseline length (default 166 μs = 20000 bins)
         try: input_shape = kwargs['trace_length']
         except KeyError: input_shape = BASELINE_LENGTH
@@ -189,10 +187,10 @@ class DataSetGenerator():
 
         # set baseline mean (default in [-0.5, 0.5] ADC)
         try: baseline_mean_limit = kwargs['baseline_mean']
-        except KeyError: baseline_mean_limit = BASELINE_MEAN        
+        except KeyError: baseline_mean_limit = BASELINE_MEAN
 
-        TrainingSet = EventGenerator(dataset, True, split, shuffle, input_shape, baseline_std, baseline_mean_limit)
-        ValidationSet = EventGenerator(dataset, False, split, shuffle, input_shape, baseline_std, baseline_mean_limit)
+        TrainingSet = EventGenerator(dataset, True, split, shuffle, input_shape, baseline_std, baseline_mean_limit, class_imbalance)
+        ValidationSet = EventGenerator(dataset, False, split, shuffle, input_shape, baseline_std, baseline_mean_limit, class_imbalance)
 
         return TrainingSet, ValidationSet 
 
@@ -209,16 +207,40 @@ class EventGenerator(tf.keras.utils.Sequence):
 
         # specify dataset architecture
         self.__files = unique_events[start : stop]
+        self.__path_to_dataset_folder = dataset
         self.__shuffle, self.__shape = args[2], args[3]
         self.__std, self.__mean = args[4], args[5]
+        self.__prior = args[6]
 
     # returns one batch of data
+    # one batch of data == one event (with multiple stations)
     def __getitem__(self, index) -> tuple :
 
-        traces, labels = []
-        # TODO add events to above lists
+        traces, labels = [], []
 
-        return (traces, labels)
+        for station in glob.glob(os.environ.get('DATA') + self.__path_to_dataset_folder + self.__files[index] + "*.csv"):
+            Trace = VEMTrace("signal", self.__shape, self.__std, self.__mean, station)
+
+            # 0 = background label
+            # 1 = signal label
+
+             # decide whether baseline gets interlaced
+            choice = np.random.choice([1, 0], p = [self.__prior, 1 - self.__prior])
+
+            while not choice:
+
+                # add background event to list
+                BackgroundTrace = VEMTrace("background", self.__shape, self.__std, self.__mean)
+                labels.append(tf.keras.utils.to_categorical(choice, 2, dtype = int))
+                traces.append(BackgroundTrace())
+
+                # add another background event to list
+                choice = np.random.choice([1, 0], p = [self.__prior, 1 - self.__prior])
+            
+            labels.append(tf.keras.utils.to_categorical(choice, 2, dtype = int))
+            traces.append(Trace())
+
+        return (np.array(traces), np.array(labels))
 
     # returns the number of batches per epoch
     def __len__(self) -> int :
@@ -228,19 +250,54 @@ class EventGenerator(tf.keras.utils.Sequence):
     def on_epoch_end(self) -> None : 
         self.__shuffle and np.random.shuffle(self.__files)
 
+# Wrapper for tf.keras.Sequential model with some additional functionalities
+# TODO add __predict_batch, __predict_trace functionalities
+class Classifier():
 
+    def __init__(self, init_from_disk : str = None) -> None:
 
+        if init_from_disk is None:
 
+            self.__epochs = 0
+            self.model = tf.keras.models.Sequential()
 
+            # architecture of this NN is - apart from in/output - completely arbitrary, at least for now
+            self.model.add(tf.keras.layers.Dense(units = 4000, input_shape = (3 * BASELINE_LENGTH, ), activation = 'relu')) # 1st hidden layer 4000 neurons
+            self.model.add(tf.keras.layers.Dropout(0.2))                                                                    # Dropout layer to fight overfitting
+            self.model.add(tf.keras.layers.Dense(units = 100, activation = 'relu'))                                         # 2nd hidden layer 100 neurons
+            self.model.add(tf.keras.layers.Dropout(0.2))                                                                    # Dropout layer to fight overfitting
+            self.model.add(tf.keras.layers.Dense(units = 2, activation = 'softmax', name = "Output"))                       # Output layer with signal/background
+        
+        elif init_from_disk is not None:
 
+            model_save_dir = "/cr/users/filip/data/first_simulation/tensorflow/model/"
+            self.__epochs = int(init_from_disk[init_from_disk.rfind('_') + 1:])                                             # set previously run epochs as start
+            self.model = tf.keras.models.load_model(model_save_dir + init_from_disk)                                        # load model, doesn't work with h5py 3.x!
 
+        self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])                         # compile the model and print a summary
+        print(self.model.summary())
 
+    # Train the model network on the provided training/validation set
+    def train(self, training_set : EventGenerator, validation_set : EventGenerator, epochs : int) -> None:
+        self.model.fit(training_set, validation_data=validation_set, initial_epoch = self.__epochs, epochs = epochs, verbose = 2)
+        self.__epochs = epochs
 
+    # Save the model to disk
+    def save(self, directory_path : str) -> None : 
+        self.model.save(directory_path + f"model_{self.__epochs}")
 
+    # Predict a batch or single trace
+    def predict(self):
+        pass                # TODO
 
-
-    
+    # Wrapper for pretty printing
+    def __str__(self) -> str :
+        self.model.summary()
+        return ""
 
 if __name__=="__main__":
 
-    TrainingSet, ValidationSet = DataSetGenerator("second_simulation/tensorflow/signal")
+    TrainingSet, ValidationSet = DataSetGenerator("second_simulation/tensorflow/signal/")
+    
+    EventClassifier = Classifier()
+    EventClassifier.train(TrainingSet, ValidationSet, 1)
