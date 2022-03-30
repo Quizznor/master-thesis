@@ -5,6 +5,7 @@ sys.dont_write_bytecode = True
 import tensorflow as tf
 import numpy as np
 import glob, os
+import typing
 
 # baseline shape defaults. 1 VEM_peak = 61.75 ADC !
 # see David's mail from 08.02 for info on magic numbers
@@ -158,37 +159,48 @@ class DataSetGenerator():
         * *baseline_mean* (``list``) -- mean ADC level limit [low, high]
     '''
 
+    def check_split(split : float) -> None : 
+        assert 0 < split <= 1, "PLEASE PROVIDE A VALID SPLIT: 0 < split < 1"
+        pass
+
+    def check_imbalance(split : float) -> None : 
+        assert 0 < split < 1, "PLEASE PROVIDE A VALID IMBALANCE: 0 < IMBALANCE < 1"
+
     def __new__(self, dataset : str, **kwargs) -> tuple :
 
+        def set_kwarg(key : str, fallback : typing.Any, input_validation : function ) -> None : 
+
+            try: value = kwargs[key]
+            except KeyError: value = fallback
+
+            input_validation(value)
+
+            return value
+
         # set split between training and validation (default 0.8)
-        try: split = kwargs['split']
-        except KeyError: split = DATASET_SPLIT
-        assert 0 < split <= 1, "PLEASE PROVIDE A VALID SPLIT: 0 < split < 1"
+        split = set_kwarg('split', DATASET_SPLIT, self.check_split )
+
+        # No input validation from this point onwards
+        # we might want to change that in the future =)   
 
         # fix RNG seed if desired (default is desired)
-        try: fix_seed = kwargs['fix_seed']
-        except KeyError: fix_seed = DATASET_FIX_SEED
+        fix_seed = set_kwarg('fix_seed', DATASET_FIX_SEED, lambda: True)
         fix_seed and np.random.seed(0)
 
         # shuffle datasets if desired (default is desired)
-        try: shuffle = kwargs['shuffle']
-        except KeyError: shuffle = DATASET_SHUFFLE
+        shuffle = set_kwarg('shuffle', DATASET_SHUFFLE, lambda: True)
 
         # set class imbalance (default no imbalance, 50/50 )
-        try: class_imbalance = kwargs['class_imbalance']
-        except KeyError: class_imbalance = CLASS_IMBALANCE    
+        class_imbalance = set_kwarg('class_imbalance', CLASS_IMBALANCE, lambda: True)
 
         # set baseline length (default 166 μs = 20000 bins)
-        try: input_shape = kwargs['trace_length']
-        except KeyError: input_shape = BASELINE_LENGTH
+        input_shape = set_kwarg('trace_length', BASELINE_LENGTH, lambda: True)
 
         # set baseline std (default exactly 0.5 ADC)
-        try: baseline_std = kwargs['baseline_std']
-        except KeyError: baseline_std = BASELINE_STD
+        baseline_std = set_kwarg('baseline_std', BASELINE_STD, lambda: True)
 
         # set baseline mean (default in [-0.5, 0.5] ADC)
-        try: baseline_mean_limit = kwargs['baseline_mean']
-        except KeyError: baseline_mean_limit = BASELINE_MEAN
+        baseline_mean_limit = set_kwarg('baseline_mean', BASELINE_MEAN, lambda: True)
 
         try:
             if kwargs['train']:
