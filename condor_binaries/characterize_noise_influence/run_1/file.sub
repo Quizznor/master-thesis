@@ -1,0 +1,12 @@
+JobBatchName    = trigger_studies-characterize_noise_influence              
+Executable      = /cr/users/filip/scripts/condor_execute.sh
+                                                           
+error           = /cr/users/filip/condor_binaries/characterize_noise_influence/run_1/errors.txt
+output          = /cr/users/filip/condor_binaries/characterize_noise_influence/run_1/output.txt
+log             = /cr/users/filip/condor_binaries/characterize_noise_influence/run_1/syslog.txt
+                                                    
+arguments       = SecondModel/characterize_noise_influence.py       
+Requirements    = (TARGET.Machine == 'crc2.ikp.kit.edu')
+request_memory  = 2G
+                                
+queue 1             

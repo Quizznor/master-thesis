@@ -14,7 +14,7 @@ BASELINE_STD = 0.5 / 61.75              # baseline std in VEM counts
 BASELINE_MEAN = [-8.097e-3, +8.097e-3]  # mean ADC level limits [low, high]
 
 # defaults for DataSetGenerator and EventGenerator
-# fwiw, these values are picked because they SHOULD™ make sense
+# fwiw, these values are picked because they SHOULD make sense
 
 DATASET_SPLIT = 0.8                     # fraction of training set/entire set
 DATASET_FIX_SEED = True                 # fix randomizer seed for reproducibility
@@ -148,6 +148,7 @@ class DataSetGenerator():
     :type dataset: ``str``
 
     :Keyword arguments:
+        * *train* (``bool``) -- split dataset into training and validation set
         * *split* (``float``) -- fraction of of training set/entire set
         * *fix_seed* (``bool``) -- fix randomizer seed for reproducibility
         * *shuffle* (``bool``) -- shuffle event list at the end of generation
@@ -162,7 +163,7 @@ class DataSetGenerator():
         # set split between training and validation (default 0.8)
         try: split = kwargs['split']
         except KeyError: split = DATASET_SPLIT
-        assert 0 < split < 1, "PLEASE PROVIDE A VALID SPLIT: 0 < split < 1"
+        assert 0 < split <= 1, "PLEASE PROVIDE A VALID SPLIT: 0 < split < 1"
 
         # fix RNG seed if desired (default is desired)
         try: fix_seed = kwargs['fix_seed']
@@ -189,10 +190,19 @@ class DataSetGenerator():
         try: baseline_mean_limit = kwargs['baseline_mean']
         except KeyError: baseline_mean_limit = BASELINE_MEAN
 
-        TrainingSet = EventGenerator(dataset, True, split, shuffle, input_shape, baseline_std, baseline_mean_limit, class_imbalance)
-        ValidationSet = EventGenerator(dataset, False, split, shuffle, input_shape, baseline_std, baseline_mean_limit, class_imbalance)
+        try:
+            if kwargs['train']:
+                raise KeyError
+            else:
+                Dataset = EventGenerator(dataset, True, 1, shuffle, input_shape, baseline_std, baseline_mean_limit, class_imbalance)
 
-        return TrainingSet, ValidationSet 
+                return Dataset
+                
+        except KeyError:
+            TrainingSet = EventGenerator(dataset, True, split, shuffle, input_shape, baseline_std, baseline_mean_limit, class_imbalance)
+            ValidationSet = EventGenerator(dataset, False, split, shuffle, input_shape, baseline_std, baseline_mean_limit, class_imbalance)
+            
+            return TrainingSet, ValidationSet 
 
 # Generator class for NN sequential model with some additional functionalities
 # This website helped tremendously with writing a working example: shorturl.at/fFI09
@@ -256,6 +266,8 @@ class Classifier():
 
     def __init__(self, init_from_disk : str = None) -> None:
 
+        tf.config.run_functions_eagerly(True)
+
         if init_from_disk is None:
 
             self.__epochs = 0
@@ -270,11 +282,10 @@ class Classifier():
         
         elif init_from_disk is not None:
 
-            model_save_dir = "/cr/users/filip/data/first_simulation/tensorflow/model/"
             self.__epochs = int(init_from_disk[init_from_disk.rfind('_') + 1:])                                             # set previously run epochs as start
-            self.model = tf.keras.models.load_model(model_save_dir + init_from_disk)                                        # load model, doesn't work with h5py 3.x!
+            self.model = tf.keras.models.load_model(init_from_disk)                                                         # load model, doesn't work with h5py 3.x!
 
-        self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])                         # compile the model and print a summary
+        self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'], run_eagerly=True)       # compile the model and print a summary
         print(self.model.summary())
 
     # Train the model network on the provided training/validation set
@@ -287,8 +298,26 @@ class Classifier():
         self.model.save(directory_path + f"model_{self.__epochs}")
 
     # Predict a batch or single trace
-    def predict(self):
-        pass                # TODO
+    def predict(self, **kwargs):
+
+        r'''
+            :Keyword arguments:
+            * *trace* (``tuple``) -- predict type of a single trace
+            * *dataset* (``EventGenerator``) -- classify entire dataset
+            * *compare_legacy* (``bool``) -- compare NN to threshold/ToT trigger
+        '''
+
+        try: return self.model.__call__(kwargs['trace']).numpy()
+        except KeyError: pass
+
+        try: 
+            if kwargs['compare_legacy']:
+                pass
+        except KeyError: pass
+        
+
+        
+
 
     # Wrapper for pretty printing
     def __str__(self) -> str :

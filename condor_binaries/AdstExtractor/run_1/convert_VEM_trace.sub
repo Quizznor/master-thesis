@@ -1,0 +1,9 @@
+JobBatchName   = trigger-studies_convert-vem-trace
+Executable     = convert_VEM_trace.py
+
+error          = /cr/users/filip/condor_output/errors/trigger-studies_convert-vem-trace.err
+log            = /cr/users/filip/condor_output/logs/trigger-studies_convert-vem-trace.log
+
+request_memory = 2G
+
+queue

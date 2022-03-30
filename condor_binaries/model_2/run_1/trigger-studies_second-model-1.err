@@ -1,0 +1,10 @@
+2022-03-27 20:20:55.180340: E tensorflow/stream_executor/cuda/cuda_driver.cc:271] failed call to cuInit: CUDA_ERROR_NO_DEVICE: no CUDA-capable device is detected
+2022-03-27 20:20:55.180441: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:169] retrieving CUDA diagnostic information for host: crc2
+2022-03-27 20:20:55.180461: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:176] hostname: crc2
+2022-03-27 20:20:55.180583: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:200] libcuda reported version is: 465.27.0
+2022-03-27 20:20:55.180634: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:204] kernel reported version is: 465.27.0
+2022-03-27 20:20:55.180649: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:310] kernel version seems to match DSO: 465.27.0
+2022-03-27 20:20:55.180944: I tensorflow/core/platform/cpu_feature_guard.cc:142] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2022-03-27 20:21:02.004903: I tensorflow/compiler/mlir/mlir_graph_optimization_pass.cc:185] None of the MLIR Optimization Passes are enabled (registered 2)
+2022-03-27 22:47:16.259345: W tensorflow/python/util/util.cc:348] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.

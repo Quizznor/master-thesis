@@ -1,0 +1,37 @@
+Traceback (most recent call last):
+  File "/home/tmp/condor//dir_4117/condor_exec.exe", line 85, in <module>
+    Event = RawTrace(file)
+  File "/home/tmp/condor//dir_4117/condor_exec.exe", line 26, in __init__
+    self.trigger_on_pmt_1 = np.loadtxt(source_path + file_name + "adst_1.csv")
+  File "/cr/users/filip/.local/lib/python3.6/site-packages/numpy/lib/npyio.py", line 961, in loadtxt
+    fh = np.lib._datasource.open(fname, 'rt', encoding=encoding)
+  File "/cr/users/filip/.local/lib/python3.6/site-packages/numpy/lib/_datasource.py", line 195, in open
+    return ds.open(path, mode, encoding=encoding, newline=newline)
+  File "/cr/users/filip/.local/lib/python3.6/site-packages/numpy/lib/_datasource.py", line 535, in open
+    raise IOError("%s not found." % path)
+OSError: /cr/data01/filip/second_simulation/tensorflow/tmp_data/DAT100397_00_adst_1.csv not found.
+Error in sys.excepthook:
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/apport_python_hook.py", line 72, in apport_excepthook
+    from apport.fileutils import likely_packaged, get_recent_crashes
+  File "/usr/lib/python3/dist-packages/apport/__init__.py", line 5, in <module>
+    from apport.report import Report
+  File "/usr/lib/python3/dist-packages/apport/report.py", line 13, in <module>
+    import fnmatch, glob, traceback, errno, sys, atexit, locale, imp, stat
+  File "/usr/lib/python3.6/imp.py", line 33, in <module>
+    DeprecationWarning, stacklevel=2)
+DeprecationWarning: the imp module is deprecated in favour of importlib; see the module's documentation for alternative uses
+
+Original exception was:
+Traceback (most recent call last):
+  File "/home/tmp/condor//dir_4117/condor_exec.exe", line 85, in <module>
+    Event = RawTrace(file)
+  File "/home/tmp/condor//dir_4117/condor_exec.exe", line 26, in __init__
+    self.trigger_on_pmt_1 = np.loadtxt(source_path + file_name + "adst_1.csv")
+  File "/cr/users/filip/.local/lib/python3.6/site-packages/numpy/lib/npyio.py", line 961, in loadtxt
+    fh = np.lib._datasource.open(fname, 'rt', encoding=encoding)
+  File "/cr/users/filip/.local/lib/python3.6/site-packages/numpy/lib/_datasource.py", line 195, in open
+    return ds.open(path, mode, encoding=encoding, newline=newline)
+  File "/cr/users/filip/.local/lib/python3.6/site-packages/numpy/lib/_datasource.py", line 535, in open
+    raise IOError("%s not found." % path)
+OSError: /cr/data01/filip/second_simulation/tensorflow/tmp_data/DAT100397_00_adst_1.csv not found.
