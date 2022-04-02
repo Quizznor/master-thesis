@@ -26,40 +26,49 @@ CLASS_IMBALANCE = 0.5                   # p(signal), p(background) = 1 - CLASS_I
 # Event wrapper for measurements of a SINGLE tank with 3 PMTs
 class VEMTrace():
 
-    def __init__(self, label : str, *args) -> None:
+    def __init__(self, label : str, *args, **kwargs) -> typing.NoReturn :
 
-        # set trace shape characteristics first
-        # defaults are defined in DataSetGenerator
-        self.trace_length = args[0]
+        # full initialization of trace on first call
+        try:
 
-        # set baseline std (default exactly 0.5 ADC)
-        self.baseline_std = args[1]
+            # set trace shape characteristics first
+            # defaults are defined in DataSetGenerator
+            self.trace_length = args[0]
 
-        # set baseline mean (default in [-0.5, 0.5] ADC)
-        self.baseline_mean = np.random.uniform(*args[2])
+            # set baseline std (default exactly 0.5 ADC)
+            self.baseline_std = args[1]
 
-        # create baseline VEM trace, same mean and std (TODO different std?)
-        self.__pmt_1 = np.random.normal(self.baseline_mean, self.baseline_std, self.trace_length)
-        self.__pmt_2 = np.random.normal(self.baseline_mean, self.baseline_std, self.trace_length)
-        self.__pmt_3 = np.random.normal(self.baseline_mean, self.baseline_std, self.trace_length)
+            # set baseline mean (default in [-0.5, 0.5] ADC)
+            self.baseline_mean = np.random.uniform(*args[2])
 
-        if label == "signal": 
+            # create baseline VEM trace, same mean and std (TODO different std?)
+            self.__pmt_1 = np.random.normal(self.baseline_mean, self.baseline_std, self.trace_length)
+            self.__pmt_2 = np.random.normal(self.baseline_mean, self.baseline_std, self.trace_length)
+            self.__pmt_3 = np.random.normal(self.baseline_mean, self.baseline_std, self.trace_length)
 
-            # don't catch exception here, since we _need_ signal data to continue
-            vem_signals = np.loadtxt(args[3])
-            signal_length = len(vem_signals[0])
+            if label == "signal": 
 
-            assert len(vem_signals[0]) == len(vem_signals[1]) == len(vem_signals[2]), "SIGNAL SHAPES DONT MATCH!\n"
-            assert self.trace_length > signal_length, "SIGNAL DOES NOT FIT INTO BASELINE!\n"
+                # don't catch exception here, since we _need_ signal data to continue
+                vem_signals = np.loadtxt(args[3])
+                signal_length = len(vem_signals[0])
 
-            # overlay signal shape at random position of baseline
-            start = np.random.randint(-self.trace_length, -signal_length)
-            self.__pmt_1[start : start + signal_length] += vem_signals[0]
-            self.__pmt_2[start : start + signal_length] += vem_signals[1]
-            self.__pmt_3[start : start + signal_length] += vem_signals[2]
+                assert len(vem_signals[0]) == len(vem_signals[1]) == len(vem_signals[2]), "SIGNAL SHAPES DONT MATCH!\n"
+                assert self.trace_length > signal_length, "SIGNAL DOES NOT FIT INTO BASELINE!\n"
 
-        else:
-            pass
+                # overlay signal shape at random position of baseline
+                start = np.random.randint(-self.trace_length, -signal_length)
+                self.__pmt_1[start : start + signal_length] += vem_signals[0]
+                self.__pmt_2[start : start + signal_length] += vem_signals[1]
+                self.__pmt_3[start : start + signal_length] += vem_signals[2]
+
+            else:
+                pass
+
+        # dummy initialization from preprocessed VEMTrace
+        except IndexError:
+
+            self.__pmt_1, self.__pmt_2, self.__pmt_3 = np.split(kwargs['trace'],3 )
+            self.trace_length = len(self.__pmt_1)
 
         self.triggered = self.has_triggered()   # whether "legacy" triggers would activate
         self.label = label                      # whether trace is signal or background
@@ -159,16 +168,9 @@ class DataSetGenerator():
         * *baseline_mean* (``list``) -- mean ADC level limit [low, high]
     '''
 
-    def check_split(split : float) -> None : 
-        assert 0 < split <= 1, "PLEASE PROVIDE A VALID SPLIT: 0 < split < 1"
-        pass
-
-    def check_imbalance(split : float) -> None : 
-        assert 0 < split < 1, "PLEASE PROVIDE A VALID IMBALANCE: 0 < IMBALANCE < 1"
-
     def __new__(self, dataset : str, **kwargs) -> tuple :
 
-        def set_kwarg(key : str, fallback : typing.Any, input_validation : function ) -> None : 
+        def set_kwarg(key : str, fallback : typing.Any, input_validation : typing.Callable = lambda x: True ) -> typing.NoReturn : 
 
             try: value = kwargs[key]
             except KeyError: value = fallback
@@ -178,29 +180,26 @@ class DataSetGenerator():
             return value
 
         # set split between training and validation (default 0.8)
-        split = set_kwarg('split', DATASET_SPLIT, self.check_split )
-
-        # No input validation from this point onwards
-        # we might want to change that in the future =)   
+        split = set_kwarg('split', DATASET_SPLIT)
 
         # fix RNG seed if desired (default is desired)
-        fix_seed = set_kwarg('fix_seed', DATASET_FIX_SEED, lambda: True)
+        fix_seed = set_kwarg('fix_seed', DATASET_FIX_SEED)
         fix_seed and np.random.seed(0)
 
         # shuffle datasets if desired (default is desired)
-        shuffle = set_kwarg('shuffle', DATASET_SHUFFLE, lambda: True)
+        shuffle = set_kwarg('shuffle', DATASET_SHUFFLE)
 
         # set class imbalance (default no imbalance, 50/50 )
-        class_imbalance = set_kwarg('class_imbalance', CLASS_IMBALANCE, lambda: True)
+        class_imbalance = set_kwarg('class_imbalance', CLASS_IMBALANCE)
 
         # set baseline length (default 166 μs = 20000 bins)
-        input_shape = set_kwarg('trace_length', BASELINE_LENGTH, lambda: True)
+        input_shape = set_kwarg('trace_length', BASELINE_LENGTH)
 
         # set baseline std (default exactly 0.5 ADC)
-        baseline_std = set_kwarg('baseline_std', BASELINE_STD, lambda: True)
+        baseline_std = set_kwarg('baseline_std', BASELINE_STD)
 
         # set baseline mean (default in [-0.5, 0.5] ADC)
-        baseline_mean_limit = set_kwarg('baseline_mean', BASELINE_MEAN, lambda: True)
+        baseline_mean_limit = set_kwarg('baseline_mean', BASELINE_MEAN)
 
         try:
             if kwargs['train']:
@@ -220,7 +219,7 @@ class DataSetGenerator():
 # This website helped tremendously with writing a working example: shorturl.at/fFI09
 class EventGenerator(tf.keras.utils.Sequence):
 
-    def __init__(self, dataset, *args) -> None :
+    def __init__(self, dataset, *args) -> typing.NoReturn :
 
         # select files for specific event generator
         unique_events = np.unique([event[:13] for event in os.listdir(os.environ.get('DATA') + dataset)])
@@ -269,14 +268,13 @@ class EventGenerator(tf.keras.utils.Sequence):
         return len(self.__files)
 
      # called by model.fit at the end of each epoch
-    def on_epoch_end(self) -> None : 
+    def on_epoch_end(self) -> typing.NoReturn : 
         self.__shuffle and np.random.shuffle(self.__files)
 
 # Wrapper for tf.keras.Sequential model with some additional functionalities
-# TODO add __predict_batch, __predict_trace functionalities
 class Classifier():
 
-    def __init__(self, init_from_disk : str = None) -> None:
+    def __init__(self, init_from_disk : str = None, architecture : tuple = (4000, 100)) -> typing.NoReturn:
 
         tf.config.run_functions_eagerly(True)
 
@@ -286,11 +284,22 @@ class Classifier():
             self.model = tf.keras.models.Sequential()
 
             # architecture of this NN is - apart from in/output - completely arbitrary, at least for now
-            self.model.add(tf.keras.layers.Dense(units = 4000, input_shape = (3 * BASELINE_LENGTH, ), activation = 'relu')) # 1st hidden layer 4000 neurons
-            self.model.add(tf.keras.layers.Dropout(0.2))                                                                    # Dropout layer to fight overfitting
-            self.model.add(tf.keras.layers.Dense(units = 100, activation = 'relu'))                                         # 2nd hidden layer 100 neurons
-            self.model.add(tf.keras.layers.Dropout(0.2))                                                                    # Dropout layer to fight overfitting
-            self.model.add(tf.keras.layers.Dense(units = 2, activation = 'softmax', name = "Output"))                       # Output layer with signal/background
+
+            for i, layer in architecture:
+
+                # init input layer:
+                if i == 0:
+                    
+                    self.model.add(tf.keras.layers.Dense(units = layer, input_shape = (3 * BASELINE_LENGTH, ), activation = 'relu'))
+                    self.model.add(tf.keras.layers.Dropout(0.2)) 
+
+                # init subsequent layers
+                else:
+                    self.model.add(tf.keras.layers.Dense(units = layer, activation = 'relu'))
+                    self.model.add(tf.keras.layers.Dropout(0.2))
+
+            # Output layer with signal/background
+            self.model.add(tf.keras.layers.Dense(units = 2, activation = 'softmax', name = "Output"))
         
         elif init_from_disk is not None:
 
@@ -301,17 +310,18 @@ class Classifier():
         print(self.model.summary())
 
     # Train the model network on the provided training/validation set
-    def train(self, training_set : EventGenerator, validation_set : EventGenerator, epochs : int) -> None:
+    def train(self, training_set : EventGenerator, validation_set : EventGenerator, epochs : int) -> typing.NoReturn:
         self.model.fit(training_set, validation_data=validation_set, initial_epoch = self.__epochs, epochs = epochs, verbose = 2)
         self.__epochs = epochs
 
     # Save the model to disk
-    def save(self, directory_path : str) -> None : 
+    def save(self, directory_path : str) -> typing.NoReturn : 
         self.model.save(directory_path + f"model_{self.__epochs}")
 
     # Predict a batch or single trace
-    def predict(self, **kwargs):
+    def predict(self, **kwargs) -> bool :
 
+        # Non-functional for now
         r'''
             :Keyword arguments:
             * *trace* (``tuple``) -- predict type of a single trace
@@ -319,26 +329,11 @@ class Classifier():
             * *compare_legacy* (``bool``) -- compare NN to threshold/ToT trigger
         '''
 
-        try: return self.model.__call__(kwargs['trace']).numpy()
-        except KeyError: pass
-
-        try: 
-            if kwargs['compare_legacy']:
-                pass
-        except KeyError: pass
-        
-
-        
-
+        # is this correct? =D
+        prediction = self.model.__call__(np.reshape(kwargs['trace'], (1, len(kwargs['trace'])))).numpy()[0]
+        return np.argmax(prediction) == 1
 
     # Wrapper for pretty printing
     def __str__(self) -> str :
         self.model.summary()
         return ""
-
-if __name__=="__main__":
-
-    TrainingSet, ValidationSet = DataSetGenerator("second_simulation/tensorflow/signal/")
-    
-    EventClassifier = Classifier()
-    EventClassifier.train(TrainingSet, ValidationSet, 1)
