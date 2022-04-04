@@ -1,8 +1,0 @@
-Traceback (most recent call last):
-  File "/home/tmp/condor//dir_833/condor_exec.exe", line 18, in <module>
-    traces = np.loadtxt(file)
-  File "/cr/users/filip/.local/lib/python3.6/site-packages/numpy/lib/npyio.py", line 1139, in loadtxt
-    for x in read_data(_loadtxt_chunksize):
-  File "/cr/users/filip/.local/lib/python3.6/site-packages/numpy/lib/npyio.py", line 1064, in read_data
-    % line_num)
-ValueError: Wrong number of columns at line 3

@@ -9,18 +9,21 @@ import typing
 
 # baseline shape defaults. 1 VEM_peak = 61.75 ADC !
 # see David's mail from 08.02 for info on magic numbers
-
-BASELINE_LENGTH = 20000                 # number of bins in baseline
-BASELINE_STD = 0.5 / 61.75              # baseline std in VEM counts
-BASELINE_MEAN = [-8.097e-3, +8.097e-3]  # mean ADC level limits [low, high]
+BASELINE_LENGTH = 20000                     # number of bins in baseline
+BASELINE_STD = 0.5 / 61.75                  # baseline std in VEM counts
+BASELINE_MEAN = [-8.097e-3, +8.097e-3]      # mean ADC level limits [low, high]
 
 # defaults for DataSetGenerator and EventGenerator
 # fwiw, these values are picked because they SHOULD make sense
+DATASET_SPLIT = 0.8                         # fraction of training set/entire set
+DATASET_FIX_SEED = False                    # fix randomizer seed for reproducibility
+DATASET_SHUFFLE = True                      # shuffle event list at the end of generation
+CLASS_IMBALANCE = 0.5                       # p(signal), p(background) = 1 - CLASS_IMBALANCE
 
-DATASET_SPLIT = 0.8                     # fraction of training set/entire set
-DATASET_FIX_SEED = True                 # fix randomizer seed for reproducibility
-DATASET_SHUFFLE = True                  # shuffle event list at the end of generation
-CLASS_IMBALANCE = 0.5                   # p(signal), p(background) = 1 - CLASS_IMBALANCE
+# defaults for neural network, picked more or less randomly
+MODEL_ARCHITECTURE = (4000, 100)            # defines # of dense layers plus # of neurons     
+MODEL_LOSS = 'categorical_crossentropy'     # option for custom loss function, default for now
+MODEL_OPTIMIZER = 'adam'                    # default optimizer, don't know much about it
 
 
 # Event wrapper for measurements of a SINGLE tank with 3 PMTs
@@ -274,7 +277,7 @@ class EventGenerator(tf.keras.utils.Sequence):
 # Wrapper for tf.keras.Sequential model with some additional functionalities
 class Classifier():
 
-    def __init__(self, init_from_disk : str = None, architecture : tuple = (4000, 100)) -> typing.NoReturn:
+    def __init__(self, init_from_disk : str = None, architecture : tuple = MODEL_ARCHITECTURE) -> typing.NoReturn:
 
         tf.config.run_functions_eagerly(True)
 
@@ -303,10 +306,10 @@ class Classifier():
         
         elif init_from_disk is not None:
 
-            self.__epochs = int(init_from_disk[init_from_disk.rfind('_') + 1:])                                             # set previously run epochs as start
-            self.model = tf.keras.models.load_model(init_from_disk)                                                         # load model, doesn't work with h5py 3.x!
+            self.__epochs = int(init_from_disk[init_from_disk.rfind('_') + 1:])                                 # set previously run epochs as start
+            self.model = tf.keras.models.load_model(init_from_disk)                                             # load model, doesn't work with h5py 3.x!
 
-        self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'], run_eagerly=True)       # compile the model and print a summary
+        self.model.compile(loss=MODEL_LOSS, optimizer=MODEL_OPTIMIZER, metrics=['accuracy'], run_eagerly=True)  # compile the model and print a summary
         print(self.model.summary())
 
     # Train the model network on the provided training/validation set
