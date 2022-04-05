@@ -9,9 +9,6 @@ warnings.filterwarnings("error")
 source_path = sys.argv[1]
 target_path = sys.argv[2]
 
-print(source_path)
-print(target_path)
-
 class RawTrace():
 
     def __init__(self, file_name : str) -> None :
@@ -76,7 +73,6 @@ if __name__ == "__main__":
     raw_files = np.unique([item[:13] for item in os.listdir(source_path)])
 
     for file in raw_files:
-        print(file)
 
         try:
             Event = RawTrace(file)

@@ -16,42 +16,45 @@ def second_to_timestr(duration : float) -> str :
 
     return f"{hours}".zfill(2) + ":" + f"{minutes}".zfill(2) + ":" + f"{seconds}".zfill(2)
 
-BASELINE_NOISE_SPREAD = np.linspace(BASELINE_STD, 1, 10)
-BASELINE_NOISE_SPREAD = np.linspace(BASELINE_NOISE_SPREAD[1],BASELINE_NOISE_SPREAD[2],10)
-std = BASELINE_NOISE_SPREAD[int(sys.argv[1])]
 start = time.time()
 
 EventClassifier = Classifier("/cr/data01/filip/second_simulation/tensorflow/model/model_1")
 
-legacy_confusion_matrix = np.zeros(shape = (2,2))
-network_confusion_matrix = np.zeros(shape = (2,2))
-stepsize = 100
+stds = np.unique([float(string[:string.rfind("_")]) for string in os.listdir("/cr/data01/filip/second_simulation/noise_studies")])
 
-PredictionDataset = DataSetGenerator("second_simulation/tensorflow/signal/", train = False, baseline_std = std)
+for step, std in enumerate(stds, 1):
+    legacy_confusion_matrix = np.zeros(shape = (2,2))
+    network_confusion_matrix = np.zeros(shape = (2,2))
+    stepsize = 500
 
-for i in range(PredictionDataset.__len__())[::stepsize]:
-    traces, labels = PredictionDataset.__getitem__(i)
+    PredictionDataset = DataSetGenerator("first_simulation/tensorflow/signal/", train = False, baseline_std = std)
 
-    for trace, label in zip(traces, labels):
-        predicted_legacy = VEMTrace(label, trace = trace).has_triggered()
-        predicted_network = EventClassifier.predict(trace = trace)
+    for i in range(PredictionDataset.__len__())[::stepsize]:
+        traces, labels = PredictionDataset.__getitem__(i)
+        iteration_counter = 0
 
-        # build confusion matrices
-        if label[1] == 1:
-            legacy_confusion_matrix[0][0] += 1 if predicted_legacy else 0
-            legacy_confusion_matrix[0][1] += 1 if not predicted_legacy else 0
-            network_confusion_matrix[0][0] += 1 if predicted_network else 0
-            network_confusion_matrix[0][1] += 1 if not predicted_network else 0
-        elif label[0] == 1:
-            legacy_confusion_matrix[1][0] += 1 if predicted_legacy else 0
-            legacy_confusion_matrix[1][1] += 1 if not predicted_legacy else 0
-            network_confusion_matrix[1][0] += 1 if predicted_network else 0
-            network_confusion_matrix[1][1] += 1 if not predicted_network else 0
+        for trace, label in zip(traces, labels):
+            predicted_legacy = VEMTrace(label, trace = trace).has_triggered()
+            predicted_network = EventClassifier.predict(trace = trace)
 
-        progress = ((i+1)/(PredictionDataset.__len__() / stepsize))
-        elapsed = time.time() - start
+            # build confusion matrices
+            if label[1] == 1:
+                legacy_confusion_matrix[0][0] += 1 if predicted_legacy else 0
+                legacy_confusion_matrix[0][1] += 1 if not predicted_legacy else 0
+                network_confusion_matrix[0][0] += 1 if predicted_network else 0
+                network_confusion_matrix[0][1] += 1 if not predicted_network else 0
+            elif label[0] == 1:
+                legacy_confusion_matrix[1][0] += 1 if predicted_legacy else 0
+                legacy_confusion_matrix[1][1] += 1 if not predicted_legacy else 0
+                network_confusion_matrix[1][0] += 1 if predicted_network else 0
+                network_confusion_matrix[1][1] += 1 if not predicted_network else 0
 
-        print(f"Progress: {progress : .2f}%, {second_to_timestr(elapsed)}, ETA = {second_to_timestr( 100/progress * elapsed )}\r", end = "")            
+            # check this again
+            iteration_counter += 1
+            progress = (i + iteration_counter)/(len(traces) * (PredictionDataset.__len__() / stepsize) )
+            elapsed = time.time() - start
 
-np.savetxt(f"/cr/data01/filip/second_simulation/noise_studies/{std}_legacy.txt", legacy_confusion_matrix)
-np.savetxt(f"/cr/data01/filip/second_simulation/noise_studies/{std}_network.txt", network_confusion_matrix)
+            print(f"Step {step}/{len(stds)} -> Progress: {progress : .2f}%, {second_to_timestr(elapsed)}, ETA = {second_to_timestr( (100/progress * elapsed) * (len(stds) - step) )}\r", end = "")            
+
+    np.savetxt(f"/cr/data01/filip/first_simulation/test_second_model/{std}_legacy.txt", legacy_confusion_matrix)
+    np.savetxt(f"/cr/data01/filip/first_simulation/test_second_model/{std}_network.txt", network_confusion_matrix)

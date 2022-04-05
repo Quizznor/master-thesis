@@ -4,11 +4,11 @@ import os
 
 plt.rcParams.update({'font.size': 22})
 
-for file in os.listdir("/cr/data01/filip/second_simulation/noise_studies/"):
+for file in os.listdir("/cr/data01/filip/first_simulation/test_second_model/"):
 
     std, label = file.split("_")
     std, label = float(std), label[:-4]
-    confusion_matrix = np.loadtxt("/cr/data01/filip/second_simulation/noise_studies/" + file)
+    confusion_matrix = np.loadtxt("/cr/data01/filip/first_simulation/test_second_model/" + file)
     accuracy = np.trace(confusion_matrix) / confusion_matrix.sum()
 
     marker = "o" if label == "network" else "s"
