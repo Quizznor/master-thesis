@@ -25,6 +25,7 @@ then
     show_help
     exit 1
 else
+    # TODO: check for file permission (i.e. is it executable by condor?)
     export CONDOR_EXECUTABLE="$1"
     shift
 fi

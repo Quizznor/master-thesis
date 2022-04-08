@@ -11,7 +11,7 @@ import typing
 # see David's mail from 08.02 for info on magic numbers
 BASELINE_LENGTH = 20000                     # number of bins in baseline
 BASELINE_STD = 0.5 / 61.75                  # baseline std in VEM counts
-BASELINE_MEAN = [-8.097e-3, +8.097e-3]      # mean ADC level limits [low, high]
+BASELINE_MEAN = [-0.5/61.75, +0.5/61.75]    # mean ADC level limits [low, high]
 
 # defaults for DataSetGenerator and EventGenerator
 # fwiw, these values are picked because they SHOULD make sense
