@@ -8,7 +8,20 @@ from binaries import *
 import matplotlib.pyplot as plt
 plt.rcParams.update({'font.size': 20})
 
-EventClassifier = Classifier("/cr/data01/filip/second_simulation/tensorflow/model/model_1")
+mock_baseline = np.random.normal(np.random.uniform(low = - 0.5 / 61.75, high = 0.5 / 61.75), 0.5 / 61.75, 20000)
+mock_signal = np.random.choice(os.listdir("/cr/data01/filip/first_simulation/tensorflow/signal/"))
+pmts = np.loadtxt(f"/cr/data01/filip/first_simulation/tensorflow/signal/{mock_signal}")
+mock_measured = mock_baseline
+start = np.random.randint(-20000, -2048)
+mock_measured[start : start + 2048] += pmts[0]
+
+trace = mock_measured
+
+plt.plot(range(len(trace)), trace, c = "steelblue")
+plt.yscale("log")
+plt.xlim(0, 20000)
+plt.ylim(5 * 10e-4, 0.7 * 10e2)
+plt.show()
 
 # Dataset = DataSetGenerator("second_simulation/tensorflow/signal/", train = False)
 # traces , labels = Dataset.__getitem__(0)
