@@ -44,12 +44,14 @@ class RawTrace():
 
         # write signal to disk
         for i in range(len(self.trigger_on_pmt_1)):
-            with open(target_path + "signal/" + self.file_name + f"station-{str(i).zfill(2)}.csv", "w") as signal:
+
+            with open(target_path + self.file_name[:-1] + ".csv", "a") as signal:
                 np.savetxt(signal, self.trigger_on_pmt_1[i], newline=" ", delimiter=" ")
                 signal.write("\n")
                 np.savetxt(signal, self.trigger_on_pmt_2[i], newline=" ", delimiter=" ")
                 signal.write("\n")
                 np.savetxt(signal, self.trigger_on_pmt_3[i], newline=" ", delimiter=" ")
+                signal.write("\n")
 
         # # write background to disk
         # for i in range(len(self.trigger_off_pmt_1[bkg])):

@@ -8,15 +8,15 @@ function set_condor_defaults {
 
 function show_help {
     echo ""
-    echo "USAGE: condor_submit <executable> [KWARGS]               "
-    echo " Available keywords are:                                 "
-    echo "  --request_memory | -m   1G  -- request 1G of RAM       "
-    echo "  --repeat_n_times | -r   10  -- queue run 10 times      "
-    echo "  --tensorflow     | -tf      -- require crc2.ikp.kit.edu"
-    echo "  --arguments      | -a   ..  -- arguments for executable"
-    echo "                                                         "
-    echo "  Please provide --arguments last !!                     "
-    echo "                                                         "
+    echo "USAGE: condor_submit <executable> [KWARGS]                     "
+    echo " Available keywords are:                                       "
+    echo "  --request_memory | -m   1G        -- request 1G of RAM       "
+    echo "  --repeat_n_times | -r   1         -- queue run 1 time(s)     "
+    echo "  --tensorflow     | -tf            -- require crc2.ikp.kit.edu"
+    echo "  --arguments      | -a   ..        -- arguments for executable"
+    echo "                                                               "
+    echo "  Please provide --arguments last !!                           "
+    echo "                                                               "
 }
 
 # check for valid executable
@@ -69,9 +69,9 @@ touch $JOB_FOLDER/run_$RUN_NO/file.sub
 echo "JobBatchName    = trigger_studies-$SCRIPTNAME               " >> $JOB_FOLDER/run_$RUN_NO/file.sub
 echo "Executable      = $HOME/scripts/condor_execute.sh           " >> $JOB_FOLDER/run_$RUN_NO/file.sub
 echo "                                                            " >> $JOB_FOLDER/run_$RUN_NO/file.sub
-echo "error           = $JOB_FOLDER/run_$RUN_NO/errors.txt        " >> $JOB_FOLDER/run_$RUN_NO/file.sub
-echo "output          = $JOB_FOLDER/run_$RUN_NO/output.txt        " >> $JOB_FOLDER/run_$RUN_NO/file.sub
-echo "log             = $JOB_FOLDER/run_$RUN_NO/syslog.txt        " >> $JOB_FOLDER/run_$RUN_NO/file.sub
+echo "error           = $JOB_FOLDER/run_$RUN_NO/errors.err        " >> $JOB_FOLDER/run_$RUN_NO/file.sub
+echo "output          = $JOB_FOLDER/run_$RUN_NO/output.out        " >> $JOB_FOLDER/run_$RUN_NO/file.sub
+echo "log             = $JOB_FOLDER/run_$RUN_NO/syslog.log        " >> $JOB_FOLDER/run_$RUN_NO/file.sub
 echo "                                                            " >> $JOB_FOLDER/run_$RUN_NO/file.sub
 echo "arguments       = $CONDOR_EXECUTABLE $CONDOR_ARGUMENTS      " >> $JOB_FOLDER/run_$RUN_NO/file.sub
 
