@@ -1,10 +1,9 @@
-import sys
+import sys, os
 
 sys.dont_write_bytecode = True
 
 import tensorflow as tf
 import numpy as np
-import glob, os
 import typing
 
 # baseline shape defaults. 1 VEM_peak = 61.75 ADC !
@@ -18,6 +17,7 @@ BASELINE_MEAN = [-0.5/61.75, +0.5/61.75]    # mean ADC level limits [low, high]
 DATASET_SPLIT = 0.8                         # fraction of training set/entire set
 DATASET_FIX_SEED = False                    # fix randomizer seed for reproducibility
 DATASET_SHUFFLE = True                      # shuffle event list at the end of generation
+DATASET_POOLING = True                      # apply max pooling to PMT data beforehand
 CLASS_IMBALANCE = 0.5                       # p(signal), p(background) = 1 - CLASS_IMBALANCE
 
 # defaults for neural network, picked more or less randomly
@@ -72,17 +72,22 @@ class VEMTrace():
 
             self.__pmt_1, self.__pmt_2, self.__pmt_3 = np.split(kwargs['trace'], 3)
             self.trace_length = len(self.__pmt_1)
+            self.triggered = self.has_triggered()                                       # whether "legacy" triggers would activate
 
-        self.triggered = self.has_triggered()   # whether "legacy" triggers would activate
-        self.label = label                      # whether trace is signal or background
+        try:
+            self.pooling = kwargs['pooling']                                            # apply manual (max) prepooling if desired
+        except KeyError:
+            self.pooling = False
+
+        self.label = label                                                              # whether trace is signal or background
 
     # getter for easier handling of data classes
     def __call__(self) -> tuple :
 
-        # return list(self.__pmt_1) + list(self.__pmt_2) + list(self.__pmt_3)
-
-        # manual prepooling
-        return [max([self.__pmt_1[i], self.__pmt_2[i], self.__pmt_3[i]]) for i in range(len(self.__pmt_1))]
+        if self.pooling:
+            return [max([self.__pmt_1[i], self.__pmt_2[i], self.__pmt_3[i]]) for i in range(len(self.__pmt_1))]
+        elif not self.pooling:
+            return list(self.__pmt_1) + list(self.__pmt_2) + list(self.__pmt_3)
 
     # Whether or not any of the existing triggers caught this event
     def has_triggered(self) -> bool : 
@@ -166,6 +171,7 @@ class DataSetGenerator():
         * *split* (``float``) -- fraction of of training set/entire set
         * *fix_seed* (``bool``) -- fix randomizer seed for reproducibility
         * *shuffle* (``bool``) -- shuffle event list at the end of generation
+        * *pooling* (``bool``) -- apply max pooling to 3 PMT tuple to reduce data size
         * *class imbalance (``float``) -- p(signal), p(background) = 1 - CLASS_IMBALANCE
         * *trace_length* (``int``) -- number of bins in the trace
         * *baseline_std* (``float``) -- baseline std in VEM counts
@@ -193,6 +199,9 @@ class DataSetGenerator():
         # shuffle datasets if desired (default is desired)
         shuffle = set_kwarg('shuffle', DATASET_SHUFFLE)
 
+        # pool input data if desired (defaults to pooling)
+        pool = set_kwarg('pooling', DATASET_POOLING)
+
         # set class imbalance (default no imbalance, 50/50 )
         class_imbalance = set_kwarg('class_imbalance', CLASS_IMBALANCE)
 
@@ -211,11 +220,11 @@ class DataSetGenerator():
             else:
                 Dataset = EventGenerator(dataset, True, 1, shuffle, input_shape, baseline_std, baseline_mean_limit, class_imbalance)
 
-                return Dataset
+            return Dataset
                 
         except KeyError:
-            TrainingSet = EventGenerator(dataset, True, split, shuffle, input_shape, baseline_std, baseline_mean_limit, class_imbalance)
-            ValidationSet = EventGenerator(dataset, False, split, shuffle, input_shape, baseline_std, baseline_mean_limit, class_imbalance)
+            TrainingSet = EventGenerator(dataset, True, split, shuffle, input_shape, baseline_std, baseline_mean_limit, class_imbalance, pooling = pool)
+            ValidationSet = EventGenerator(dataset, False, split, shuffle, input_shape, baseline_std, baseline_mean_limit, class_imbalance, pooling = pool)
             
             return TrainingSet, ValidationSet 
 
@@ -223,7 +232,7 @@ class DataSetGenerator():
 # This website helped tremendously with writing a working example: shorturl.at/fFI09
 class EventGenerator(tf.keras.utils.Sequence):
 
-    def __init__(self, dataset, *args) -> typing.NoReturn :
+    def __init__(self, dataset, *args, **kwargs) -> typing.NoReturn :
 
         # select files for specific event generator
         unique_events = os.listdir(os.environ.get('DATA') + dataset)
@@ -236,9 +245,11 @@ class EventGenerator(tf.keras.utils.Sequence):
         self.__shuffle, self.__shape = args[2], args[3]
         self.__std, self.__mean = args[4], args[5]
         self.__prior = args[6]
+        self.__pooling = kwargs['pooling']
 
     # returns one batch of data
     # one batch of data == one event (with multiple stations, PMTs)
+    # TODO: maybe overthink this to better implement class imbalance?
     def __getitem__(self, index) -> tuple :
 
         signal_traces = np.loadtxt(os.environ.get('DATA') + self.__path_to_dataset_folder + self.__files[index])
@@ -246,7 +257,7 @@ class EventGenerator(tf.keras.utils.Sequence):
         traces, labels = [], []
 
         for station in signal_traces:
-            Trace = VEMTrace("signal", self.__shape, self.__std, self.__mean, station)
+            Trace = VEMTrace("signal", self.__shape, self.__std, self.__mean, station, pooling = self.__pooling)
 
             # 0 = background label
             # 1 = signal label
@@ -257,7 +268,7 @@ class EventGenerator(tf.keras.utils.Sequence):
             while not choice:
 
                 # add background event to list
-                BackgroundTrace = VEMTrace("background", self.__shape, self.__std, self.__mean)
+                BackgroundTrace = VEMTrace("background", self.__shape, self.__std, self.__mean, pooling = self.__pooling)
                 labels.append(tf.keras.utils.to_categorical(choice, 2, dtype = int))
                 traces.append(BackgroundTrace())
 
@@ -283,7 +294,7 @@ class EventGenerator(tf.keras.utils.Sequence):
 # Wrapper for tf.keras.Sequential model with some additional functionalities
 class Classifier():
 
-    def __init__(self, init_from_disk : str = None, architecture : tuple = MODEL_ARCHITECTURE) -> typing.NoReturn:
+    def __init__(self, init_from_disk : str = None) -> typing.NoReturn:
 
         tf.config.run_functions_eagerly(True)
 
@@ -293,17 +304,12 @@ class Classifier():
             self.model = tf.keras.models.Sequential()
 
             # input layer to specify input size
-            self.model.add(tf.keras.layers.InputLayer(input_shape=(BASELINE_LENGTH, ), batch_size=None))
-
-            # pooling layer to catch max signal and reduce dimensionality
-            # self.model.add(tf.keras.layers.MaxPooling1D(pool_size = 3, name = "pooling"))                         # only consider largest PMT signal
+            self.model.add(tf.keras.layers.InputLayer(input_shape=(BASELINE_LENGTH, 1), batch_size=None))
 
             # architecture of this NN is - apart from in/output - completely arbitrary, at least for now
-            self.model.add(tf.keras.layers.Dense(units = 4000, activation ='relu', name = "hidden_layer_1"))        # 1st hidden layer 4000 neurons
-            self.model.add(tf.keras.layers.Dropout(0.2))                                                            # Dropout layer to fight overfitting
-            self.model.add(tf.keras.layers.Dense(units = 100, activation = 'relu', name = "hidden_layer_2"))        # 2nd hidden layer 100 neurons
-            self.model.add(tf.keras.layers.Dropout(0.2))                                                            # Dropout layer to fight overfitting
-            self.model.add(tf.keras.layers.Dense(units = 2, activation = 'softmax', name = "Output"))               # Output layer with signal/background
+            self.model.add(tf.keras.layers.Conv1D(filters = 1, kernel_size = 200, activation = 'relu'))
+            self.model.add(tf.keras.layers.Conv1D(filters = 1, kernel_size = 20, activation = 'relu'))
+            self.model.add(tf.keras.layers.Conv1D(filters = 1, kernel_size = 2, activation = 'softmax'))
         
         elif init_from_disk is not None:
 

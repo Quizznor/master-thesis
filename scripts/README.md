@@ -3,9 +3,13 @@
     * (TODO) extract component traces from Adsts
 * ExtractTraceCharacteristics/
     * unimportant really, for visualisation
+* pyik/
+    * python wrapper for C++ RecEvent headers
 * FirstModel/
-    * Sequential model (2048, 12) -> 84%
+    * Dense model (2048, 12) -> 84%
 * SecondModel/
-    * Sequential model (4000, 100) -> 99.7%
+    * Dense model (4000, 100) -> 99.7%
 * ThirdModel/
-    * pooling layer + sequential model (TODO) -> TODO
+    * pooling layer + dense model (4000, 100) -> 99.8%
+* FourthModel/
+    * pooling layer + convolutional layer (TODO) -> TODO

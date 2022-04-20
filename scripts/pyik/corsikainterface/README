@@ -1,0 +1,12 @@
+###  README --- CorsikaReader/
+#
+## Author: Javier Gonzalez
+
+Python wrapper for a Corsika file reader utility. This is based on the Auger corsika reader with some modifications.
+
+To use this you need SWIG and cmake. I have not added an 'install' target, so you can only compile it in place.
+
+  cmake /path/to/source
+  make
+
+should be enough... then there are the two examples. For the plotting example you need PyRoot.

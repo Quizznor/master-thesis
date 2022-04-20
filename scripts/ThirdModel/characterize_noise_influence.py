@@ -24,9 +24,9 @@ stds = np.unique([float(string[:string.rfind("_")]) for string in os.listdir("/c
 
 for step, std in enumerate(stds, 1):
     network_confusion_matrix = np.zeros(shape = (2,2))
-    stepsize = 500
+    stepsize = 50
 
-    PredictionDataset = DataSetGenerator("first_simulation/tensorflow/signal/", train = False, baseline_std = std)
+    PredictionDataset = DataSetGenerator("02_simulation/signal/", train = False, baseline_std = std)
 
     for i in range(PredictionDataset.__len__())[::stepsize]:
         traces, labels = PredictionDataset.__getitem__(i)

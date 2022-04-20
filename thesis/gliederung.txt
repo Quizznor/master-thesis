@@ -1,0 +1,11 @@
+GLIEDERUNG THESIS
+
+	1. Einleitung
+	2. Motivation
+	3. Auger
+		- Flouresence detector (FD)
+		- Surface detector (SD)
+		- Central data acquisition system (CDAS)
+	4. Various triggers
+	5. Neural network triggers
+	6. Results / Discussion
