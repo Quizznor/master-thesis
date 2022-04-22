@@ -307,9 +307,11 @@ class Classifier():
             self.model.add(tf.keras.layers.InputLayer(input_shape=(BASELINE_LENGTH, 1), batch_size=None))
 
             # architecture of this NN is - apart from in/output - completely arbitrary, at least for now
-            self.model.add(tf.keras.layers.Conv1D(filters = 1, kernel_size = 200, activation = 'relu'))
-            self.model.add(tf.keras.layers.Conv1D(filters = 1, kernel_size = 20, activation = 'relu'))
-            self.model.add(tf.keras.layers.Conv1D(filters = 1, kernel_size = 2, activation = 'softmax'))
+            self.model.add(tf.keras.layers.Conv1D(filters = 8, kernel_size = 11, strides = 5, activation = 'relu'))
+            self.model.add(tf.keras.layers.Conv1D(filters = 16, kernel_size = 11, strides = 5, activation = 'relu'))
+            self.model.add(tf.keras.layers.Conv1D(filters = 32, kernel_size = 11, strides = 5, activation = 'relu'))
+            self.model.add(tf.keras.layers.Flatten())
+            self.model.add(tf.keras.layers.Dense(units = 2, activation = 'softmax'))
         
         elif init_from_disk is not None:
 
