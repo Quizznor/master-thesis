@@ -13,7 +13,7 @@ do
     # while [ $(ls $TEMPORARY_DIR | wc -l) -ge 10 ]; do sleep 2; done
 
     if ! [[ $FILE =~ "trigger_all_adst" ]]; then
-        /cr/users/filip/scripts/AdstExtractor/AdstExtractor $FILE $TEMPORARY_DIR
-        /cr/users/filip/scripts/AdstExtractor/convert_VEM_trace.py $TEMPORARY_DIR $TARGET_DIR
+        /cr/users/filip/scripts/AdstExtractor/VEMTraces/AdstExtractor $FILE $TEMPORARY_DIR
+        /cr/users/filip/scripts/AdstExtractor/VEMTraces/convert_VEM_trace.py $TEMPORARY_DIR $TARGET_DIR
     fi
 done

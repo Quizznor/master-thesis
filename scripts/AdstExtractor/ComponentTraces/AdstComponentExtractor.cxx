@@ -40,6 +40,7 @@ using namespace std;
 using namespace utl;
 
 /**
+  // PYTHON CODE SNIPPET 
   for iPMT in range(3):
         pmt_traces = station.GetPMTTraces(component,iPMT+1)
         calibrated_trace = np.array(pmt_traces.GetVEMComponent())
@@ -87,12 +88,6 @@ struct VectorWrapper
 
   VectorWrapper operator + (const VectorWrapper trace)
   {
-    // if (values.size() != trace.values.size())
-    // {
-    //   string errormsg = "VECTOR ADDITION incompatible size: " + to_string(values.size()) + " and " + to_string(trace.values.size());
-    //   throw std::runtime_error(errormsg);
-    // }
-
     vector<float> sum_of_both_vectors;
 
     for (int i = 0; i < values.size(); i++)

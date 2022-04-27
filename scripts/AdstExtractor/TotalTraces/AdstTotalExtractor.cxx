@@ -138,14 +138,23 @@ void ExtractDataFromAdstFiles(const string& pathToAdst, const string& pathToOutp
       {
         // write station id to trace file
         trace_file << recStation.GetId() << ' ';
-        cout << recStation.GetTotalSignal() << endl;
 
         // container for total trace
-        vector<float> trace_container(2048, 0);
-        auto total_signal = recStation.GetPMTTraces(eTotalTrace, PMT);
-        auto total_trace = total_signal.GetVEMComponent();
 
-        traces.push_back(total_trace);
+        const auto total_trace = recStation.GetPMTTraces(eTotalTrace, PMT);
+        auto calibrated_trace = VectorWrapper( total_trace.GetVEMComponent() );
+
+        const auto vem_peak = total_trace.GetPeak();
+        VectorWrapper uncalibrated_trace = calibrated_trace * vem_peak;
+
+        if (recStation.IsHighGainSaturated())
+        {
+          const auto dynode_anode_ratio = recStation.GetDynodeAnodeRatio(PMT);
+          uncalibrated_trace = uncalibrated_trace / dynode_anode_ratio;
+        }
+
+        auto result = uncalibrated_trace.get_trace();
+        traces.push_back(result);
       }
 
       trace_file << endl;
