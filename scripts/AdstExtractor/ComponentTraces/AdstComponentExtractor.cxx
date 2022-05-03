@@ -137,7 +137,7 @@ void ExtractDataFromAdstFiles(const string& pathToAdst, const string& pathToOutp
       for (const auto& recStation : sdEvent.GetStationVector()) 
       {
         // write station id to trace file
-        trace_file << recStation.GetId() << ' ';
+        // trace_file << recStation.GetId() << ' ';
 
         // container for total trace
         vector<float> trace_container(2048, 0);
@@ -155,11 +155,11 @@ void ExtractDataFromAdstFiles(const string& pathToAdst, const string& pathToOutp
             const auto vem_peak = component_trace.GetPeak();
             VectorWrapper uncalibrated_trace = calibrated_trace * vem_peak;
 
-            if (recStation.IsHighGainSaturated())
-            {
-              const auto dynode_anode_ratio = recStation.GetDynodeAnodeRatio(PMT);
-              uncalibrated_trace = uncalibrated_trace / dynode_anode_ratio;
-            }
+            // if (recStation.IsHighGainSaturated())
+            // {
+            //   const auto dynode_anode_ratio = recStation.GetDynodeAnodeRatio(PMT);
+            //   uncalibrated_trace = uncalibrated_trace / dynode_anode_ratio;
+            // }
 
             total_trace = total_trace + uncalibrated_trace;
           }
@@ -169,7 +169,7 @@ void ExtractDataFromAdstFiles(const string& pathToAdst, const string& pathToOutp
         traces.push_back(result);
       }
 
-      trace_file << endl;
+      // trace_file << endl;
 
       // write VEM traces to disk
       for (int j = 0; j < 2048; j++)

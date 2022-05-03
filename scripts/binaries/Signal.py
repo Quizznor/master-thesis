@@ -7,7 +7,7 @@ class VEMTrace():
     def __init__(self, label : str, *args, **kwargs) -> typing.NoReturn :
 
         self.label = label      # one of "SIG" or "BKG"
-        self.pooling = args[3]  # True or False
+        
 
         # full initialization of trace on first call
         try:
@@ -17,6 +17,9 @@ class VEMTrace():
 
             # set baseline std (default exactly 0.5 ADC)
             self.baseline_std = args[1]
+
+            # Reduce input dimensionality by pooling
+            self.pooling = args[3]  # True or False
 
             # set baseline mean (default in [-0.5, 0.5] ADC)
             self.baseline_mean = np.random.uniform(*args[2])
@@ -47,9 +50,14 @@ class VEMTrace():
         # dummy initialization from preprocessed VEMTrace
         except IndexError:
 
-            self.__pmt_1, self.__pmt_2, self.__pmt_3 = np.split(kwargs['trace'], 3)
-            # assert self.__pmt_1.shape == self.__pmt_2.shape == self.__pmt_3.shape, "SIGNAL SHAPES DONT MATCH!\n"
-            self.trace_length = len(self.__pmt_1)
+            try:
+
+                self.__pmt_1, self.__pmt_2, self.__pmt_3 = np.split(kwargs['trace'], 3)
+                # assert self.__pmt_1.shape == self.__pmt_2.shape == self.__pmt_3.shape, "SIGNAL SHAPES DONT MATCH!\n"
+                self.trace_length = len(self.__pmt_1)
+
+            except ValueError:
+                self.__pmt_1 = self.__pmt_2 = self.__pmt_3 = kwargs['trace']
 
     # getter for easier handling of data classes
     def __call__(self) -> tuple :

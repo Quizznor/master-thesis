@@ -20,7 +20,7 @@ start = time.time()
 
 EventClassifier = Classifier("/cr/data01/filip/second_simulation/tensorflow/model/model_1")
 
-stds = np.unique([float(string[:string.rfind("_")]) for string in os.listdir("/cr/data01/filip/second_simulation/noise_studies")])
+stds = np.unique([float(string[:string.rfind("_")]) for string in os.listdir("/cr/data01/filip/second_model/noise_studies")])
 
 for step, std in enumerate(stds, 1):
     legacy_confusion_matrix = np.zeros(shape = (2,2))

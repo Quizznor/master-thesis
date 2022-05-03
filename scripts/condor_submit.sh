@@ -76,14 +76,14 @@ echo "                                                            " >> $JOB_FOLD
 echo "arguments       = $CONDOR_EXECUTABLE $CONDOR_ARGUMENTS      " >> $JOB_FOLDER/run_$RUN_NO/file.sub
 
 if $REQUIRE_TENSORFLOW; then
-    echo "Requirements    = (TARGET.Machine == 'crc2.ikp.kit.edu')" >> $JOB_FOLDER/run_$RUN_NO/file.sub
+    echo 'Requirements    = (TARGET.Machine == "crc2.ikp.kit.edu")' >> $JOB_FOLDER/run_$RUN_NO/file.sub
 fi
 
 echo "request_memory  = $CONDOR_MEMORY                            " >> $JOB_FOLDER/run_$RUN_NO/file.sub
 echo "                                                            " >> $JOB_FOLDER/run_$RUN_NO/file.sub
 echo "should_transfer_files = YES                                 " >> $JOB_FOLDER/run_$RUN_NO/file.sub
 
-echo "transfer_input_files  = $(pwd)/$CONDOR_EXECUTABLE, /cr/users/filip/scripts/condor_execute.sh" >> $JOB_FOLDER/run_$RUN_NO/file.sub
+echo "transfer_input_files  = $(pwd)/$CONDOR_EXECUTABLE,$BINARIES/Classifiers.py,$BINARIES/EventGenerators.py,$BINARIES/PerformanceTest.py, $BINARIES/Signal.py,/cr/users/filip/scripts/condor_execute.sh" >> $JOB_FOLDER/run_$RUN_NO/file.sub
 
 echo "                                                            " >> $JOB_FOLDER/run_$RUN_NO/file.sub
 echo "queue $CONDOR_QUEUE                                         " >> $JOB_FOLDER/run_$RUN_NO/file.sub

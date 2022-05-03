@@ -9,18 +9,18 @@ warnings.filterwarnings("error")
 
 source_path = sys.argv[1]
 target_path = sys.argv[2]
+convert_trace = True if sys.argv[3] == "True" else False
 
-def digitize(array, convert):
+def digitize(station, convert):
 
     if convert:
-        for i in range(len(array)):
-            array[i] = math.floor(array[i]) / 61.75
-            
+        for i, trace in enumerate(station):
+            for j, bin in enumerate(trace):
+                station[i][j] = math.floor(bin) / 61.75
     else:
-        for i in range(len(array)):
-            array[i] = math.floor(array[i]) / 61.75
+        pass
 
-    return np.array(array)
+    return np.array(station)
 
 class RawTrace():
 
@@ -45,9 +45,9 @@ class RawTrace():
         # self.trigger_off_pmt_3 = self.trigger_off_pmt_3.T[:,1:]
 
         # self.trigger_on_stations = self.trigger_on_pmt_1[0,:]
-        self.trigger_on_pmt_1 = digitize(self.trigger_on_pmt_1.T[:,1:])
-        self.trigger_on_pmt_2 = digitize(self.trigger_on_pmt_2.T[:,1:])
-        self.trigger_on_pmt_3 = digitize(self.trigger_on_pmt_3.T[:,1:])
+        self.trigger_on_pmt_1 = digitize(self.trigger_on_pmt_1.T, convert = convert_trace)
+        self.trigger_on_pmt_2 = digitize(self.trigger_on_pmt_2.T, convert = convert_trace)
+        self.trigger_on_pmt_3 = digitize(self.trigger_on_pmt_3.T, convert = convert_trace)
 
     # split the data into signal and background
     def split_data(self) -> None :

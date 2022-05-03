@@ -4,14 +4,13 @@ import numpy as np
 def digitize(array, convert):
 
     if convert:
-        for i in range(len(array)):
-            array[i] = math.floor(array[i]) / 61.75
-            
+        for i, station in enumerate(array):
+            for j, bin in enumerate(station):
+                array[i][j] = math.floor(bin) / 61.75
     else:
-        for i in range(len(array)):
-            array[i] = math.floor(array[i]) / 61.75
+        pass
 
-    return array
+    return np.array(array)
 
 data = np.loadtxt(sys.argv[1])
 os.remove(sys.argv[1])

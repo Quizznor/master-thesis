@@ -11,33 +11,43 @@ class NNClassifier():
 
     def __init__(self, set_architecture = None) -> typing.NoReturn :
 
-        self.layers = {"Dense" : self.add_dense, "Conv1D" : self.add_conv1d, "Flatten" : self.add_flatten, "Input" : self.add_input, "Dropout" : self.add_dropout}
+        self.layers = {"Dense" : self.add_dense, "Conv1D" : self.add_conv1d, "Flatten" : self.add_flatten, 
+        "Input" : self.add_input, "Dropout" : self.add_dropout, "Output" : self.add_output}
 
         tf.config.run_functions_eagerly(True)
 
         if isinstance(set_architecture, typing.Callable):
             self.model = tf.keras.models.Sequential()
             set_architecture(self)
+            self.epochs = 0
         elif isinstance(set_architecture, str):
-            self.model = tf.keras.models.load_model(set_architecture)
+            self.model = tf.keras.models.load_model("/cr/data01/filip/" + set_architecture)
+            self.epochs = int(set_architecture[-1])
 
         self.model.compile(loss = 'categorical_crossentropy', optimizer = 'adam', metrics = 'accuracy', run_eagerly = True)
         print(self)
 
-    def train(self, dataset, epochs : int, TrainingSet : EventGenerator = None, **kwargs) -> typing.NoReturn :
-
-        if TrainingSet is None:
-
-            TrainingSet, ValidationSet = EventGenerator(dataset, *kwargs)
+    def train(self, dataset : typing.Any, epochs : int, **kwargs) -> typing.NoReturn :
         
-        self.model.fit(TrainingSet, validation_data = ValidationSet, epochs = epochs, verbose = 1)
+        TrainingSet, ValidationSet = EventGenerator(dataset, *kwargs)
+        self.model.fit(TrainingSet, validation_data = ValidationSet, epochs = epochs, verbose = 2)
+        self.epochs += epochs
+
+    def save(self, directory_path : str) -> typing.NoReturn : 
+        self.model.save("/cr/data01/filip/" + directory_path + f"model_{self.epochs}")
+
+    def predict(self, trace : list) -> bool :
+
+        # True if the network thinks it's seeing a signal
+        # False if the network things it's not seeing a signal 
+
+        return np.argmax(self.model.__call__(np.reshape(trace, (1, len(trace)))).numpy()[0]) == 1
 
     def __str__(self) -> str :
         self.model.summary()
         return ""
     
     def add_input(self, **kwargs) -> typing.NoReturn :
-        print(kwargs)
         self.model.add(tf.keras.layers.Input(**kwargs))
 
     def add_dense(self, **kwargs) -> typing.NoReturn : 
@@ -49,39 +59,46 @@ class NNClassifier():
     def add_flatten(self, **kwargs) -> typing.NoReturn : 
         self.model.add(tf.keras.layers.Flatten(**kwargs))
 
+    def add_output(self, **kwargs) -> typing.NoReturn : 
+        self.model.add(tf.keras.layers.Flatten())
+        self.model.add(tf.keras.layers.Dense(**kwargs))
+
     def add_dropout(self, **kwargs) -> typing.NoReturn : 
         self.model.add(tf.keras.layers.Dropout(**kwargs))
 
-# TODO
-# # Wrapper for currently employed station-level triggers (T1, T2, ToT, etc.)
-# class Trigger():
 
-    # # Whether or not any of the existing triggers caught this event
-    # def has_triggered(self) -> bool : 
+# TODO WRITE THIS
+# Wrapper for currently employed station-level triggers (T1, T2, ToT, etc.)
+class Trigger():
 
-    #     # check T1 first, then ToT, for performance reasons
-    #     # have T2 only when T1 also triggered, so ignore it
-    #     T1_is_active = self.absolute_threshold_trigger(1.75)
+    
 
-    #     if not T1_is_active:
-    #         ToT_is_active = self.time_over_threshold_trigger()
+    # Whether or not any of the existing triggers caught this event
+    def has_triggered(self, signal) -> bool : 
 
-    #     return T1_is_active or ToT_is_active
+        # check T1 first, then ToT, for performance reasons
+        # have T2 only when T1 also triggered, so ignore it
+        T1_is_active = self.absolute_threshold_trigger(1.75, signal)
 
-    # # method to check for (coincident) absolute signal threshold
-    # def absolute_threshold_trigger(self, threshold : float) -> bool : 
+        if not T1_is_active:
+            ToT_is_active = self.time_over_threshold_trigger()
 
-    #     # hierarchy doesn't (shouldn't?) matter, since we need coincident signal anyway
-    #     for i in range(self.trace_length):
-    #         if self.__pmt_1[i] >= threshold:
-    #             if self.__pmt_2[i] >= threshold:
-    #                 if self.__pmt_3[i] >= threshold:
-    #                     return True
-    #                 else: continue
-    #             else: continue
-    #         else: continue
+        return T1_is_active or ToT_is_active
+
+    # method to check for (coincident) absolute signal threshold
+    def absolute_threshold_trigger(self, threshold : float, ) -> bool : 
+
+        # hierarchy doesn't (shouldn't?) matter, since we need coincident signal anyway
+        for i in range(self.trace_length):
+            if self.__pmt_1[i] >= threshold:
+                if self.__pmt_2[i] >= threshold:
+                    if self.__pmt_3[i] >= threshold:
+                        return True
+                    else: continue
+                else: continue
+            else: continue
         
-    #     return False
+        return False
 
     # # method to check for elevated baseline threshold trigger
     # def time_over_threshold_trigger(self) -> bool : 

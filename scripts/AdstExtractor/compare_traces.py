@@ -2,28 +2,29 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os, sys
 
-fig, axes = plt.subplots(3, sharex = True)
-plt.title("Station wise comparison of traces")
-plt.rcParams.update({'font.size': 20})
-color = {"Component":"b", "Total":"r"}
-linestyle = {"Component":"-", "Total":":"}
+plt.rcParams.update({'font.size': 18})
+color = {"Component":"b", "VEM":"r"}
+linestyle = {"Component":"-", "VEM":":"}
+ratios = [[],[]]
 
-for type in ["Component","Total"]:
+for i, type in enumerate(["Component","VEM"]):
     data_files = [file for file in os.listdir(f"{type}Traces/") if file.endswith(".csv")]
 
+    factor = 215 / 61.75 if type == "VEM" else 1
+
     for i, file in enumerate(data_files):
-        vemtraces = np.loadtxt(f"{type}Traces/{file}", unpack = True)
+        vemtraces = np.loadtxt(f"{type}Traces/{file}")
+        print(vemtraces.shape)
 
-        for trace in vemtraces:
-            axes[i - 3].plot(range(len(trace) - 1), trace[1:], color = color[type], ls = linestyle[type])
+        for trace in vemtraces[:6]:
+            plt.plot(range(len(trace) - 1), factor * trace[1:], color = color[type], ls = linestyle[type])
 
-fig.text(0.07, 0.5, 'PMT signal strength', va='center', rotation='vertical')
-axes[-1].set_xlabel("Time bin (8.3 ns)")
+plt.ylabel('PMT signal strength (VEM_peak)')
+plt.xlabel("Time bin (8.3 ns)")
 
-for i in range(len(axes)):
-    axes[i].set_title(f"PMT #{i}")
-    axes[i].plot([],[], c="r", label = "Total trace", ls = ":")
-    axes[i].plot([],[], c="b", label = r"$\Sigma$ (photon, electron, muon)", ls = "-")
-    axes[i].legend()
+# plt.set_title(f"PMT #{i}")
+plt.plot([],[], c="r", label = "recStation.GetVEMTrace(PMT)", ls = ":")
+plt.plot([],[], c="b", label = r"converted $\Sigma$ (photon, electron, muon)", ls = "-")
+plt.legend()
 
 plt.show()

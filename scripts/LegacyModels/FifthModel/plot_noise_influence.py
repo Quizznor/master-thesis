@@ -2,9 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-plt.rcParams.update({'font.size': 22})
+plt.rcParams.update({'font.size': 17})
 
 for file in os.listdir("/cr/data01/filip/second_model/noise_studies"):
+
+    if file.endswith("_network.txt"):
+        continue
 
     std, label = file.split("_")
     std, label = float(std), label[:-4]
@@ -54,11 +57,35 @@ for file in os.listdir("/cr/data01/filip/fourth_model/noise_studies_gen_2"):
     # plt.errorbar(std * 61.75, accuracy, marker = "s", c = "green", ls = "--", yerr = 1/np.sqrt(confusion_matrix.sum()))
     # plt.plot(std * 61.75, accuracy, ls = "--", c = "orange")
 
-plt.scatter([],[], marker = "o", c = "r", label = "Sequential model")
-plt.scatter([],[], marker = "o", c = "g", label = "Sequential + pooling")
+for file in os.listdir("/cr/data01/filip/fifth_model/noise_studies_gen_1"):
+
+    std, label = file.split("_")
+    std, label = float(std), label[:-4]
+    confusion_matrix = np.loadtxt("/cr/data01/filip/fifth_model/noise_studies_gen_1/" + file)
+    accuracy = np.trace(confusion_matrix) / confusion_matrix.sum()
+
+    plt.scatter(std * 61.75, accuracy, marker = "s", c = "b")
+    # plt.errorbar(std * 61.75, accuracy, marker = "s", c = "k", ls = "-", yerr = 1/np.sqrt(confusion_matrix.sum()))
+    # plt.plot(std * 61.75, accuracy, ls = "--", c = "k")
+
+for file in os.listdir("/cr/data01/filip/fifth_model/noise_studies_gen_2"):
+
+    std, label = file.split("_")
+    std, label = float(std), label[:-4]
+    confusion_matrix = np.loadtxt("/cr/data01/filip/fifth_model/noise_studies_gen_2/" + file)
+    accuracy = np.trace(confusion_matrix) / confusion_matrix.sum()
+
+    plt.scatter(std * 61.75, accuracy, marker = "s", c = "r")
+    # plt.errorbar(std * 61.75, accuracy, marker = "s", c = "k", ls = "-", yerr = 1/np.sqrt(confusion_matrix.sum()))
+    # plt.plot(std * 61.75, accuracy, ls = "--", c = "k")
+
+# plt.scatter([],[], marker = "o", c = "r", label = "Sequential model")
 plt.scatter([],[], marker = "_", c = "b", label = "T1/ToT predicted")
+plt.scatter([],[], marker = "o", c = "g", label = "Dense + pooling")
 plt.scatter([],[], marker = "s", c = "k", label = "Convolution + pooling Gen 1")
 plt.scatter([],[], marker = "s", c = "orange", label = "Convolution + pooling Gen 2")
+plt.scatter([],[], marker = "s", c = "b", label = "Component traces, Convolution + pooling Gen 1")
+plt.scatter([],[], marker = "s", c = "r", label = "Component traces, Convolution + pooling Gen 2")
 plt.xlabel("Baseline std / ADC counts")
 plt.ylabel("Prediction accuracy")
 plt.legend()
