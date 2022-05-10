@@ -3,7 +3,7 @@
     * extract component traces or total traces from Adsts
 * binaries/
     * Wrapper for EventGenerator, Classifier, VEMTrace, etc
-* LegacyModel/
+* LegacyModel/ (several models that were built when establishing framework)
     * FirstModel/                                                   
         * Dense model (2048, 12) -> 84%                             
     * SecondModel/                                                  

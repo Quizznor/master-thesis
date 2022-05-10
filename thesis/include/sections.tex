@@ -1,0 +1,22 @@
+\newcommand{\FrontMatter}
+{
+	\frontmatter
+}
+
+\newcommand{\TableOfContents}
+{
+	\cleardoublepage
+	\begingroup \let\clearpage\relax
+	\tableofcontents
+	%\listoffigures
+	%\listoftables
+	\endgroup
+}
+
+
+\newcommand{\MainMatter}
+{
+	\mainmatter
+	% make pagemark appear only on new chapter pages and only in mainmatter
+	\cfoot[\pagemark]{}
+}

@@ -1,0 +1,78 @@
+\newcommand{\tpborder}{15mm}
+\newcommand{\tpbotborder}{20mm}
+\newcommand{\tpborderradius}{10mm}
+\newcommand{\tpbinding}{0mm}
+\newcommand{\tpkitlogooffset}{10mm}
+\newcommand{\tpaugerlogooffset}{10mm}
+\newcommand{\tpfont}{\fontfamily{phv}\selectfont}
+
+\begin{titlepage}
+
+	\begin{tikzpicture}[remember picture,overlay,every node/.style={inner sep=0,outer sep=0}]
+
+		\draw[color=gray]
+			($(current page.north west) + (\tpbinding + \tpborder, -\tpborder)$)
+			--
+			($(current page.north east) + (-\tpborder -\tpborderradius, -\tpborder)$)
+			arc (90:0:\tpborderradius)
+			--
+			($(current page.south east) + (-\tpborder, \tpbotborder)$)
+			--
+			($(current page.south west) + (\tpbinding + \tpborder + \tpborderradius, \tpbotborder)$)
+			arc (270:180:\tpborderradius)
+			--
+			($(current page.north west) + (\tpbinding + \tpborder, -\tpborder)$);
+
+		\node[anchor=north west] at ($(current page.north west) + (\tpbinding + \tpborder + \tpkitlogooffset, -\tpborder -\tpkitlogooffset)$) {\includegraphics[height=30mm]{cover/kitlogo.pdf}};
+		\node[anchor=north east] at ($(current page.north east) - (6mm +\tpbinding + \tpborder + \tpaugerlogooffset, \tpborder +\tpaugerlogooffset)$) {\includegraphics[height=30mm]{cover/augerlogo.pdf}};
+
+		\coordinate (pagetopcenter) at ($0.5*(current page.north west) + 0.5*(current page.north east) + (0.5*\tpbinding,0mm)$);
+		\coordinate (pagebotcenter) at ($0.5*(current page.south west) + 0.5*(current page.south east) + (0.5*\tpbinding,0mm)$);
+
+		\node[anchor=north] at ($(pagetopcenter) + (0mm,-\tpborder -55mm)$)
+		{
+			\begin{minipage}{160mm}
+				\centering
+				\tpfont
+				\Huge
+				\thesisentopic\\
+			\end{minipage}
+		};
+
+		\node[anchor=north] at ($(pagetopcenter) + (0mm,-\tpborder - 180mm)$)
+		{
+			\begin{minipage}{160mm}
+				\centering
+				\tpfont
+				\Large Master's thesis by\\
+				\vspace*{0.3cm}
+				\huge\thesisauthor\\
+				\vspace*{0.3cm}
+				\Large at the \thesisinstitute
+			\end{minipage}
+		};
+
+		\node[anchor=south] at ($(pagebotcenter) + (0mm,\tpbotborder + 20mm)$)
+		{
+			\begin{minipage}{160mm}
+				\centering
+				\tpfont
+				\Large
+
+				\begin{tabular}[ht]{l c l}
+					Advisor: & \hfill & \thesisreviewerone\\
+					Coadvisor: & \hfill & \thesisreviewertwo\\
+					% Supervisor: & \hfill & \thesisadvisorone\\
+				\end{tabular}
+
+				\vspace*{1cm}
+
+				\large{Processing time: \thesistimestart \hspace*{0.25cm} -- \hspace*{0.25cm} \thesistimeend}
+			\end{minipage}
+		};
+
+		\node [anchor=west] at ($(current page.south west) + (\tpbinding + \tpborder + \tpborderradius, \tpbotborder - 0.5 * \tpborder)$) {\tpfont\tiny{KIT – The Research University in the Helmholtz Association }};
+
+		\node [anchor=east] at ($(current page.south east) + (-\tpborder - \tpborderradius, \tpbotborder - 0.5 * \tpborder)$) {\tpfont\large{\textbf{www.kit.edu}}};
+	\end{tikzpicture}
+\end{titlepage}

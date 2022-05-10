@@ -48,7 +48,7 @@ class EventGenerator():
             def __getitem__(self, index) -> tuple :
 
                 signal_traces = np.loadtxt("/cr/data01/filip/" + self.__path_to_dataset_folder + self.__files[index])           # get vem trace data
-                signal_traces = np.split(signal_traces, len(signal_traces)/3 )                                                  # group them by station
+                signal_traces = np.split(signal_traces, len(signal_traces) / 3 )                                                # group them by station
                 grouped_events = []
 
                 # 0 = background label
