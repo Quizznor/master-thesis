@@ -2,6 +2,7 @@
 
 function set_condor_defaults {
     export REQUIRE_TENSORFLOW=false
+    export REQUIRE_OFFLINE=false
     export CONDOR_MEMORY="1G"
     export CONDOR_QUEUE="1"
 }
@@ -13,6 +14,7 @@ function show_help {
     echo "  --request_memory | -m   1G        -- request 1G of RAM       "
     echo "  --repeat_n_times | -r   1         -- queue run 1 time(s)     "
     echo "  --tensorflow     | -tf            -- require crc2.ikp.kit.edu"
+    echo "  --offline        | -o             -- require offline         "
     echo "  --arguments      | -a   ..        -- arguments for executable"
     echo "                                                               "
     echo "  Please provide --arguments last !!                           "
@@ -46,6 +48,10 @@ while [ $# -gt 0 ]; do
     -tf | --tensorflow )
         export REQUIRE_TENSORFLOW=true
         shift
+        ;;
+    -o | --offline )
+        export REQUIRE_OFFLINE=true
+        shift $#
         ;;
     -a | --arguments )
         export CONDOR_ARGUMENTS="$@"
