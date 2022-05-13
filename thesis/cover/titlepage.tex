@@ -6,6 +6,7 @@
 \newcommand{\tpkitlogooffset}{10mm}
 \newcommand{\tpaugerlogooffset}{10mm}
 \newcommand{\tpfont}{\fontfamily{phv}\selectfont}
+\newcommand{\imagetopleft}{(29mm, -125mm)}
 
 \begin{titlepage}
 
@@ -40,7 +41,25 @@
 			\end{minipage}
 		};
 
-		\node[anchor=north west] at ($(current page.north west) + (29mm, -95mm)$){\includegraphics[height=8.53cm]{cover/cover.png}};
+		\draw[line width = 0.8mm, color=gray]
+			($(current page.north west) + (31mm, -120mm)$)
+			--
+			($(current page.north west) + (31mm, -100mm)$)
+			arc (180:90:2mm)
+			($(current page.north west) + (33mm, -98mm)$)
+			--
+			($(current page.north west) + (53mm, -98mm)$);
+
+			\draw[line width = 0.8mm, color=gray]
+			($(current page.north west) + (148mm, -183mm)$)
+			--
+			($(current page.north west) + (178mm, -183mm)$)
+			arc (270:360:2mm)
+			($(current page.north west) + (180mm, -181mm)$)
+			--
+			($(current page.north west) + (180mm, -161mm)$);
+
+		\node[anchor=north west] at ($(current page.north west) + (33mm, -100mm)$){\includegraphics[width=14.5cm]{cover/cover.png}};
 
 		\node[anchor=north] at ($(pagetopcenter) + (0mm,-\tpborder - 180mm)$)
 		{
