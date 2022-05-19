@@ -66,78 +66,115 @@ class NNClassifier():
     def add_dropout(self, **kwargs) -> typing.NoReturn : 
         self.model.add(tf.keras.layers.Dropout(**kwargs))
 
-
-# TODO WRITE THIS
 # Wrapper for currently employed station-level triggers (T1, T2, ToT, etc.)
-class Trigger():
+class TriggerClassifier():
 
-    
+    def __init__(self, signal : VEMTrace) -> typing.NoReturn :
+        self.signal = np.array(signal())
+        self.trigger = self.has_triggered()
 
     # Whether or not any of the existing triggers caught this event
-    def has_triggered(self, signal) -> bool : 
+    def has_triggered(self) -> bool : 
 
         # check T1 first, then ToT, for performance reasons
         # have T2 only when T1 also triggered, so ignore it
-        T1_is_active = self.absolute_threshold_trigger(1.75, signal)
+        T1_is_active = self.absolute_threshold_trigger(1.75, self.signal)
 
         if not T1_is_active:
-            ToT_is_active = self.time_over_threshold_trigger()
+            ToT_is_active = self.time_over_threshold_trigger(self.signal)
 
         return T1_is_active or ToT_is_active
 
     # method to check for (coincident) absolute signal threshold
-    def absolute_threshold_trigger(self, threshold : float, ) -> bool : 
+    def absolute_threshold_trigger(self, threshold : float, signal : list) -> bool : 
 
-        # hierarchy doesn't (shouldn't?) matter, since we need coincident signal anyway
-        for i in range(self.trace_length):
-            if self.__pmt_1[i] >= threshold:
-                if self.__pmt_2[i] >= threshold:
-                    if self.__pmt_3[i] >= threshold:
-                        return True
+        # signal isn't prepooled
+        if len(signal) == 60000:
+
+            pmt_1, pmt_2, pmt_3 = np.split(signal, 3)
+            assert len(pmt_1) == len(pmt_2) == len(pmt_3), "Something went wrong in the trigger trace conversion"
+
+            # hierarchy doesn't (shouldn't?) matter, since we need coincident signal anyway
+            for i in range(len(pmt_1)):
+                if pmt_1[i] >= threshold:
+                    if pmt_2[i] >= threshold:
+                        if pmt_3[i] >= threshold:
+                            return True
+                        else: continue
                     else: continue
                 else: continue
-            else: continue
+            
+            return False
         
-        return False
+        # signal is maxpooled
+        elif len(signal) == 20000:
 
-    # # method to check for elevated baseline threshold trigger
-    # def time_over_threshold_trigger(self) -> bool : 
+            for i in range(len(signal)):
+                if signal[i] >= threshold:
+                    return True
+                else: continue
+            
+            return False
 
-    #     window_length = 120      # amount of bins that are being checked
-    #     threshold     = 0.2      # bins above this threshold are 'active'
+    # method to check for elevated baseline threshold trigger
+    def time_over_threshold_trigger(self, signal : list) -> bool : 
+
+        window_length = 120      # amount of bins that are being checked
+        threshold     = 0.2      # bins above this threshold are 'active'
+
+        # signal isn't prepooled
+        if len(signal) == 60000:
+
+            pmt_1, pmt_2, pmt_3 = np.split(signal, 3)
+            assert len(pmt_1) == len(pmt_2) == len(pmt_3), "Something went wrong in the trigger trace conversion"
         
-    #     # count initial active bins
-    #     pmt1_active = len(self.__pmt_1[:window_length][self.__pmt_1[:window_length] > threshold])
-    #     pmt2_active = len(self.__pmt_2[:window_length][self.__pmt_2[:window_length] > threshold])
-    #     pmt3_active = len(self.__pmt_3[:window_length][self.__pmt_3[:window_length] > threshold])
+            # count initial active bins
+            pmt1_active = len(pmt_1[:window_length][pmt_1[:window_length] > threshold])
+            pmt2_active = len(pmt_2[:window_length][pmt_2[:window_length] > threshold])
+            pmt3_active = len(pmt_3[:window_length][pmt_3[:window_length] > threshold])
 
-    #     for i in range(window_length, self.trace_length):
+            for i in range(window_length, len(pmt_1)):
 
-    #         # check if ToT conditions are met
-    #         ToT_trigger = [pmt1_active >= 13, pmt2_active >= 13, pmt3_active >= 13]
+                # check if ToT conditions are met
+                ToT_trigger = [pmt1_active >= 13, pmt2_active >= 13, pmt3_active >= 13]
 
-    #         if ToT_trigger.count(True) >= 2:
-    #             return True
+                if ToT_trigger.count(True) >= 2:
+                    return True
 
-    #         # overwrite oldest bin and reevaluate
-    #         pmt1_active += self.update_bin_count(i, self.__pmt_1, window_length, threshold)
-    #         pmt2_active += self.update_bin_count(i, self.__pmt_2, window_length, threshold)
-    #         pmt3_active += self.update_bin_count(i, self.__pmt_3, window_length, threshold)
+                # overwrite oldest bin and reevaluate
+                pmt1_active += self.update_bin_count(i, pmt_1, window_length, threshold)
+                pmt2_active += self.update_bin_count(i, pmt_2, window_length, threshold)
+                pmt3_active += self.update_bin_count(i, pmt_3, window_length, threshold)
 
-    #     return False
+            return False
 
-    # @staticmethod
-    # # helper method for time_over_threshold_trigger
-    # def update_bin_count(index : int, array: np.ndarray, window_length : int, threshold : float) -> int : 
+        # signal is maxpooled
+        elif len(signal) == 20000:
+            signal_active = len(signal[:window_length][signal[:window_length] > threshold])
 
-    #     # is new bin active?
-    #     if array[index] >= threshold:
-    #         updated_bin_count = 1
-    #     else:
-    #         updated_bin_count = 0
+            for i in range(window_length, len(signal)):
 
-    #     # was old bin active?
-    #     if array[index - window_length] >= threshold:
-    #         updated_bin_count -= 1
+                # check if ToT conditions are met
+                if signal_active >= 13:
+                    return True
 
-    #     return updated_bin_count
+                # overwrite oldest bin and reevaluate
+                signal_active += self.update_bin_count(i, signal, window_length, threshold)
+
+            return False
+
+    @staticmethod
+    # helper method for time_over_threshold_trigger
+    def update_bin_count(index : int, array: np.ndarray, window_length : int, threshold : float) -> int : 
+
+        # is new bin active?
+        if array[index] >= threshold:
+            updated_bin_count = 1
+        else:
+            updated_bin_count = 0
+
+        # was old bin active?
+        if array[index - window_length] >= threshold:
+            updated_bin_count -= 1
+
+        return updated_bin_count

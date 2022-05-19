@@ -47,7 +47,6 @@ class VEMTrace():
             elif label == "BKG":
                 pass
 
-        # dummy initialization from preprocessed VEMTrace
         except IndexError:
 
             try:
