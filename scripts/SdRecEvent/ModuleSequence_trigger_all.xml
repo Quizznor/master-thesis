@@ -1,0 +1,64 @@
+<!-- A sequence for an SD only reconstruction -->
+
+<!DOCTYPE sequenceFile [
+  <!ENTITY % sd SYSTEM "/cr/data01/filip/offline/install/share/auger-offline/config/standardSdSequences.dtd">
+  %sd;
+] >
+
+<sequenceFile
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation='/cr/data01/filip/offline/install/share/auger-offline/config/ModuleSequence.xsd'>
+
+  <moduleControl>
+
+    <loop numTimes="1" pushEventToStack="yes">
+
+      <module> EventFileReaderOG </module>
+
+      <!-- increase numTimes if you want to throw the shower
+           into the array more than once -->
+      <loop numTimes="1" pushEventToStack="yes">
+
+        <module> EventGeneratorOG </module>
+
+        <!-- simulation of muon background -->
+        <!-- <module> SdAccidentalInjectorKG </module> -->
+        <!-- <module> G4StationSimulatorOG </module> -->
+
+        &SdSimulation;
+
+<!--        <module> ClearParticleLists              </module> -->
+
+        <!-- <module> CentralTriggerSimulatorXb       </module> -->
+        <module> DummyCentralTriggerDenseKG       </module>
+        <module> CentralTriggerEventBuilderOG    </module>
+        <module> EventBuilderOG                  </module>
+
+        <module> EventCheckerOG                  </module>
+        <module> SdCalibratorOG                  </module>
+        <module> SdSignalRecoveryKLT             </module>
+<!--
+        <module> SdMonteCarloEventSelectorOG     </module>
+        <module> SdEventSelectorOG               </module>
+
+        <module> SdPlaneFitOG                    </module>
+        <module> LDFFinderKG                     </module>
+        
+        <try>
+          <module> ScintillatorLDFFinderKG </module>
+        </try>
+
+        <module> SdEventPosteriorSelectorOG      </module>
+        <module> Risetime1000LLL                 </module>
+
+        <module> EventFileExporterOG             </module>
+-->
+        <module> RecDataWriterNG                 </module>
+
+      </loop>
+
+    </loop>
+
+  </moduleControl>
+
+</sequenceFile>

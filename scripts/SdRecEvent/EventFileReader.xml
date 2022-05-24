@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<!-- Configuration of Module EventFileReader -->
+
+<EventFileReader
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation='/cr/data01/filip/offline/install/share/auger-offline/config/EventFileReader.xsd'>
+
+  <ReportFilenames/>
+
+  <CORSIKA>
+
+    <!-- the list of filenames -->
+    <InputFilenames>
+      /cr/data01/filip/offline/install/share/auger-offline/doc/SampleShowers/Corsika-1e19-6.part
+    </InputFilenames>
+
+    <!-- The following glob pattern is applied to the <InputFilenames>
+         in order to identify the base path on to which different file
+         extensions can be mapped in <InputMapping>. In the example below,
+         the the portion of the <InputFilenames> string preceding ".part"
+         is identified and referred to with "(1)" in the <InputMapping>
+         below. Multiple strings could be selected using multiple wild-cards
+         in the glob pattern if desired. -->
+    <PatternPath> * </PatternPath>
+    
+    <!-- The portion of <InputFilenames> string selected via
+         the "*" wild-card in the glob pattern specified in 
+         <PatternPath> has different file extensions appended to it
+         here to construct the file paths for ground particle files,
+         profile data files, etc. from the same base path/name. Had
+         more than one string been selected in the glob pattern in
+         <PatternPath>, each could be referred to here with
+         (1), (2), etc. -->
+    <InputMapping>
+      <GroundData> (1) </GroundData>
+      <ProfileData> (1).long </ProfileData>
+    </InputMapping>    
+    
+  </CORSIKA>
+
+</EventFileReader>
