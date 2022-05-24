@@ -190,6 +190,10 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
           }
         }
 
+        // save shower plane distance to core and write to disk
+        const auto shower_plane_distance = recStation.GetSPDistance();
+        traceFile << shower_plane_distance << " ";
+
         // "digitize" component trace...
         const auto trace_vector = TotalTrace.convert_to_VEM().get_trace();
 

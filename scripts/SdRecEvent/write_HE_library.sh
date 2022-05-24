@@ -21,11 +21,11 @@ WORKING_PATH="/cr/tempdata01/filip/protons/19_19.5/root_files/"
 # done
 
 # test one single file
-FILE="/lsdf/auger/tmp/hahn/test_production/napoli/ub/QGSJET-II.04/proton/19_19.5/00/DAT807679_02_adst.root"
+FILE="/lsdf/auger/tmp/hahn/test_production/napoli/ub/QGSJET-II.04/proton/19_19.5/00/DAT807679_01_adst.root"
 
 BASENAME="$(basename -- $FILE)"
 echo "$SOURCE_PATH/$BASENAME"
 
 cp $FILE /cr/tempdata01/filip/protons/19_19.5/root_files/
-/cr/data01/filip/SdRecEvent/AdstExtractor/AdstComponentExtractor "$WORKING_PATH/$BASENAME"
+/cr/users/filip/scripts/SdRecEvent/AdstExtractor/AdstComponentExtractor "$WORKING_PATH/$BASENAME"
 rm -rf $WORKING_PATH/$BASENAME
