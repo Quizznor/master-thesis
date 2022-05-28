@@ -1,10 +1,49 @@
-from EventGenerators import EventGenerator
-from Classifiers import NNClassifier
+from Classifiers import TriggerClassifier, NNClassifier
+from EventGenerators import Generator
 from Signal import VEMTrace
 import numpy as np
 import typing
 import time
 
+def lateral_trigger_probability(Classifier : typing.Any, Dataset : Generator) -> tuple :
+
+    hits, misses = [], []
+
+    for batch in range(Dataset.__len__()):
+        traces, labels = Dataset.__getitem__(batch, for_training = False)
+
+        for Trace, label in zip(traces, labels):
+            predicted_label = Classifier(Trace)
+
+            if predicted_label == label:
+                hits.append(Trace._spdistance)
+            else:
+                misses.append(Trace._spdistance)
+    
+    return hits, misses
+
+def energy_trigger_probability(Classifier : typing.Any, Dataset : Generator) -> tuple :
+
+    hits, misses = [], []
+
+    # TODO link energy to prediction
+
+    for batch in range(Dataset.__len__()):
+        event_name = Dataset.__files[batch]
+        traces, labels = Dataset.__getitem__(batch, for_training = False)
+
+        # for Trace, label in zip(traces, labels):
+        #     predicted_label = Classifier(Trace)
+
+        #     if predicted_label == label:
+        #         hits.append(Trace._spdistance)
+        #     else:
+        #         misses.append(Trace._spdistance)
+    
+    return hits, misses
+
+# this uses outdated Signal / EventGenerator class structure and is obsolete
+'''
 def test_noise_performance(network_dir : str, dataset_dir : str, save_dir : str, noise_levels : list = None) -> typing.NoReturn:
 
     def second_to_timestr(duration : float) -> str : 
@@ -52,3 +91,8 @@ def test_noise_performance(network_dir : str, dataset_dir : str, save_dir : str,
             print(f"Looping through traces {current_steps}/{total_steps}   ETA = {second_to_timestr((total_steps/current_steps-1) * elapsed)}", end = "\r")
 
         np.savetxt(f"/cr/data01/filip/noise_studies/{save_dir}/{noise}_network.txt", network_confusion_matrix)
+'''
+
+if __name__ == "__main__":
+
+    Classifier = NNClassifier("/cr/data01/filip/minimal_model/model_2")

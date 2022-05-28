@@ -21,27 +21,27 @@ class NNClassifier():
             set_architecture(self)
             self.epochs = 0
         elif isinstance(set_architecture, str):
-            self.model = tf.keras.models.load_model("/cr/data01/filip/" + set_architecture)
+            self.model = tf.keras.models.load_model(set_architecture)
             self.epochs = int(set_architecture[-1])
 
         self.model.compile(loss = 'categorical_crossentropy', optimizer = 'adam', metrics = 'accuracy', run_eagerly = True)
         print(self)
 
-    def train(self, dataset : typing.Any, epochs : int, **kwargs) -> typing.NoReturn :
+    def train(self, DataSet : EventGenerator, epochs : int, **kwargs) -> typing.NoReturn :
         
-        TrainingSet, ValidationSet = EventGenerator(dataset, *kwargs)
+        TrainingSet, ValidationSet = DataSet()
         self.model.fit(TrainingSet, validation_data = ValidationSet, epochs = epochs, verbose = 2)
         self.epochs += epochs
 
     def save(self, directory_path : str) -> typing.NoReturn : 
         self.model.save("/cr/data01/filip/" + directory_path + f"model_{self.epochs}")
 
-    def predict(self, trace : list) -> bool :
+    def __call__(self, signal : VEMTrace) -> bool :
 
         # True if the network thinks it's seeing a signal
         # False if the network things it's not seeing a signal 
 
-        return np.argmax(self.model.__call__(np.reshape(trace, (1, len(trace)))).numpy()[0]) == 1
+        return np.argmax(self.model.__call__(np.reshape(signal(), (1, len(signal())))).numpy()[0]) == 1
 
     def __str__(self) -> str :
         self.model.summary()
@@ -69,36 +69,32 @@ class NNClassifier():
 # Wrapper for currently employed station-level triggers (T1, T2, ToT, etc.)
 class TriggerClassifier():
 
-    def __init__(self, signal : VEMTrace) -> typing.NoReturn :
-        self.signal = np.array(signal())
-        self.trigger = self.has_triggered()
+    def __call__(self, trace : VEMTrace) -> bool : 
+        return self.has_triggered(trace)
 
     # Whether or not any of the existing triggers caught this event
-    def has_triggered(self) -> bool : 
+    def has_triggered(self, trace: VEMTrace) -> bool : 
 
         # check T1 first, then ToT, for performance reasons
         # have T2 only when T1 also triggered, so ignore it
-        T1_is_active = self.absolute_threshold_trigger(1.75, self.signal)
+        T1_is_active = self.absolute_threshold_trigger(1.75, trace)
 
         if not T1_is_active:
-            ToT_is_active = self.time_over_threshold_trigger(self.signal)
+            ToT_is_active = self.time_over_threshold_trigger(trace)
 
         return T1_is_active or ToT_is_active
 
     # method to check for (coincident) absolute signal threshold
-    def absolute_threshold_trigger(self, threshold : float, signal : list) -> bool : 
+    def absolute_threshold_trigger(self, threshold : float, signal : VEMTrace) -> bool : 
 
         # signal isn't prepooled
-        if len(signal) == 60000:
+        if not signal.pooling:
 
-            pmt_1, pmt_2, pmt_3 = np.split(signal, 3)
-            assert len(pmt_1) == len(pmt_2) == len(pmt_3), "Something went wrong in the trigger trace conversion"
-
-            # hierarchy doesn't (shouldn't?) matter, since we need coincident signal anyway
-            for i in range(len(pmt_1)):
-                if pmt_1[i] >= threshold:
-                    if pmt_2[i] >= threshold:
-                        if pmt_3[i] >= threshold:
+            # hierarchy doesn't (shouldn't?) matter
+            for i in range(signal.trace_length):
+                if signal._pmt_1[i] >= threshold:
+                    if signal._pmt_2[i] >= threshold:
+                        if signal._pmt_3[i] >= threshold:
                             return True
                         else: continue
                     else: continue
@@ -107,33 +103,29 @@ class TriggerClassifier():
             return False
         
         # signal is maxpooled
-        elif len(signal) == 20000:
-
-            for i in range(len(signal)):
-                if signal[i] >= threshold:
+        elif signal.pooling:
+            for bin in signal():
+                if bin >= threshold:
                     return True
                 else: continue
             
             return False
 
     # method to check for elevated baseline threshold trigger
-    def time_over_threshold_trigger(self, signal : list) -> bool : 
+    def time_over_threshold_trigger(self, signal : VEMTrace) -> bool : 
 
         window_length = 120      # amount of bins that are being checked
         threshold     = 0.2      # bins above this threshold are 'active'
 
         # signal isn't prepooled
-        if len(signal) == 60000:
+        if not signal.pooling:
 
-            pmt_1, pmt_2, pmt_3 = np.split(signal, 3)
-            assert len(pmt_1) == len(pmt_2) == len(pmt_3), "Something went wrong in the trigger trace conversion"
-        
             # count initial active bins
-            pmt1_active = len(pmt_1[:window_length][pmt_1[:window_length] > threshold])
-            pmt2_active = len(pmt_2[:window_length][pmt_2[:window_length] > threshold])
-            pmt3_active = len(pmt_3[:window_length][pmt_3[:window_length] > threshold])
+            pmt1_active = len(signal._pmt_1[:window_length][signal._pmt_1[:window_length] > threshold])
+            pmt2_active = len(signal._pmt_2[:window_length][signal._pmt_2[:window_length] > threshold])
+            pmt3_active = len(signal._pmt_3[:window_length][signal._pmt_3[:window_length] > threshold])
 
-            for i in range(window_length, len(pmt_1)):
+            for i in range(window_length, signal.trace_length):
 
                 # check if ToT conditions are met
                 ToT_trigger = [pmt1_active >= 13, pmt2_active >= 13, pmt3_active >= 13]
@@ -142,24 +134,25 @@ class TriggerClassifier():
                     return True
 
                 # overwrite oldest bin and reevaluate
-                pmt1_active += self.update_bin_count(i, pmt_1, window_length, threshold)
-                pmt2_active += self.update_bin_count(i, pmt_2, window_length, threshold)
-                pmt3_active += self.update_bin_count(i, pmt_3, window_length, threshold)
+                pmt1_active += self.update_bin_count(i, signal._pmt_1, window_length, threshold)
+                pmt2_active += self.update_bin_count(i, signal._pmt_2, window_length, threshold)
+                pmt3_active += self.update_bin_count(i, signal._pmt_3, window_length, threshold)
 
             return False
 
         # signal is maxpooled
-        elif len(signal) == 20000:
-            signal_active = len(signal[:window_length][signal[:window_length] > threshold])
+        elif signal.pooling:
 
-            for i in range(window_length, len(signal)):
+            signal_active = len(signal()[:window_length][signal[:window_length] > threshold])
+
+            for i in range(window_length, signal.trace_length):
 
                 # check if ToT conditions are met
                 if signal_active >= 13:
                     return True
 
                 # overwrite oldest bin and reevaluate
-                signal_active += self.update_bin_count(i, signal, window_length, threshold)
+                signal_active += self.update_bin_count(i, signal(), window_length, threshold)
 
             return False
 

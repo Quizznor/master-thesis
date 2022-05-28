@@ -42,9 +42,11 @@ class VEMTrace():
 
             if label == "SIG": 
 
+                # Signal composition: 0th bin = SPDistance, following bins = trace
                 # don't catch exception here, since we _need_ signal data to continue
-                signal_length = len(args[4][0])
-                vem_signals = args[4]
+                signal_length = len(args[4][0]) - 1
+                self._spdistance = np.mean(args[4][:,0])
+                vem_signals = args[4][:,1:]
 
                 # assert len(vem_signals[0]) == len(vem_signals[1]) == len(vem_signals[2]), "SIGNAL SHAPES DONT MATCH!\n"
                 # assert self.trace_length > signal_length, "SIGNAL DOES NOT FIT INTO BASELINE!\n"
