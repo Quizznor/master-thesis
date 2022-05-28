@@ -27,7 +27,7 @@ class EventGenerator():
         * *baseline_mean* (``list``) -- mean ADC level limit [low, high]
     '''
 
-    def __init__(self, libraries : list[str], **kwargs) -> typing.NoReturn :
+    def __init__(self, datasets : list[str], **kwargs) -> typing.NoReturn :
 
         def set_kwarg(kwargs, key, fallback):
 
@@ -38,26 +38,26 @@ class EventGenerator():
 
             return value
 
-        library_paths = {
-            "19_19.5" : "/cr/tempdata01/filip/protons/19_19.5/",
-            "18.5_19" : "/cr/tempdata01/filip/protons/18.5_19/",
-            "18_18.5" : "/cr/tempdata01/filip/protons/18_18.5/",
-            "17.5_18" : "/cr/tempdata01/filip/protons/17.5_18/",
-            "17_17.5" : "/cr/tempdata01/filip/protons/17_17.5/",
-            "16.5_17" : "/cr/tempdata01/filip/protons/16.5_17/",
+        libraries = {
+            "19_19.5" : ["/cr/tempdata01/filip/protons/19_19.5/","/cr/tempdata01/filip/protons/library_19_19.5.csv"],
+            "18.5_19" : ["/cr/tempdata01/filip/protons/18.5_19/","/cr/tempdata01/filip/protons/library_18.5_19.csv"],
+            "18_18.5" : ["/cr/tempdata01/filip/protons/18_18.5/","/cr/tempdata01/filip/protons/library_18_18.5.csv"],
+            "17.5_18" : ["/cr/tempdata01/filip/protons/17.5_18/","/cr/tempdata01/filip/protons/library_17.5_18.csv"],
+            "17_17.5" : ["/cr/tempdata01/filip/protons/17_17.5/","/cr/tempdata01/filip/protons/library_17_17.5.csv"],
+            "16.5_17" : ["/cr/tempdata01/filip/protons/16.5_17/","/cr/tempdata01/filip/protons/library_16.5_17.csv"],
         }
 
         # get chosen datasets
-        if isinstance(libraries, str):
+        if isinstance(datasets, str):
             try:
-                datasets = list(library_paths[libraries])
+                chosen_datasets = list(libraries[datasets])
             except KeyError:
-                datasets = [*library_paths.values]
-        elif isinstance(libraries, list):
+                chosen_datasets = [*libraries.values()]
+        elif isinstance(datasets, list):
             datasets = []
-            for key in libraries:
+            for key in datasets:
                 try:
-                    datasets.append(library_paths[key])
+                    chosen_datasets.append(libraries[key])
                 except KeyError:
                     print(f"COULDN'T FIND '{key}' IN LIBRARY PATHS")
         else:
@@ -85,13 +85,13 @@ class EventGenerator():
         # split signal files into training / validation
         self.training_files, self.validation_files = [], []
 
-        for dataset in datasets:
-            signal_events = os.listdir(dataset)
+        for dataset in chosen_datasets:
+            signal_events = os.listdir(dataset[0]).remove("root_files/")
             self.training_files.append(signal_events[0 : int( split * len(signal_events))])
             self.validation_files.append(signal_events[int(split * len(signal_events)):-1])
 
-        self.TestingSet = Generator(self.training_files, split, shuffle, bkg_size, bkg_std, bkg_mean, imbalance, pooling)
-        self.ValidationSet = Generator(self.validation_files, -split, shuffle, bkg_size, bkg_std, bkg_mean, imbalance, pooling)
+        self.TestingSet = Generator(self.training_files, split, dataset[1], shuffle, bkg_size, bkg_std, bkg_mean, imbalance, pooling)
+        self.ValidationSet = Generator(self.validation_files, -split, dataset[1], shuffle, bkg_size, bkg_std, bkg_mean, imbalance, pooling)
 
         def __call__(self) -> tuple :
 
@@ -108,7 +108,8 @@ class Generator(tf.keras.utils.Sequence):
         stop =  int( args[0] * len) if args[0] > 0 else -1
 
         # specify dataset architecture
-        self.__files = unique_events[start : stop]
+        self.libraries = args[1]
+        self.files = unique_events[start : stop]
         self.__path_to_dataset_folder = dataset
         self.__shuffle, self.__shape = args[2], args[3]
         self.__std, self.__mean = args[4], args[5]

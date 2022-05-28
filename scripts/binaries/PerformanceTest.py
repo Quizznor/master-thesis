@@ -3,9 +3,8 @@ from EventGenerators import Generator
 from Signal import VEMTrace
 import numpy as np
 import typing
-import time
 
-def lateral_trigger_probability(Classifier : typing.Any, Dataset : Generator) -> tuple :
+def lateral_trigger_probability_distribution(Classifier : typing.Any, Dataset : Generator) -> tuple :
 
     hits, misses = [], []
 
@@ -22,7 +21,7 @@ def lateral_trigger_probability(Classifier : typing.Any, Dataset : Generator) ->
     
     return hits, misses
 
-def energy_trigger_probability(Classifier : typing.Any, Dataset : Generator) -> tuple :
+def energy_trigger_probability_distribution(Classifier : typing.Any, Dataset : Generator) -> tuple :
 
     hits, misses = [], []
 
