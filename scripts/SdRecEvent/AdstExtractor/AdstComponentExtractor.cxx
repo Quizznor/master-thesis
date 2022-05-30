@@ -134,11 +134,8 @@ struct VectorWrapper
 void ExtractDataFromAdstFiles(fs::path pathToAdst)
 {
   fs::path baseWorkingDir = "/cr/tempdata01/filip/protons";
-  const auto eventName = pathToAdst.stem();
   const auto energy = pathToAdst.lexically_relative(baseWorkingDir).remove_filename().parent_path();
-  const auto libraryName = "library_" + energy.string() + ".csv";
   const auto csvTraceFile = pathToAdst.parent_path().parent_path() / pathToAdst.filename().replace_extension("csv");
-  const auto librarySaveDir = csvTraceFile.parent_path().parent_path() / libraryName;
 
   // (2) start main loop
   RecEventFile     recEventFile(pathToAdst.string());
@@ -156,16 +153,8 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
     const SDEvent& sdEvent = recEvent->GetSDEvent();
     const GenShower& genShower = recEvent->GetGenShower();
 
-    // write shower parameters (energy / zenith) into library file
-    const auto showerEnergy = genShower.GetEnergy();                        // in eV
-    const auto showerZenith = genShower.GetZenith() * (180 / 3.14159265);   // in °
-
-    // create library / csv file stream
-    ofstream libraryFile(librarySaveDir.string(), std::ios_base::app);
+    // create csv file stream
     ofstream traceFile(csvTraceFile.string(), std::ios_base::app);
-
-    libraryFile << eventName.string() << " " << showerEnergy << " " << showerZenith << "\n";
-    libraryFile.close();
 
     // loop over all stations
     for (const auto& recStation : sdEvent.GetStationVector()) 
@@ -190,9 +179,13 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
           }
         }
 
-        // save shower plane distance to core and write to disk
-        const auto shower_plane_distance = recStation.GetSPDistance();
-        traceFile << shower_plane_distance << " ";
+        // get true shower parameters (energy / zenith)
+        const auto showerEnergy = genShower.GetEnergy();                        // in eV
+        const auto showerZenith = genShower.GetZenith() * (180 / 3.14159265);   // in °
+        const auto showerPlaneDistance = recStation.GetSPDistance();            // in m
+
+        // write all information to trace file
+        traceFile << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " ";
 
         // "digitize" component trace...
         const auto trace_vector = TotalTrace.convert_to_VEM().get_trace();
@@ -204,7 +197,6 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
         }
 
         traceFile << "\n";
-        
       }
     }
 

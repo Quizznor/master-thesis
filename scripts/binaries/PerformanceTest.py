@@ -25,19 +25,16 @@ def energy_trigger_probability_distribution(Classifier : typing.Any, Dataset : G
 
     hits, misses = [], []
 
-    # TODO link energy to prediction
-
     for batch in range(Dataset.__len__()):
-        event_name = Dataset.__files[batch]
         traces, labels = Dataset.__getitem__(batch, for_training = False)
 
-        # for Trace, label in zip(traces, labels):
-        #     predicted_label = Classifier(Trace)
+        for Trace, label in zip(traces, labels):
+            predicted_label = Classifier(Trace)
 
-        #     if predicted_label == label:
-        #         hits.append(Trace._spdistance)
-        #     else:
-        #         misses.append(Trace._spdistance)
+            if predicted_label == label:
+                hits.append(Trace._energy)
+            else:
+                misses.append(Trace._energy)
     
     return hits, misses
 
