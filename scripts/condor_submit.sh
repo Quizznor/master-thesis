@@ -94,4 +94,4 @@ echo "transfer_input_files  = $(pwd)/$CONDOR_EXECUTABLE,$BINARIES/Classifiers.py
 echo "                                                            " >> $JOB_FOLDER/run_$RUN_NO/file.sub
 echo "queue $CONDOR_QUEUE                                         " >> $JOB_FOLDER/run_$RUN_NO/file.sub
 
-condor_submit $JOB_FOLDER/run_$RUN_NO/file.sub
+# condor_submit $JOB_FOLDER/run_$RUN_NO/file.sub

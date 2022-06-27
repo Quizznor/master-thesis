@@ -20,27 +20,27 @@
     <configLink
       id         = "ModuleSequence"
       type       = "XML"
-      xlink:href = "./ModuleSequence_trigger_all.xml"/>
+      xlink:href = "/cr/users/filip/scripts/BuildSimulation/ModuleSequence_trigger_all.xml"/>
 
     <configLink
       id         = "EventFileReader"
       type       = "XML"
-      xlink:href = "./EventFileReader.xml"/>
+      xlink:href = "/cr/users/filip/scripts/BuildSimulation/EventFileReader.xml"/>
 
     <configLink
       id         = "EventFileExporter"
       type       = "XML"
-      xlink:href = "./EventFileExporter.xml"/>
+      xlink:href = "/cr/users/filip/scripts/BuildSimulation/EventFileExporter.xml"/>
 
     <configLink
       id         = "EventGenerator"
       type       = "XML"
-      xlink:href = "./EventGenerator.xml"/>
+      xlink:href = "/cr/users/filip/scripts/BuildSimulation/EventGenerator.xml"/>
 
    <configLink
        id         = "SStationListXMLManager"
        type       = "XML"
-       xlink:href = "./CustomStationList.xml"/>
+       xlink:href = "/cr/users/filip/scripts/BuildSimulation/CustomStationList.xml"/>
 
   </centralConfig>
 
@@ -53,9 +53,9 @@
           <InputFilenames>
             @INPUTFILE@
           </InputFilenames>
-          <PatternPath> * </PatternPath>
+          <PatternPath> *.part </PatternPath>
           <InputMapping>
-            <GroundData> (1) </GroundData>
+            <GroundData> (1).part </GroundData>
             <ProfileData> (1).long </ProfileData>
           </InputMapping>
         </CORSIKA>

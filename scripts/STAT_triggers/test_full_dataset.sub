@@ -1,17 +1,19 @@
-JobBatchName    = trigger_studies-create_training_data   
-Executable      = /cr/users/filip/scripts/BuildSimulation/RunSimulation/run_simulation.py 
+JobBatchName    = trigger_studies-test_full_dataset
+Executable      = /cr/users/filip/scripts/station_triggers/test_full_dataset.sh
 
-# error           = /cr/users/filip/scripts/BuildSimulation/condor/errors-$(Process).err
-# output          = /cr/users/filip/scripts/BuildSimulation/condor/output-$(Process).log
+error           = /cr/users/filip/scripts/station_triggers/test_full_dataset.err
+output          = /cr/users/filip/scripts/station_triggers/test_full_dataset.log
 
 arguments       = $(Process)   
-request_memory  = 1G
+request_memory  = 5G
 max_idle        = 150
+
+Requirements    = (TARGET.Machine == "crc2.ikp.kit.edu")
                                                             
 should_transfer_files = YES                                 
-transfer_input_files  = ../userAugerOffline, ../ModuleSequence_trigger_all.xml, ../EventFileReader.xml, ../EventFileExporter.xml, ../EventGenerator.xml, ../CustomStationList.xml
+transfer_input_files  = binaries
 
-queue 5153
+queue 1
 
 # PRAGUE LIBRARIES
 # 15_15.5 log E = 4999 Files

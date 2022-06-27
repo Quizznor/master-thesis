@@ -134,8 +134,6 @@ struct VectorWrapper
 
 void ExtractDataFromAdstFiles(fs::path pathToAdst)
 {
-  fs::path baseWorkingDir = "/cr/tempdata01/filip/protons";
-  const auto energy = pathToAdst.lexically_relative(baseWorkingDir).remove_filename().parent_path();
   const auto csvTraceFile = pathToAdst.parent_path().parent_path() / pathToAdst.filename().replace_extension("csv");
 
   // (2) start main loop
@@ -151,15 +149,27 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
     if (recEventFile.ReadEvent(i) != RecEventFile::eSuccess){continue;}
 
     // allocate memory for data
-    const SDEvent& sdEvent = recEvent->GetSDEvent();
-    const GenShower& genShower = recEvent->GetGenShower();
+    const SDEvent& sdEvent = recEvent->GetSDEvent();                              // contains the traces
+    const GenShower& genShower = recEvent->GetGenShower();                        // contains the shower
+  
+    DetectorGeometry detectorGeometry = DetectorGeometry();                       // contains SPDistance
+    recEventFile.ReadDetectorGeometry(detectorGeometry);
 
+    // binaries to calculate shower plane distance
+    const auto showerAxis = genShower.GetAxisSiteCS();
+    const auto showerCore = genShower.GetCoreSiteCS();
+    
     // create csv file stream
     ofstream traceFile(csvTraceFile.string(), std::ios_base::app);
 
     // loop over all stations
     for (const auto& recStation : sdEvent.GetStationVector()) 
     {
+
+      // calculate shower plane distance from generated shower parameters
+      const auto stationID = recStation.GetId();
+      const auto showerPlaneDistance = detectorGeometry.GetStationAxisDistance(stationID, showerAxis, showerCore);
+
       // loop over all PMTs
       for (unsigned int PMT = 1; PMT < 4; PMT++)
       {
@@ -184,10 +194,10 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
         // get true shower parameters (energy / zenith / spdistance)
         const auto showerEnergy = genShower.GetEnergy();                        // in eV
         const auto showerZenith = genShower.GetZenith() * (180 / 3.141593);     // in °
-        const auto showerPlaneDistance = recStation.GetSPDistance();            // in m
+        // const auto showerPlaneDistance = recStation.GetSPDistance();            // in m
 
         // write all information to trace file
-        traceFile << recStation.GetId() << " " << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " ";
+        traceFile << stationID << " " << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " ";
 
         // "digitize" component trace...
         const auto trace_vector = TotalTrace.convert_to_VEM().get_trace();
