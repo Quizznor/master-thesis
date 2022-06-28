@@ -34,9 +34,9 @@ class NNClassifier():
         self.model.compile(loss = 'categorical_crossentropy', optimizer = 'adam', metrics = 'accuracy', run_eagerly = True)
         print(self)
 
-    def train(self, DataSet : EventGenerator, epochs : int, **kwargs) -> typing.NoReturn :
+    def train(self, DataSets : tuple, epochs : int, **kwargs) -> typing.NoReturn :
         
-        TrainingSet, ValidationSet = DataSet()
+        TrainingSet, ValidationSet = DataSets
         self.model.fit(TrainingSet, validation_data = ValidationSet, epochs = epochs, verbose = 2)
         self.epochs += epochs
 
@@ -53,6 +53,11 @@ class NNClassifier():
     def __str__(self) -> str :
         self.model.summary()
         return ""
+
+    def convert_to_C(self, save_file : str) -> typing.NoReturn :
+
+        # TODO
+        pass
     
     ### Library functions to add layers ################
     def add_input(self, **kwargs) -> typing.NoReturn :

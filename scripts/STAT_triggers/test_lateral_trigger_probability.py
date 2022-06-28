@@ -1,4 +1,5 @@
 # builtin modules
+from multiprocessing import Event
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -7,35 +8,45 @@ plt.rcParams.update({'font.size': 22})
 # custom modules
 from binaries.Classifiers import NNClassifier, TriggerClassifier
 from binaries.EventGenerators import EventGenerator
-from binaries.PerformanceTest import lateral_trigger_probability_distribution, lateral_trigger_profile_plot
+from binaries.PerformanceTest import trigger_probability_distribution, profile_plot
 
-Classifier = NNClassifier("/cr/data01/filip/all_traces_model/model_1")
 # Classifier = TriggerClassifier()
+# hits, misses = trigger_probability_distribution(Classifier, "all", split = 0.8)
+# np.savetxt(f"/cr/data01/filip/trigger_probabilities/all_hits_old_triggers.txt", np.array(hits))
+# np.savetxt(f"/cr/data01/filip/trigger_probabilities/all_misses_old_triggers.txt", np.array(misses))
+
+# Classifier = NNClassifier("/cr/data01/filip/all_traces_model_high_noise/model_2")
+hits_NN, misses_NN = [], []
 
 colors = ["steelblue", "orange", "green", "red", "brown"]
-for i, sets in enumerate(["17_17.5", "17.5_18", "18_18.5", "18.5_19", "19_19.5"]):
+for i, sets in enumerate(["16_16.5", "16.5_17","17_17.5", "17.5_18", "18_18.5", "18.5_19", "19_19.5"]):
 
-#     # # create datasets
-#     # hits, misses = lateral_trigger_probability_distribution(Classifier, sets, split = 0.8)
-#     # np.savetxt(f"/cr/data01/filip/lateral_trigger_probability/all_traces_model_1/val_hits_{sets}.txt", np.array(hits))
-#     # np.savetxt(f"/cr/data01/filip/lateral_trigger_probability/all_traces_model_1/val_misses_{sets}.txt", np.array(misses))
+    # _, Dataset = EventGenerator(sets, split = 0.8, prior = 1, sigma = 2, mu = [-2, 2])
+
+#     # create datasets
+#     hits, misses = trigger_probability_distribution(Classifier, Dataset)
+#     np.savetxt(f"/cr/data01/filip/trigger_probabilities/all_traces_model_2/val_hits_{sets}_high_noise.txt", np.array(hits))
+#     np.savetxt(f"/cr/data01/filip/trigger_probabilities/all_traces_model_2/val_misses_{sets}_high_noise.txt", np.array(misses))
 
     # load and show datasets
-    hits_NN = np.loadtxt(f"/cr/data01/filip/lateral_trigger_probability/all_traces_model_1/val_hits_{sets}.txt")
-    misses_NN = np.loadtxt(f"/cr/data01/filip/lateral_trigger_probability/all_traces_model_1/val_misses_{sets}.txt")
-    lateral_trigger_profile_plot(hits_NN, misses_NN, 28, f"log E {sets}", colors[i])
+    _, hits, _, _ = np.loadtxt(f"/cr/data01/filip/trigger_probabilities/all_traces_model_2/val_hits_{sets}_high_noise.txt", unpack = True)
+    _, misses, _, _ = np.loadtxt(f"/cr/data01/filip/trigger_probabilities/all_traces_model_2/val_misses_{sets}_high_noise.txt", unpack = True)
+    hits_NN.append(hits), misses_NN.append(misses)
 
-# hits_OLD = np.loadtxt("/cr/data01/filip/lateral_trigger_probability/all_traces_old_triggers_hits.txt")
-# misses_OLD = np.loadtxt("/cr/data01/filip/lateral_trigger_probability/all_traces_old_triggers_misses.txt")
-# lateral_trigger_profile_plot(hits_OLD, misses_OLD, 38, "Current triggers", color = "orange")
+_, hits_OLD, _, _ = np.loadtxt("/cr/data01/filip/trigger_probabilities/old_triggers_hits_high_noise.txt", unpack = True)
+_, misses_OLD, _, _ = np.loadtxt("/cr/data01/filip/trigger_probabilities/old_triggers_misses_high_noise.txt", unpack = True)
+profile_plot(np.concatenate(hits_NN), np.concatenate(misses_NN), 38, "CNN triggers", color = "steelblue")
+profile_plot(hits_OLD, misses_OLD, 38, "Current triggers", color = "orange")
 
-# hits_NN = np.loadtxt("/cr/data01/filip/lateral_trigger_probability/all_traces_model_1/all_val_hits.txt")
-# misses_NN = np.loadtxt("/cr/data01/filip/lateral_trigger_probability/all_traces_model_1/all_val_misses.txt")
-# lateral_trigger_profile_plot(hits_NN, misses_NN, 38, "CNN triggers", color = "steelblue")
+# Classifier = TriggerClassifier()
+# Dataset = EventGenerator("all", split = 1, prior = 1, sigma = 2, mu = [-2, 2])
+# hits, misses = trigger_probability_distribution(Classifier, Dataset)
+# np.savetxt(f"/cr/data01/filip/trigger_probabilities/old_triggers_hits_high_noise.txt", np.array(hits))
+# np.savetxt(f"/cr/data01/filip/trigger_probabilities/old_triggers_misses_high_noise.txt", np.array(misses))
 
-# plt.title("Lateral trigger probability by energy")
+plt.title("Lateral trigger probability by energy")
 plt.xlabel("Shower plane distance / m")
 plt.ylabel("Trigger probability")
-plt.ylim(0.8, 1.05)
+# plt.ylim(0.8, 1.05)
 plt.legend()
 plt.show()

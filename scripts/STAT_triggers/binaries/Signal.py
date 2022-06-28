@@ -106,3 +106,6 @@ class VEMTrace():
                 return dict[key]
         except KeyError:
             return fallback
+
+    def integrate(self) -> float : 
+        return np.mean(np.sum([self.pmt_1, self.pmt_2, self.pmt_3], axis = 1))

@@ -2,7 +2,6 @@
 from binaries.Classifiers import NNClassifier
 from binaries.EventGenerators import EventGenerator
 
-
 def __setup__(cls : NNClassifier):
 
     def add(layer : str, **kwargs):
@@ -20,7 +19,7 @@ def __setup__(cls : NNClassifier):
     add("Output", units = 2, activation = "softmax")
 
 # # Minimal model setup + training
-MinimalModel = NNClassifier("/cr/data01/filip/all_traces_model/model_1")
-DataGenerator = EventGenerator("all")
-MinimalModel.train(DataGenerator, 1)
-MinimalModel.save("all_traces_model/")
+MinimalModel = NNClassifier(__setup__)
+DataGenerator = EventGenerator("all", sigma = 2, mu = [-2,2])
+MinimalModel.train(DataGenerator, 2)
+MinimalModel.save("all_traces_model_high_noise/")

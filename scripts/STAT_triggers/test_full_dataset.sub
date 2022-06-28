@@ -1,8 +1,8 @@
 JobBatchName    = trigger_studies-test_full_dataset
-Executable      = /cr/users/filip/scripts/station_triggers/test_full_dataset.sh
+Executable      = /cr/users/filip/scripts/STAT_triggers/test_full_dataset.sh
 
-error           = /cr/users/filip/scripts/station_triggers/test_full_dataset.err
-output          = /cr/users/filip/scripts/station_triggers/test_full_dataset.log
+error           = /cr/users/filip/scripts/STAT_triggers/test_full_dataset_high_noise.err
+output          = /cr/users/filip/scripts/STAT_triggers/test_full_dataset_high_noise.log
 
 arguments       = $(Process)   
 request_memory  = 5G

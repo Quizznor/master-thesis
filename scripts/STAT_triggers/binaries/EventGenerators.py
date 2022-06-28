@@ -42,14 +42,19 @@ class Generator(tf.keras.utils.Sequence):
     # one batch of data == one event (with multiple stations, PMTs)
     def __getitem__(self, index : int, for_training : bool = True) -> tuple :
 
-        event_file = self.files[index]                                          # the even file from which to fetch data from
         grouped_events = []                                                     # [[trace1, label1], [trace2, label2], .... ]
         background_proxies = 2                                                  # number of background traces raised for empty file
 
-        # check if the signal file is not empty first and foremost
-        signals = np.loadtxt(event_file)                                        # get vem trace data
-
         try:
+            if self.prior == 0:
+                raise ZeroDivisionError                                         # if self.prior = 0 only background traces should be raised
+            else:
+                event_file = self.files[index]                                  # the even file from which to fetch data from
+
+            # check if the signal file is not empty first and foremost
+            signals = np.loadtxt(event_file)                                    # get vem trace data
+
+        
             signals = np.split(signals, len(signals) / 3 )                      # group them by station (since there are 3 PMTs)
 
             # create and add all signal events to batch first
@@ -96,7 +101,7 @@ class EventGenerator():
     Pooling = True                                                              # whether or not to (max- ) pool trace data
     Split   =  0.8                                                              # Ratio of the training / validation events
     Seed    = False                                                             # make RNG dice rolls reproducible via seed
-    Prior   = 0.5                                                               # Size imbalance between signal/backgrounds
+    Prior   = 0.5                                                               # Probability of a signal event in the data
 
     # dict for easier adding of different data libraries
     libraries = {
@@ -165,7 +170,7 @@ class EventGenerator():
         # shuffle different libraries with each other
         self.training_files = np.concatenate(self.training_files)
         self.validation_files = np.concatenate(self.validation_files)
-        random.shuffle(self.training_files.flatten()), random.shuffle(self.validation_files)
+        random.shuffle(self.training_files), random.shuffle(self.validation_files)
 
         generator_options = [self.Pooling, self.Prior, ADC_to_VEM_factor, trace_length, baseline_std, baseline_mean]
 
