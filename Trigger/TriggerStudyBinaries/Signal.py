@@ -123,24 +123,28 @@ class VEMTrace():
 
 
     # return a label and sector of the whole trace, specify window length and starting position
-    def get_trace_window(self, start_bin : int, window_length : int) -> tuple :
+    def get_trace_window(self, start_bin : int, window_length : int, no_label : bool = False) -> tuple :
 
         assert start_bin + window_length <= self.trace_length, "trace sector exceeds the whole trace length"
 
         start_at, stop_at = start_bin, start_bin + window_length
         cut = lambda array : array[start_at : stop_at]
-        label = 0
 
-        # check whether signal is in the given window frame
-        try:
-            for index in range(start_at, stop_at):
-                if self._sig_injected_at <= index <= self._sig_stopped_at:
-                    label = 1; break
-
-        except AttributeError:
+        if no_label:
+            return np.array([cut(self.pmt_1), cut(self.pmt_2), cut(self.pmt_3)])
+        else:
             label = 0
 
-        return label, np.array([cut(self.pmt_1), cut(self.pmt_2), cut(self.pmt_3)])
+            # check whether signal is in the given window frame
+            try:
+                for index in range(start_at, stop_at):
+                    if self._sig_injected_at <= index <= self._sig_stopped_at:
+                        label = 1; break
+
+            except AttributeError:
+                label = 0
+
+            return label, np.array([cut(self.pmt_1), cut(self.pmt_2), cut(self.pmt_3)])
 
     # return the number of bins containing a (signal, background) of a given window
     def get_n_signal_background_bins(self, index : int, window_length : int) -> tuple : 

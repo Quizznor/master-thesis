@@ -47,7 +47,7 @@ class Generator(tf.keras.utils.Sequence):
             with open(event_file, "r") as file:
                 t = [[float(x) for x in line.split()] for line in file.readlines()]
 
-            for j, station in enumerate([np.array([t[i],t[i+1],t[i+2]]) for i in range(0,len(t),3)]):
+            for station in [np.array([t[i],t[i+1],t[i+2]]) for i in range(0,len(t),3)]:
 
                 Trace = VEMTrace(station, n_bins = self.trace_length, sigma = self.baseline_std, mu = self.baseline_mean, force_inject = self.n_injected)
 
@@ -56,19 +56,15 @@ class Generator(tf.keras.utils.Sequence):
                         label, pmt_data = Trace.get_trace_window(i, self.window_length)
                         labels.append(self.labels[label]), traces.append(pmt_data)
 
-                        print(label, i, i + self.window_length)
-
                         if label: self._signals += 1                            # for bookkeeping purposes when training a model
                         else: self._backgrounds += 1
 
-                    raise StopIteration
                 else:
                     labels.append(self.labels[1]), traces.append(Trace)
 
         except ZeroDivisionError:
 
             Trace = VEMTrace(n_bins = self.trace_length, sigma = self.baseline_std, mu = self.baseline_mean, force_inject = self.n_injected)
-            start, stop = self.get_relevant_trace_window(Trace)
 
             if reduce:
                 for i in range(0, self.trace_length - self.window_length, self.window_step):
@@ -79,10 +75,6 @@ class Generator(tf.keras.utils.Sequence):
                 labels.append(self.labels[1]), traces.append(Trace)        
 
         finally:
-            
-            print("")
-            print("signals",self._signals)
-            print("bkg", self._backgrounds)
             return np.array(traces), np.array(labels)
 
     # returns the number of batches per epoch
@@ -97,14 +89,8 @@ class Generator(tf.keras.utils.Sequence):
         start = int(Trace._sig_injected_at - ( n_bkg / 2 * 10 + (self.window_length - 1)))
         stop = int(Trace._sig_stopped_at + ( n_bkg / 2 * 10))
         
-        if stop > Trace.trace_length: stop = Trace.trace_length
+        if stop > Trace.trace_length: stop = Trace.trace_length - self.window_length
         if start < 0: start = 0
-
-        print("signal", Trace._sig_injected_at, Trace._sig_stopped_at, Trace._sig_stopped_at - Trace._sig_injected_at)
-        print("window",start, stop)
-        print(n_bkg)
-        print("")
-
 
         return start, stop
 

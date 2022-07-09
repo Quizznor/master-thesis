@@ -14,45 +14,69 @@ Estimator = typing.Union[TriggerClassifier, NNClassifier]
 class TriggerProbabilityDistribution():
 
     @staticmethod
+    # something goes wrong with the first prediction string
     def build_dataset(Classifier : Estimator, Dataset : Generator, save_path : str) -> typing.NoReturn :
 
-        os.makedirs(f"/cr/data01/filip/ROC_curves/{save_path}", exist_ok = True)
+        with open(f"/cr/data01/filip/ROC_curves/{save_path}.txt","w") as predictions:
+            predictions.write(f"# E/eV sig/VEM SPD theta/° (LBL,n_sig,n_bkg)...\n")
 
-        with open(f"/cr/data01/filip/ROC_curves/{save_path}/hits.txt","w") as hits:
-            hits.write(f"LBL\tn_sig\tn_bkg\tE (eV)\tsig (VEM)\tSPD\ttheta (°)\n")
+            for batch in range(Dataset.__len__()):
+                traces, _ = Dataset.__getitem__(batch, reduce = False)
 
-        with open(f"/cr/data01/filip/ROC_curves/{save_path}/misses.txt","w") as misses:
-            misses.write(f"LBL\tn_sig\tn_bkg\tE (eV)\tsig (VEM)\tSPD\ttheta (°)\n")
+                print(f"Fetching batch {batch + 1}/{Dataset.__len__()}: {100 * (batch/Dataset.__len__()):.2f}%", end = "...\r")
 
-        for batch in range(Dataset.__len__()):
-            traces, _ = Dataset.__getitem__(batch, reduce = False)
+                for Trace in traces:
 
-            print(f"Fetching batch {batch + 1}/{Dataset.__len__()}: {100 * (batch/Dataset.__len__()):.2f}%", end = "...\r")
-
-            for Trace in traces:
-
-                # ignore mock background traces
-                if Trace.SPDistance == -1:
-                    continue
-
-                for i in range(0, Trace.trace_length - EventGenerator.Window, EventGenerator.Step):
-                    
-                    n_sig, n_bkg = Trace.get_n_signal_background_bins(i, EventGenerator.Window)
-
-                    # continue only if trace does not (only) contain baseline
-                    if n_sig == n_bkg == 0:
+                    # ignore mock background traces
+                    if Trace.SPDistance == -1:
                         continue
 
-                    label, pmt_data = Trace.get_trace_window(i, EventGenerator.Window)
-                    predicted_label = Classifier.model.predict(tf.expand_dims([pmt_data], axis = -1)).argmax()
-                    save_string = f"{label}\t{n_sig}\t{n_bkg}\t{Trace.Energy}\t{Trace.integrate()}\t{Trace.SPDistance}\t{Trace.Zenith}\n"
+                    save_string = f"{Trace.Energy}\t{Trace.integrate()}\t{Trace.SPDistance}\t{Trace.Zenith} "
 
-                    if predicted_label == label:
-                        with open(f"/cr/data01/filip/ROC_curves/{save_path}/hits.txt","a") as hits:
-                            hits.write(save_string)
-                    else:
-                        with open(f"/cr/data01/filip/ROC_curves/{save_path}/misses.txt","a") as misses:
-                            misses.write(save_string)
+                    # gather interesting regions
+                    padding = Dataset.window_length + np.random.randint(1,9)
+                    interesting_regions = [[Trace._sig_injected_at - padding],[Trace._sig_stopped_at]]
+
+                    try:
+                        for start, stop in zip(Trace._bkg_injected_at, Trace._bkg_stopped_at):
+                            interesting_regions[0].append(start - padding)
+                            interesting_regions[1].append(stop)
+                    except AttributeError:
+                        pass
+
+                    for start, stop in zip(*interesting_regions):
+
+                        if stop + Dataset.window_length > Trace.trace_length: continue
+                        if start < 0: continue
+
+                        for i in range(start, stop, Dataset.window_step):
+
+                            n_sig, n_bkg = Trace.get_n_signal_background_bins(i, Dataset.window_length)
+                            pmt_data = Trace.get_trace_window(i, Dataset.window_length, no_label = True)
+                            predicted_label = Classifier.model.predict(tf.expand_dims([pmt_data], axis = -1)).argmax()
+                            save_string += f"({predicted_label},{n_sig},{n_bkg}) "
+
+                    if save_string != f"{Trace.Energy}\t{Trace.integrate()}\t{Trace.SPDistance}\t{Trace.Zenith} ":
+                        with open(f"/cr/data01/filip/ROC_curves/{save_path}.txt","a") as hits:
+                            hits.write(save_string+"\n")
+
+    @staticmethod
+    def profile_plot(file_path : str) -> typing.NoReturn : 
+
+        def convert_string(string : str) -> list :
+
+            by_column = string.split()
+            
+            for i, entry in enumerate(by_column):
+                if i < 4:
+                    by_column[i] = float(entry)
+                else:
+                    by_column[i] = tuple(map(int, entry[1:-1].split(',')))
+
+            return by_column
+
+        with open(file_path, "r") as input:
+            data_by_line = [convert_string(line) for line in input.readlines()[1:]]
 
 # def profile_plot(hits : np.ndarray, misses : np.ndarray, n_bins : int, label : str, color : str) -> typing.NoReturn :
 

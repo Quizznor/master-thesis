@@ -3,6 +3,8 @@ from TriggerStudyBinaries.Classifier import TriggerClassifier, NNClassifier
 from TriggerStudyBinaries.Generator import EventGenerator, Generator
 from TriggerStudyBinaries.Signal import VEMTrace, Background
 
-Classifier = NNClassifier(NNClassifier.__minimal_conv2d__)
-Events = EventGenerator("all", split = 1, prior = 1)
-TriggerProbabilityDistribution.build_dataset(Classifier, Events, "mock_model")
+# Classifier = NNClassifier("mock_model_all/model_3")
+# Trainingset, Testingset = EventGenerator("all", prior = 1)
+# TriggerProbabilityDistribution.build_dataset(Classifier, Testingset, "mock_model_val_3")
+
+TriggerProbabilityDistribution.profile_plot("/cr/data01/filip/ROC_curves/mock_model_val_3.txt")
