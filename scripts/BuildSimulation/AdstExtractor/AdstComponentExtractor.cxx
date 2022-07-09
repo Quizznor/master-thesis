@@ -125,9 +125,10 @@ struct VectorWrapper
     return VectorWrapper(sum_of_both_vectors);
   }
 
-  vector<float> get_trace()
+  vector<float> get_trace(int start, int end)
   {
-    return values;
+    const auto trace = std::vector<float>(values.begin() + start, values.begin() + end);
+    return trace;
   }
 
 };
@@ -200,7 +201,10 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
         traceFile << stationID << " " << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " ";
 
         // "digitize" component trace...
-        const auto trace_vector = TotalTrace.convert_to_VEM().get_trace();
+        // this used to be converted to VEM
+        const auto signal_start = recStation.GetSignalStartSlot();
+        const auto signal_end = recStation.GetSignalEndSlot();
+        const auto trace_vector = TotalTrace.get_trace(signal_start, signal_end);
 
         // ... and write to disk
         for (const auto& bin : trace_vector)

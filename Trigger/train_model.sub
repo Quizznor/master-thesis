@@ -1,0 +1,16 @@
+JobBatchName    = machine_learning_trigger_studies-train_model
+Executable      = /cr/users/filip/Trigger/train_model.sh
+
+error           = /cr/users/filip/Trigger/condor_output/errors.err
+output          = /cr/users/filip/Trigger/condor_output/output.log
+
+arguments       = $(Process)   
+request_memory  = 5G
+max_idle        = 150
+
+Requirements    = (TARGET.Machine == "crc2.ikp.kit.edu")
+                                                            
+should_transfer_files = YES                                 
+transfer_input_files  = TriggerStudyBinaries
+
+queue 1

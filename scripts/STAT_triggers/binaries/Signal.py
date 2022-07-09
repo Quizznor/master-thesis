@@ -1,6 +1,6 @@
-import tensorflow as tf
 import numpy as np
 import typing
+import sys
 
 # Event wrapper for measurements of a SINGLE tank with 3 PMTs
 class VEMTrace():
@@ -47,6 +47,9 @@ class VEMTrace():
         self.pmt_2 = np.random.normal(self.baseline_mean, self.baseline_std, self.trace_length)
         self.pmt_3 = np.random.normal(self.baseline_mean, self.baseline_std, self.trace_length)
 
+        # Accidentally inject background particles
+        # TODO
+
         # Add a signal on top of baseline
         if trace_data is not None:
 
@@ -60,27 +63,29 @@ class VEMTrace():
             sp_distances = set(trace_data[:,1])
             energies = set(trace_data[:,2])
             zeniths = set(trace_data[:,3])
-            pmt_data = trace_data[:,4:]
 
             # assert that metadata looks the same for all three PMTs
             for metadata in [station_ids, sp_distances, energies, zeniths]:
                 if len(metadata) != 1:
-                    raise ValueError
+                    raise ValueError("Metadata between PMTs doesn't match")
 
-            self.StationID = next(iter(station_ids))
-            self.SPDistance = next(iter(sp_distances))
-            self.Energy = next(iter(energies))
-            self.Zenith = next(iter(zeniths))
+            self.StationID = next(iter(station_ids))                            # the ID of the station in question
+            self.SPDistance = next(iter(sp_distances))                          # the distance from the shower core
+            self.Energy = next(iter(energies))                                  # energy of the shower of this signal
+            self.Zenith = next(iter(zeniths))                                   # zenith of the shower of this signal
+
+            # TODO: Is this order of operations the right way?
+            self.Signal = self.convert_to_VEM(np.array(trace_data[:,4:]))       # container the data measured by the pmts
 
             # superimpose signal data on top of baseline at a random position
-            if self.baseline_length < pmt_data.shape[1]:
-                raise ValueError
+            if self.baseline_length < self.Signal.shape[1]:
+                raise ValueError("Signal does not fit into baseline!")
 
-            signal_start = np.random.randint(-self.trace_length, -pmt_data.shape[1])
+            signal_start = np.random.randint(-self.trace_length, -self.Signal.shape[1])
 
-            self.pmt_1[signal_start : signal_start + pmt_data.shape[1]] += pmt_data[0]
-            self.pmt_2[signal_start : signal_start + pmt_data.shape[1]] += pmt_data[1]
-            self.pmt_3[signal_start : signal_start + pmt_data.shape[1]] += pmt_data[2]
+            self.pmt_1[signal_start : signal_start + self.Signal.shape[1]] += self.Signal[0]
+            self.pmt_2[signal_start : signal_start + self.Signal.shape[1]] += self.Signal[1]
+            self.pmt_3[signal_start : signal_start + self.Signal.shape[1]] += self.Signal[2]
 
     # getter for easier handling of PMT data
     def __call__(self, pooling : bool = True, reduce : bool = True) -> np.ndarray :
@@ -107,5 +112,41 @@ class VEMTrace():
         except KeyError:
             return fallback
 
+    def convert_to_VEM(self, signal : np.ndarray) -> np.ndarray :
+
+        signal_VEM = []
+
+        for pmt in signal:
+            signal_VEM.append(np.floor(pmt) / self.ADC_to_VEM_factor)
+
+        return np.array(signal_VEM)
+
+    def get_signal(self) -> tuple : 
+        if self.signal is not None:
+            return self.signal
+        else:
+            raise AttributeError("VEM trace does not have a signal")
+
     def integrate(self) -> float : 
         return np.mean(np.sum([self.pmt_1, self.pmt_2, self.pmt_3], axis = 1))
+
+    def plot(self) -> typing.NoReturn :
+
+        if "matplotlib.pyplot" not in sys.modules:
+            import matplotlib.pyplot as plt
+            plt.rcParams.update({'font.size': 22})
+
+        ax1 = plt.subplot2grid((3,1),(0,0))
+        ax2, ax3 = [plt.subplot2grid((3,1),(i,0), sharex = ax1, sharey = ax1) for i in range(1,3)]
+
+        ax1.plot(range(self.trace_length), self.pmt_1)
+        ax2.plot(range(self.trace_length), self.pmt_3)
+        ax3.plot(range(self.trace_length), self.pmt_3)
+
+        ax1.set_xlim(0,self.trace_length)
+        ax1.set_xlabel("Time bin / 8.3 ns")
+        ax1.set_ylabel("PMT #1 / VEM")
+        ax2.set_ylabel("PMT #2 / VEM")
+        ax3.set_ylabel("PMT #3 / VEM")
+
+        plt.show()

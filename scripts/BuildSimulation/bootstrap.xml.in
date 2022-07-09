@@ -42,6 +42,11 @@
        type       = "XML"
        xlink:href = "/cr/users/filip/scripts/BuildSimulation/CustomStationList.xml"/>
 
+   <configLink
+       id         = "SDenseStationListXMLManager"
+       type       = "XML"
+       xlink:href = '/cr/users/filip/scripts/BuildSimulation/SDenseStations_purged.xml'/>
+
   </centralConfig>
 
   <parameterOverrides>
@@ -53,9 +58,13 @@
           <InputFilenames>
             @INPUTFILE@
           </InputFilenames>
-          <PatternPath> *.part </PatternPath>
+          <PatternPath> 
+            @PATTERNPATH@ 
+          </PatternPath>
           <InputMapping>
-            <GroundData> (1).part </GroundData>
+            <GroundData> 
+              @GROUNDDATA@ 
+            </GroundData>
             <ProfileData> (1).long </ProfileData>
           </InputMapping>
         </CORSIKA>
@@ -106,8 +115,12 @@
 
     <configLink id="RandomEngineRegistry">
       <RandomEngineRegistry>
-        <DetectorSeed> 000001 </DetectorSeed>
-        <PhysicsSeed> 000002 </PhysicsSeed>
+        <DetectorSeed> 
+        @DETECTORSEED@
+        </DetectorSeed>
+        <PhysicsSeed> 
+        @PHYSICSSEED@
+        </PhysicsSeed>
       </RandomEngineRegistry>
     </configLink>
 

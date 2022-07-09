@@ -105,13 +105,15 @@ class EventGenerator():
 
     # dict for easier adding of different data libraries
     libraries = {
-        "19_19.5" : "/cr/tempdata01/filip/QGSJET-II/protons/19_19.5/",
-        "18.5_19" : "/cr/tempdata01/filip/QGSJET-II/protons/18.5_19/",
-        "18_18.5" : "/cr/tempdata01/filip/QGSJET-II/protons/18_18.5/",
-        "17.5_18" : "/cr/tempdata01/filip/QGSJET-II/protons/17.5_18/",
-        "17_17.5" : "/cr/tempdata01/filip/QGSJET-II/protons/17_17.5/",
-        "16.5_17" : "/cr/tempdata01/filip/QGSJET-II/protons/16.5_17/",
-        "16_16.5" : "/cr/tempdata01/filip/QGSJET-II/protons/16_16.5/"
+        # "20_20.2" : "/cr/tempdata01/filip/QGSJET-II/protons/20_20.2/",
+        "19.5_20" : "/cr/tempdata01/filip/VEM/QGSJET-II/protons/19.5_20/",
+        "19_19.5" : "/cr/tempdata01/filip/VEM/QGSJET-II/protons/19_19.5/",
+        "18.5_19" : "/cr/tempdata01/filip/VEM/QGSJET-II/protons/18.5_19/",
+        "18_18.5" : "/cr/tempdata01/filip/VEM/QGSJET-II/protons/18_18.5/",
+        "17.5_18" : "/cr/tempdata01/filip/VEM/QGSJET-II/protons/17.5_18/",
+        "17_17.5" : "/cr/tempdata01/filip/VEM/QGSJET-II/protons/17_17.5/",
+        "16.5_17" : "/cr/tempdata01/filip/VEM/QGSJET-II/protons/16.5_17/",
+        "16_16.5" : "/cr/tempdata01/filip/VEM/QGSJET-II/protons/16_16.5/"
     }
 
     def __new__(self, datasets : typing.Union[list, str], **kwargs) -> typing.Union[tuple, Generator] :
@@ -179,7 +181,7 @@ class EventGenerator():
             ValidationSet = Generator(self.validation_files, generator_options)
             return TrainingSet, ValidationSet
         else:
-            return Generator(np.concatenate([self.training_files, self.validation_files]), generator_options)
+            return Generator(np.array(np.concatenate([self.training_files, self.validation_files])), generator_options)
 
     # helper function for easier handling of kwargs upon initialization
     def set_generator_attribute(self, dict, key, fallback):

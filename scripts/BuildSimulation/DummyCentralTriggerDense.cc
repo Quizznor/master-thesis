@@ -61,15 +61,6 @@ DummyCentralTriggerDense::Run(evt::Event & event)
     return eContinueLoop;
   const ShowerSimData& simShower = event.GetSimShower();
 
-  // Sufficient if we trigger all station except for dense!
-  // std::vector<int> SelectedStations{
-  //         5482, 5483, 5484,
-  //      5439, 5440, 5441, 5442,
-  //   5396, 5397, 5398, 5399, 5400,
-  //      5354, 5355, 5356, 5357,
-  //         5313, 5314, 5315,
-  // };
-
   T3 simT3;
   TimeStamp trigTime = simShower.GetTimeStamp();
   simT3.SetTime(trigTime);
@@ -87,6 +78,15 @@ DummyCentralTriggerDense::Run(evt::Event & event)
   const SDetector& sDetector = det::Detector::GetInstance().GetSDetector();
   for (sdet::SDetector::StationIterator sIt = sDetector.StationsBegin();
        sIt != sDetector.StationsEnd(); ++sIt) {
+
+    // Sufficient if we trigger all station except for dense!
+    // std::vector<int> SelectedStations{
+    //         5482, 5483, 5484,
+    //      5439, 5440, 5441, 5442,
+    //   5396, 5397, 5398, 5399, 5400,
+    //      5354, 5355, 5356, 5357,
+    //         5313, 5314, 5315,
+    // };
 
     // // Trigger everything but dense stations         
     if (!(sIt->IsDense())) 

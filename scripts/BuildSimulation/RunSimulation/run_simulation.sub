@@ -11,7 +11,7 @@ max_idle        = 150
 should_transfer_files = YES                                 
 transfer_input_files  = ../userAugerOffline, ../ModuleSequence_trigger_all.xml, ../EventFileReader.xml, ../EventFileExporter.xml, ../EventGenerator.xml, ../CustomStationList.xml
 
-queue 5153
+queue 5200
 
 # PRAGUE LIBRARIES
 # 15_15.5 log E = 4999 Files
