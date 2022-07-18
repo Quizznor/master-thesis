@@ -21,7 +21,8 @@ class VEMTrace():
     ADC_to_VEM_factor = 215.9                                                   # from David's Mail @ 7.06.22 3:30 pm
     trace_length = 2048                                                         # 1 Bin = 8.3 ns, 2048 Bins = ~17. µs
     baseline_std = 2                                                            # two FAD counts, NOT converted here!
-    baseline_mean = [-2, 2]                                                     # same goes for (the limits) of means
+    baseline_limits = [-2, 2]                                                   # same goes for (the limits) of means
+    baseline_mean = 0                                                           # not set here, actual baseline value                                                                   
 
     # metadata regarding shower origin, energy and so on
     StationID  = -1                                                             # set all these values to nonsensical
@@ -41,17 +42,19 @@ class VEMTrace():
             * *n_bins* (``int``) -- generate a baseline with <trace_length> bins
             * *force_inject* (``int``) -- force the injection of <force_inject> pbackground particles
             * *sigma* (``float``) -- baseline std in ADC counts
-            * *mu* (``list``) -- mean ADC level limit [low, high] in ADC counts
+            * *mu_lim* (``list``) -- mean ADC level limit [low, high] in ADC counts)
+            * *mu* (``float``) -- the actual value of the trace background baseline
 
         Initialization fails if metadata doesn't match for the different PMTs
         or the baseline length is too short. In both cases a ValueError is raised 
         '''
 
         # Change VEM trace defaults (if desired)
-        self.ADC_to_VEM_factor = self.set_trace_attribute(kwargs, "ADC_to_VEM", VEMTrace.ADC_to_VEM_factor)
-        self.trace_length = self.set_trace_attribute(kwargs, "n_bins", VEMTrace.trace_length)
-        self.baseline_std = self.set_trace_attribute(kwargs, "sigma", VEMTrace.baseline_std)
-        self.baseline_mean = self.set_trace_attribute(kwargs, "mu", np.random.uniform(*VEMTrace.baseline_mean))
+        self.ADC_to_VEM_factor = kwargs.get("ADC_to_VEM", VEMTrace.ADC_to_VEM_factor)
+        self.trace_length = kwargs.get("n_bins", VEMTrace.trace_length)
+        self.baseline_limits = kwargs.get("mu_lim", VEMTrace.baseline_limits)
+        self.baseline_mean = kwargs.get("mu", np.random.uniform(*VEMTrace.baseline_limits) / self.ADC_to_VEM_factor)
+        self.baseline_std = kwargs.get("sigma", VEMTrace.baseline_std / self.ADC_to_VEM_factor)
 
         # Create a Gaussian background for each PMT
         self.Baseline = np.random.normal(self.baseline_mean, self.baseline_std, (3, self.trace_length))
@@ -68,7 +71,7 @@ class VEMTrace():
             sp_distances = set(trace_data[:,1])
             energies = set(trace_data[:,2])
             zeniths = set(trace_data[:,3])
-            trace_data = self.convert_to_VEM(trace_data[:,4:])
+            trace_data = trace_data[:,4:]
 
             # assert that metadata looks the same for all three PMTs
             for metadata in [station_ids, sp_distances, energies, zeniths]:
@@ -93,13 +96,13 @@ class VEMTrace():
             self._sig_injected_at += self.trace_length
 
         # Accidentally inject background particles
-        self.Injected = None
+        self.Background = None
 
         n_inject = np.random.poisson( self.background_frequency * self.single_bin_duration * self.trace_length )
-        self.n_injected = self.set_trace_attribute(kwargs, "force_inject", n_inject )
+        self.n_injected = n_inject if np.isnan(kwargs.get("force_inject", n_inject)) else kwargs.get("force_inject", n_inject)
 
         if self.n_injected != 0:
-            self.Injected = np.zeros((3, self.trace_length))
+            self.Background = np.zeros((3, self.trace_length))
             self._bkg_injected_at, self._bkg_stopped_at = [], []
 
             for i in range(self.n_injected):
@@ -111,16 +114,23 @@ class VEMTrace():
                 self._bkg_injected_at.append( injected_at + self.trace_length )
 
                 for j in range(3):
-                    self.Injected[j][injected_at : injected_at + Background.shape[1]] += background_particle
+                    self.Background[j][injected_at : injected_at + Background.shape[1]] += background_particle
+
+        
 
         # Add all different components (Baseline, Injected, Signal) together
         self.pmt_1, self.pmt_2, self.pmt_3 = self.Baseline
-        for Component in [self.Signal, self.Injected]:
+        for Component in [self.Signal, self.Background]:
             if Component is not None:
                 self.pmt_1 += Component[0]
                 self.pmt_2 += Component[1]
                 self.pmt_3 += Component[2]
 
+        # and convert everything from ADC to VEM counts (if desired)
+        self.pmt_1 = self.convert_to_VEM(self.pmt_1)
+        self.pmt_2 = self.convert_to_VEM(self.pmt_2)
+        self.pmt_3 = self.convert_to_VEM(self.pmt_3)
+    
 
     # return a label and sector of the whole trace, specify window length and starting position
     def get_trace_window(self, start_bin : int, window_length : int, no_label : bool = False) -> tuple :
@@ -149,83 +159,37 @@ class VEMTrace():
     # return the number of bins containing a (signal, background) of a given window
     def get_n_signal_background_bins(self, index : int, window_length : int) -> tuple : 
 
-        n_bkg_bins, n_sig_bins = 0, 0
-
         try:
-            for start, stop in zip(self._bkg_injected_at, self._bkg_stopped_at):
-                n_bkg_bins += self.count_bins(index, window_length, start, stop)
-        except AttributeError:
+            n_bkg_bins = 0
+            n_bkg_bins += len(np.unique(np.nonzero(self.Injected[:, index : index + window_length])[1]))
+        except TypeError:
             pass
 
-        n_sig_bins = self.count_bins(index, window_length, self._sig_injected_at, self._sig_stopped_at)
+        n_sig_bins = len(np.unique(np.nonzero(self.Signal[:, index : index + window_length])[1]))
 
         return n_sig_bins, n_bkg_bins
 
-    # calculate the number of bins with overlayed signal in a given window
-    @staticmethod
-    def count_bins(index : int, window_length : int, start : int, stop : int) -> int : 
-
-        bin_i, bin_f = index, index + window_length
-
-        if bin_i > stop: return 0                                               # window is right of signal
-        elif bin_f < start: return 0                                            # window is left of signal
-        else: return min(bin_f, stop) - max(bin_i, start)                       # signal is contained in some form
-
-
-    # return the trace either as a class with full information (reduce = False) or pooled / non-pooled
-    def __call__(self, pooling : bool = True, reduce : bool = True) -> np.ndarray :
-
-        if reduce: 
-            # TODO: test more types of pooling here?
-            if pooling:
-                return np.array([max([self.pmt_1[i], self.pmt_2[i], self.pmt_3[i]]) for i in range(self.trace_length)])
-            else:
-                return np.array([self.pmt_1, self.pmt_2, self.pmt_3])
-        else:
-            return self
-
-    # helper function for easier handling of kwargs upon initialization
-    def set_trace_attribute(self, dict, key, fallback) -> typing.NoReturn:
-        try:
-            # baseline std and mean have to be converted to VEM first
-            # baseline mean must be random (uniform) float between limits
-            if key == "mu":
-                    return np.random.uniform(*dict[key]) / self.ADC_to_VEM_factor
-            elif key == "sigma":
-                return dict[key] / self.ADC_to_VEM_factor
-            elif key == "force_inject" and dict[key] == -1:
-                return fallback
-            else:
-                return dict[key]
-        except KeyError:
-            return fallback
-
     # convert array of FADC counts to array of VEM counts
     def convert_to_VEM(self, signal : np.ndarray) -> np.ndarray :
+        return np.floor(signal) / self.ADC_to_VEM_factor
 
-        signal_VEM = []
-
-        for pmt in signal:
-            np.floor(pmt)
-            signal_VEM.append(np.floor(pmt) / self.ADC_to_VEM_factor)
-
-        return np.array(signal_VEM)
-
-    # return a specific component of the trace (signal, injected, background)
+    # return a specific component of the trace (signal, background, baseline)
     def get_component(self, key : str) -> np.ndarray :
 
         components = {"signal" : self.Signal,
-                      "injected" : self.Injected,
+                      "background" : self.Background,
                       "baseline" : self.Baseline}
 
         if components[key] is not None:
+            print("\nWARNING: COMPONENT TRACES ARE GIVEN IN ADC COUNTS, NOT VEM!\n")
             return components[key]
         else:
             raise AttributeError(f"VEM trace does not have a component: {key}")
 
-    # return the sum of individual vem trace bins
-    def integrate(self) -> float : 
-        return np.mean(np.sum([self.pmt_1, self.pmt_2, self.pmt_3], axis = 1))
+    # return the integrated signal of a trace window
+    @staticmethod
+    def integrate(window : np.ndarray) -> float : 
+        return np.round(np.mean(np.sum(window, axis = 1)),2)
 
     # plot the trace in whatever figure plt.gca() points to
     def plot(self, accumulate : bool = True) -> typing.NoReturn :
@@ -237,8 +201,8 @@ class VEMTrace():
         plt.plot(range(self.trace_length), self.pmt_2, label = "PMT #2")
         plt.plot(range(self.trace_length), self.pmt_3, label = "PMT #3")
 
-        plt.axvline(self.__sig_injected_at, ls = "--", c = "g")
-        plt.axvline(self.__sig_stopped_at, ls = "--", c = "r")
+        plt.axvline(self._sig_injected_at, ls = "--", c = "g")
+        plt.axvline(self._sig_stopped_at, ls = "--", c = "r")
 
         # plt.xlim(0,self.trace_length)
         plt.xlabel("Time bin / 8.3 ns")

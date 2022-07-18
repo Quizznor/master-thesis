@@ -29,8 +29,6 @@ class Generator(tf.keras.utils.Sequence):
         self.baseline_std = args[7]                                             # standard deviation of the baseline
         self.baseline_mean = args[8]                                            # max/min value of the baseline mean
 
-        self._signals, self._backgrounds = 0, 0                                 # for bookkeeping purposes
-
     # one batch of data == one event (with multiple stations, PMTs)
     def __getitem__(self, index : int, reduce : bool = True) -> tuple :
 
@@ -55,10 +53,6 @@ class Generator(tf.keras.utils.Sequence):
                     for i in range(*self.get_relevant_trace_window(Trace), self.window_step):
                         label, pmt_data = Trace.get_trace_window(i, self.window_length)
                         labels.append(self.labels[label]), traces.append(pmt_data)
-
-                        if label: self._signals += 1                            # for bookkeeping purposes when training a model
-                        else: self._backgrounds += 1
-
                 else:
                     labels.append(self.labels[1]), traces.append(Trace)
 
@@ -97,8 +91,6 @@ class Generator(tf.keras.utils.Sequence):
     # called by model.fit at the end of each epoch
     def on_epoch_end(self) -> typing.NoReturn : 
         random.shuffle(self.files)
-
-        self._signals, self._backgrounds = 0, 0
 
 # Generator class for NN sequential model with some additional functionalities
 class EventGenerator():
@@ -157,7 +149,7 @@ class EventGenerator():
         trace_length = self.set_generator_attribute(self, kwargs, "n_bins", VEMTrace.trace_length)
         baseline_std = self.set_generator_attribute(self, kwargs, "sigma", VEMTrace.baseline_std)
         baseline_mean = self.set_generator_attribute(self, kwargs, "mu", VEMTrace.baseline_mean)
-        n_injected = self.set_generator_attribute(self, kwargs, "force_inject", -1 )
+        n_injected = self.set_generator_attribute(self, kwargs, "force_inject", np.NaN )
 
         # set RNG seed if desired
         if self.Seed:

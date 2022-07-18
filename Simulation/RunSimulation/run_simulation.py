@@ -26,6 +26,15 @@ file_list = [file for file in os.listdir(SRC_DIR) if not '.' in file or file.end
 FILE_NAME = file_list[int(sys.argv[1])]
 EVENT_NAME = FILE_NAME.replace(".part", "")
 
+# n_showers in lib
+#   30000 16_16.5
+#   19996 16.5_17
+#   12496 18_18.5
+#   10000 17_17.5
+#    9998 17.5_18
+#    8646 19_19.5
+#    7232 18.5_19
+
 for j in range(ALREADY_PRESENT, ALREADY_PRESENT + NUM_RETHROWS):
     NAME = f"{EVENT_NAME}_{str(j).zfill(2)}"
     SEED = str(j).zfill(6)
