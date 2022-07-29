@@ -1,16 +1,35 @@
 from dataclasses import dataclass
 import numpy as np
-import linecache
 import typing
-import sys
+import os
+
+# library of real (mostly) background data from random traces
+@dataclass
+class Baseline():
+
+    baseline_dir : str = "/cr/tempdata01/filip/iRODS/Background/"               # storage path of the baseline lib
+    all_files : np.ndarray = np.asarray(os.listdir(baseline_dir))               # container for all baseline files
+    n_files : int = len(all_files)                                              # number of available baseline files
+
+    def __init__(self, index : int) -> typing.NoReturn : 
+
+        these_traces = np.loadtxt(Baseline.baseline_dir + Baseline.all_files[index])
+        these_traces = np.split(these_traces, len(these_traces) // 3)
+        self.these_traces = np.array([station[:,1:] for station in these_traces])
+
+    # get a random traces of n_station number of stations, starting at start
+    def get_baseline(self, start : int, n_stations : int) -> np.ndarray : 
+        
+        if start + n_stations > len(self.these_traces): raise IndexError
+        return self.these_traces[start: start + n_stations]
 
 # library of stray (e.g.) muon signals that are accidentally injected
 @dataclass
 class Background():
 
-    path    : str = "/cr/data01/filip/background/single_pmt.dat"                # storage path of the background lib
+    path : str = "/cr/data01/filip/background/single_pmt.dat"                   # storage path of the background lib
     library : np.ndarray = np.loadtxt(path)                                     # contains injected particle signals
-    shape   : tuple = library.shape                                             # (number, length) of particles in ^
+    shape : tuple = library.shape                                               # (number, length) of particles in ^
 
 # Event wrapper for measurements of a SINGLE tank with 3 PMTs
 class VEMTrace():
@@ -32,7 +51,7 @@ class VEMTrace():
     # TODO add timing information here? 
     # Might be needed for CDAS triggers ...
 
-    def __init__(self, trace_data : np.ndarray = None, **kwargs) -> typing.NoReturn :
+    def __init__(self, trace_data : np.ndarray = None, baseline_data : np.ndarray = None, **kwargs) -> typing.NoReturn :
 
         r'''
         :trace_data ``tuple``: tuple with individual pmt data in each entry of the tuple. If None, background trace is raised
@@ -41,9 +60,9 @@ class VEMTrace():
             * *ADC_to_VEM* (``float``) -- ADC to VEM conversion factor, important for ub <-> uub
             * *n_bins* (``int``) -- generate a baseline with <trace_length> bins
             * *force_inject* (``int``) -- force the injection of <force_inject> pbackground particles
-            * *sigma* (``float``) -- baseline std in ADC counts
-            * *mu_lim* (``list``) -- mean ADC level limit [low, high] in ADC counts)
-            * *mu* (``float``) -- the actual value of the trace background baseline
+            * *sigma* (``float``) -- baseline std in ADC counts, ignored if real_background = True
+            * *mu_lim* (``list``) -- mean ADC level limit [low, high] in ADC counts), ignored if real_background = True
+            * *mu* (``float``) -- the actual value of the trace background baseline, ignored if real_background = True
 
         Initialization fails if metadata doesn't match for the different PMTs
         or the baseline length is too short. In both cases a ValueError is raised 
@@ -56,8 +75,11 @@ class VEMTrace():
         self.baseline_mean = kwargs.get("mu", np.random.uniform(*VEMTrace.baseline_limits) / self.ADC_to_VEM_factor)
         self.baseline_std = kwargs.get("sigma", VEMTrace.baseline_std / self.ADC_to_VEM_factor)
 
-        # Create a Gaussian background for each PMT
-        self.Baseline = np.random.normal(self.baseline_mean, self.baseline_std, (3, self.trace_length))
+        # Create a baseline for each PMT
+        if baseline_data is not None:
+            self.Baseline = baseline_data
+        else:
+            self.Baseline = np.random.normal(self.baseline_mean, self.baseline_std, (3, self.trace_length))
 
         # Create container for Signal
         self.Signal = None
@@ -115,8 +137,7 @@ class VEMTrace():
 
                 for j in range(3):
                     self.Background[j][injected_at : injected_at + Background.shape[1]] += background_particle
-
-        
+    
 
         # Add all different components (Baseline, Injected, Signal) together
         self.pmt_1, self.pmt_2, self.pmt_3 = self.Baseline
@@ -129,32 +150,38 @@ class VEMTrace():
         # and convert everything from ADC to VEM counts (if desired)
         self.pmt_1 = self.convert_to_VEM(self.pmt_1)
         self.pmt_2 = self.convert_to_VEM(self.pmt_2)
-        self.pmt_3 = self.convert_to_VEM(self.pmt_3)
-    
+        self.pmt_3 = self.convert_to_VEM(self.pmt_3)    
 
     # return a label and sector of the whole trace, specify window length and starting position
-    def get_trace_window(self, start_bin : int, window_length : int, no_label : bool = False) -> tuple :
+    def get_trace_window(self, start_bin : int, window_length : int, threshold : float = None) -> tuple :
 
         assert start_bin + window_length <= self.trace_length, "trace sector exceeds the whole trace length"
 
-        start_at, stop_at = start_bin, start_bin + window_length
+        start_at, stop_at, label = start_bin, start_bin + window_length, 0
         cut = lambda array : array[start_at : stop_at]
+        trace_window = np.array([cut(self.pmt_1), cut(self.pmt_2), cut(self.pmt_3)])
 
-        if no_label:
-            return np.array([cut(self.pmt_1), cut(self.pmt_2), cut(self.pmt_3)])
-        else:
+        # check whether signal and window frame overlap AND signal exceeds <threshold> VEM
+        try:
+
+            signal = range(self._sig_injected_at, self._sig_stopped_at)
+            window = range(start_at, stop_at)
+
+            signal_has_overlap = len(range(max(signal[0], window[0]), min(signal[-1], window[-1]) + 1 )) == 0
+            
+            if threshold is not None:
+
+                if VEMTrace.integrate(trace_window) >= threshold:
+                    label = 1 if signal_has_overlap else 0
+                else:
+                    label = 0
+            else:
+                label = 1 if signal_has_overlap else 0
+
+        except AttributeError:
             label = 0
 
-            # check whether signal is in the given window frame
-            try:
-                for index in range(start_at, stop_at):
-                    if self._sig_injected_at <= index <= self._sig_stopped_at:
-                        label = 1; break
-
-            except AttributeError:
-                label = 0
-
-            return label, np.array([cut(self.pmt_1), cut(self.pmt_2), cut(self.pmt_3)])
+        return label, trace_window
 
     # return the number of bins containing a (signal, background) of a given window
     def get_n_signal_background_bins(self, index : int, window_length : int) -> tuple : 
@@ -162,10 +189,13 @@ class VEMTrace():
         try:
             n_bkg_bins = 0
             n_bkg_bins += len(np.unique(np.nonzero(self.Injected[:, index : index + window_length])[1]))
-        except TypeError:
+        except (AttributeError, TypeError):
             pass
 
-        n_sig_bins = len(np.unique(np.nonzero(self.Signal[:, index : index + window_length])[1]))
+        try:
+            n_sig_bins = len(np.unique(np.nonzero(self.Signal[:, index : index + window_length])[1]))
+        except (AttributeError, TypeError):
+            n_sig_bins = 0
 
         return n_sig_bins, n_bkg_bins
 
@@ -201,8 +231,11 @@ class VEMTrace():
         plt.plot(range(self.trace_length), self.pmt_2, label = "PMT #2")
         plt.plot(range(self.trace_length), self.pmt_3, label = "PMT #3")
 
-        plt.axvline(self._sig_injected_at, ls = "--", c = "g")
-        plt.axvline(self._sig_stopped_at, ls = "--", c = "r")
+        try:
+            plt.axvline(self._sig_injected_at, ls = "--", c = "g")
+            plt.axvline(self._sig_stopped_at, ls = "--", c = "r")
+        except AttributeError:
+            pass
 
         # plt.xlim(0,self.trace_length)
         plt.xlabel("Time bin / 8.3 ns")

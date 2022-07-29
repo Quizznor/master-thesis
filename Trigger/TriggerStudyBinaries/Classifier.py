@@ -40,21 +40,21 @@ class NeuralNetworkArchitectures():
             cls.model.add(tf.keras.layers.Dropout(**kwargs))
     #####################################################
 
-    @staticmethod
+    @staticmethod   # 92 parameters
     def __minimal_conv2d__(cls : "NNClassifier") -> typing.NoReturn :
 
         NeuralNetworkArchitectures.add_input(cls, shape = (3, 120, 1))
         NeuralNetworkArchitectures.add_conv2d(cls, filters = 1, kernel_size = 3, strides = 3)
         NeuralNetworkArchitectures.add_output(cls, units = 2, activation = "softmax")
 
-    @staticmethod
+    @staticmethod   # 182 parameters
     def __minimal_conv2d_2f__(cls : "NNClassifier") -> typing.NoReturn :
 
         NeuralNetworkArchitectures.add_input(cls, shape = (3, 120, 1))
         NeuralNetworkArchitectures.add_conv2d(cls, filters = 2, kernel_size = 3, strides = 3)
         NeuralNetworkArchitectures.add_output(cls, units = 2, activation = "softmax")
 
-    @staticmethod
+    @staticmethod   # 55 parameters
     def __two_layer_conv2d__(cls : "NNClassifier") -> typing.NoReturn :
 
         NeuralNetworkArchitectures.add_input(cls, shape = (3, 120, 1))
@@ -62,6 +62,26 @@ class NeuralNetworkArchitectures():
         NeuralNetworkArchitectures.add_conv1d(cls, filters = 1, kernel_size = 2, strides = 2)
         NeuralNetworkArchitectures.add_output(cls, units = 2, activation = "softmax")
     
+
+    @staticmethod   # 35 parameters
+    def __light_conv2d__(cls : "NNClassifier") -> typing.NoReturn :
+
+        NeuralNetworkArchitectures.add_input(cls, shape = (3, 120,1))
+        NeuralNetworkArchitectures.add_conv2d(cls, filters = 2, kernel_size = (3,2), strides = 2)
+        NeuralNetworkArchitectures.add_conv1d(cls, filters = 1, kernel_size = 2, strides = 2)
+        NeuralNetworkArchitectures.add_conv1d(cls, filters = 1, kernel_size = 3, strides = 3)
+        NeuralNetworkArchitectures.add_conv1d(cls, filters = 1, kernel_size = 3, strides = 3)
+        NeuralNetworkArchitectures.add_output(cls, units = 2, activation = "softmax")
+
+    @staticmethod   # 606 parameters
+    def __large_conv2d__(cls : "NNClassifier") -> typing.NoReturn : 
+
+        NeuralNetworkArchitectures.add_input(cls, shape = (3, 120,1))
+        NeuralNetworkArchitectures.add_conv2d(cls, filters = 2, kernel_size = (3,1), strides = 2)
+        NeuralNetworkArchitectures.add_conv1d(cls, filters = 4, kernel_size = 3, strides = 3)
+        NeuralNetworkArchitectures.add_conv1d(cls, filters = 8, kernel_size = 3, strides = 3)
+        NeuralNetworkArchitectures.add_conv1d(cls, filters = 16, kernel_size = 3, strides = 3)
+        NeuralNetworkArchitectures.add_output(cls, units = 2, activation = "softmax")
 
 # Wrapper for tf.keras.Sequential model with some additional functionalities
 class NNClassifier(NeuralNetworkArchitectures):
@@ -71,7 +91,7 @@ class NNClassifier(NeuralNetworkArchitectures):
         r'''
         :set_architecture ``None``: one of
         
-        ``str`` -- path to existing network (relative to /)
+        ``str`` -- path to existing network (relative to /cr/data01/filip/models/)
         ``callable`` -- examples of architectures, see NeuralNetworkArchitectures
         '''
 
@@ -89,18 +109,21 @@ class NNClassifier(NeuralNetworkArchitectures):
         self.model.build()
         print(self)
 
-    def train(self, Datasets : tuple, epochs : int, **kwargs) -> typing.NoReturn :
+    def train(self, Datasets : tuple, epochs : int, save_dir : str, **kwargs) -> typing.NoReturn :
         
         TrainingSet, ValidationSet = Datasets
-
         verbosity = kwargs.get("verbose", 2)
 
-        
-        self.model.fit(TrainingSet, validation_data = ValidationSet, epochs = epochs, verbose = verbosity)
-        self.epochs += epochs
+        for i in range(self.epochs, epochs):
+            print(f"Epoch {i + 1}/{epochs}")
+            self.model.fit(TrainingSet, validation_data = ValidationSet, epochs = 1, verbose = verbosity)
+            self.epochs += 1
+
+            self.save(save_dir)
+
 
     def save(self, directory_path : str) -> typing.NoReturn : 
-        self.model.save("/cr/data01/filip/models/" + directory_path + f"model_{self.epochs}")
+        self.model.save("/cr/data01/filip/models/" + directory_path + f"/model_{self.epochs}")
 
     def __call__(self, signal : np.ndarray) -> bool :
 

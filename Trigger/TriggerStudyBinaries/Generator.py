@@ -1,3 +1,4 @@
+from asyncore import read
 import tensorflow as tf
 import numpy as np
 import random
@@ -5,7 +6,7 @@ import typing
 import os
 
 # custom modules for specific use case
-from TriggerStudyBinaries.Signal import VEMTrace
+from TriggerStudyBinaries.Signal import VEMTrace, Background, Baseline
 
 # Helper class (the actual generator) called by EventGenerator
 # See this websitefor help on a working example: shorturl.at/fFI09
@@ -28,6 +29,12 @@ class Generator(tf.keras.utils.Sequence):
         self.n_injected = args[6]                                               # number of injected stray (e.g.) muons
         self.baseline_std = args[7]                                             # standard deviation of the baseline
         self.baseline_mean = args[8]                                            # max/min value of the baseline mean
+        self.real_background = args[9]                                          # if True use random trace baselines
+        self.ignore_low_VEM = args[10]                                          # threshold to mislabel low VEM traces
+
+        if self.real_background:
+            self.__n_baselines = 0                                              # pointer for bookkeeping of random traces
+            self.__Baselines = Baseline(np.random.randint(0, Baseline.n_files)) # temporary cache for random trace baselines
 
     # one batch of data == one event (with multiple stations, PMTs)
     def __getitem__(self, index : int, reduce : bool = True) -> tuple :
@@ -43,26 +50,52 @@ class Generator(tf.keras.utils.Sequence):
                 if not os.path.getsize(event_file): raise ZeroDivisionError     # check that the file is not empty first and foremost
 
             with open(event_file, "r") as file:
-                t = [[float(x) for x in line.split()] for line in file.readlines()]
+                s = [[float(x) for x in line.split()] for line in file.readlines()]
+                n_stations = len(s) // 3
 
-            for station in [np.array([t[i],t[i+1],t[i+2]]) for i in range(0,len(t),3)]:
+            if self.real_background:                                            # take random traces from buffer if real_background is True
+                try: 
+                    b = self.__Baselines.get_baseline(self.__n_baselines, n_stations)
 
-                Trace = VEMTrace(station, n_bins = self.trace_length, sigma = self.baseline_std, mu = self.baseline_mean, force_inject = self.n_injected)
+                except IndexError:                                              # reload buffer with different file if it overflows
+                    self.__n_baselines = 0
+                    self.__Baselines = Baseline(np.random.randint(0, Baseline.n_files))
+                    b = self.__Baselines.get_baseline(self.__n_baselines, len(s) // 3)
+                finally:
+                    self.__n_baselines += n_stations                            # update pointer to not reload already loaded traces
+            else:
+                b = [None for i in range(len(s) // 3)]                          # raise mock baseline traces if real_background is False
+
+            for j, station in enumerate([np.array([s[i],s[i+1],s[i+2]]) for i in range(0,len(s),3)]):
+
+                Trace = VEMTrace(station, b[j],
+                                n_bins = self.trace_length, 
+                                sigma = self.baseline_std, 
+                                mu = self.baseline_mean, 
+                                force_inject = self.n_injected,
+                                real_background = self.real_background)
 
                 if reduce:
                     for i in range(*self.get_relevant_trace_window(Trace), self.window_step):
-                        label, pmt_data = Trace.get_trace_window(i, self.window_length)
+                        label, pmt_data = Trace.get_trace_window(i, self.window_length, threshold = self.ignore_low_VEM)
                         labels.append(self.labels[label]), traces.append(pmt_data)
                 else:
                     labels.append(self.labels[1]), traces.append(Trace)
 
         except ZeroDivisionError:
 
-            Trace = VEMTrace(n_bins = self.trace_length, sigma = self.baseline_std, mu = self.baseline_mean, force_inject = self.n_injected)
+            b = self.__Baselines.get_baseline(self.__n_baselines, 1) if self.real_background else None 
+
+            Trace = VEMTrace(None, b, 
+                             n_bins = self.trace_length, 
+                             sigma = self.baseline_std, 
+                             mu = self.baseline_mean, 
+                             force_inject = self.n_injected, 
+                             real_background = self.real_background)
 
             if reduce:
                 for i in range(0, self.trace_length - self.window_length, self.window_step):
-                    label, pmt_data = Trace.get_trace_window(i, self.window_length)
+                    label, pmt_data = Trace.get_trace_window(i, self.window_length, threshold = self.ignore_low_VEM)
                     labels.append(self.labels[label]), traces.append(pmt_data)
                     self._backgrounds += 1
             else:
@@ -83,7 +116,7 @@ class Generator(tf.keras.utils.Sequence):
         start = int(Trace._sig_injected_at - ( n_bkg / 2 * 10 + (self.window_length - 1)))
         stop = int(Trace._sig_stopped_at + ( n_bkg / 2 * 10))
         
-        if stop > Trace.trace_length: stop = Trace.trace_length - self.window_length
+        if stop > Trace.trace_length - self.window_length: stop = Trace.trace_length - self.window_length
         if start < 0: start = 0
 
         return start, stop
@@ -102,6 +135,7 @@ class EventGenerator():
     Prior   = 0.5                                                               # Probability of a signal event in the data
     Window  = 120                                                               # Length (in bins) of the sliding window
     Step    = 10                                                                # Sliding window analysis step size (in bins)
+    ignore_low_VEM = None                                                       # intentionally mislabel low VEM trace windows
 
     # dict for easier adding of different data libraries
     libraries = \
@@ -127,6 +161,8 @@ class EventGenerator():
         * *prior* (``float``) -- p(signal), p(background) = 1 - prior
         * *window* (``int``) -- the length of the sliding window = input size of the NN
         * *step* (``int``) -- step size of the sliding window analysis (in bins)
+        * *ignore_low_VEM* (``float``) -- intentionally mislabel low signal vem traces
+        * *real_background* (``bool``) -- use real background from random traces
 
         Borrowed from VEM trace class
         * *ADC_to_VEM* (``float``) -- ADC to VEM conversion factor, for ub <-> uub (i think), for example
@@ -143,6 +179,7 @@ class EventGenerator():
         self.Prior = self.set_generator_attribute(self, kwargs, 'prior', EventGenerator.Prior)
         self.Window = self.set_generator_attribute(self, kwargs, 'window', EventGenerator.Window)
         self.Step = self.set_generator_attribute(self, kwargs, 'step', EventGenerator.Step)
+        self.ignore_low_VEM = self.set_generator_attribute(self, kwargs, "ignore_low_VEM", EventGenerator.ignore_low_VEM)
 
         # Set the VEM Trace defaults
         ADC_to_VEM_factor = self.set_generator_attribute(self, kwargs, "ADC_to_VEM", VEMTrace.ADC_to_VEM_factor)
@@ -150,6 +187,7 @@ class EventGenerator():
         baseline_std = self.set_generator_attribute(self, kwargs, "sigma", VEMTrace.baseline_std)
         baseline_mean = self.set_generator_attribute(self, kwargs, "mu", VEMTrace.baseline_mean)
         n_injected = self.set_generator_attribute(self, kwargs, "force_inject", np.NaN )
+        real_background = self.set_generator_attribute(self, kwargs, "real_background", False)
 
         # set RNG seed if desired
         if self.Seed:
@@ -179,7 +217,18 @@ class EventGenerator():
         self.validation_files = np.concatenate(self.validation_files)
         random.shuffle(self.training_files), random.shuffle(self.validation_files)
 
-        generator_options = [self.Pooling, self.Prior, self.Window, self.Step, ADC_to_VEM_factor, trace_length, n_injected, baseline_std, baseline_mean]
+        generator_options = [
+            self.Pooling, 
+            self.Prior, 
+            self.Window, 
+            self.Step, 
+            ADC_to_VEM_factor, 
+            trace_length, 
+            n_injected, 
+            baseline_std, 
+            baseline_mean, 
+            real_background,
+            self.ignore_low_VEM]
 
         if 0 < self.Split < 1:
             TrainingSet = Generator(self.training_files, generator_options)
