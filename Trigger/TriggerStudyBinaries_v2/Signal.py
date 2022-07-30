@@ -1,35 +1,184 @@
-from dataclasses import dataclass
-import numpy as np
-import typing
-import os
+from TriggerStudyBinaries_v2.__configure__ import *
 
-# library of real (mostly) background data from random traces
+# container for reading signal files
+@dataclass
+class SignalBatch():
+
+    def __new__(self, trace_file : str) -> tuple:
+
+        if not os.path.getsize(trace_file): raise EmptyFileError
+
+        with open(trace_file, "r") as file:
+                signal = [np.array([float(x) for x in line.split()]) for line in file.readlines()]
+
+        for station in range(0, len(signal) // 3, 3):
+            yield np.array([signal[station], signal[station + 1], signal[station + 2]]) 
+
+# container for simulated signal
+@dataclass
+class Signal():
+
+    def __init__(self, pmt_data : np.ndarray, trace_length : int) -> None :
+
+        assert len(pmt_data[0]) == len(pmt_data[1]) == len(pmt_data[2]), "PMTs have differing signal length"
+
+        # group trace information first
+        station_ids = set(pmt_data[:,0])
+        sp_distances = set(pmt_data[:,1])
+        energies = set(pmt_data[:,2])
+        zeniths = set(pmt_data[:,3])
+        pmt_data = pmt_data[:,4:]
+
+        assert trace_length > len(pmt_data[0]), "signal size exceeds trace length"
+
+        # assert that metadata looks the same for all three PMTs
+        for metadata in [station_ids, sp_distances, energies, zeniths]:
+            assert len(metadata) == 1, "Metadata between PMTs doesn't match"
+
+        self.StationID = int(next(iter(station_ids)))                       # the ID of the station in question
+        self.SPDistance = int(next(iter(sp_distances)))                     # the distance from the shower core
+        self.Energy = next(iter(energies))                                  # energy of the shower of this signal
+        self.Zenith = next(iter(zeniths))                                   # zenith of the shower of this signal
+
+        self.Signal = np.zeros((3, trace_length))
+        self.signal_start = np.random.randint(0, trace_length - len(pmt_data[0]))
+        self.signal_stop = self.signal_start + len(pmt_data[0])
+
+        for i, PMT in enumerate(pmt_data):
+            self.Signal[i][self.signal_start : self.signal_stop] += PMT
+
+# container for gaussian baseline
 @dataclass
 class Baseline():
 
-    baseline_dir : str = "/cr/tempdata01/filip/iRODS/Background/"               # storage path of the baseline lib
-    all_files : np.ndarray = np.asarray(os.listdir(baseline_dir))               # container for all baseline files
-    n_files : int = len(all_files)                                              # number of available baseline files
+    def __new__(self, mu, sigma, length) -> np.ndarray :
+        return np.random.normal(mu, sigma, (3, length))
 
-    def __init__(self, index : int) -> typing.NoReturn : 
-
-        these_traces = np.loadtxt(Baseline.baseline_dir + Baseline.all_files[index])
-        these_traces = np.split(these_traces, len(these_traces) // 3)
-        self.these_traces = np.array([station[:,1:] for station in these_traces])
-
-    # get a random traces of n_station number of stations, starting at start
-    def get_baseline(self, start : int, n_stations : int) -> np.ndarray : 
-        
-        if start + n_stations > len(self.these_traces): raise IndexError
-        return self.these_traces[start: start + n_stations]
-
-# library of stray (e.g.) muon signals that are accidentally injected
+# container for random traces
 @dataclass
-class Background():
+class RandomTrace():
 
-    path : str = "/cr/data01/filip/background/single_pmt.dat"                   # storage path of the background lib
-    library : np.ndarray = np.loadtxt(path)                                     # contains injected particle signals
-    shape : tuple = library.shape                                               # (number, length) of particles in ^
+    baseline_dir : str = "/cr/tempdata01/filip/iRODS/Background/"                   # storage path of the baseline lib
+    all_files : np.ndarray = np.asarray(os.listdir(baseline_dir))                   # container for all baseline files
+    all_n_files : int = len(all_files)                                              # number of available baseline files
+
+    def __init__(self, index : int = None) -> None : 
+
+
+        self.__current_files = 0                                                    # number of traces already raised
+
+        if index is None:
+            random_file = RandomTrace.all_files[np.random.randint(RandomTrace.all_n_files)]
+            these_traces = np.loadtxt(RandomTrace.baseline_dir + random_file)
+        else:
+            these_traces = np.loadtxt(RandomTrace.baseline_dir + RandomTrace.all_files[index])
+
+        these_traces = np.split(these_traces, len(these_traces) // 3)               # group random traces by pmt    
+        self._these_traces = np.array([station[:,1:] for station in these_traces])  # add them to this dataclass
+
+    # get random traces for a single stations
+    def get(self,) -> np.ndarray : 
+        
+        if self.__current_files >= self.all_n_files: self.__init__()                # reload buffer on overflow
+        self.__current_files += 1                                                   # update pointer after loading
+
+        return self._these_traces[self.__current_files]
+
+# container for injected muons
+@dataclass
+class InjectedBackground():
+
+    # TODO get simulations for three different PMTs
+    background_dir : str = "/cr/data01/filip/background/single_pmt.dat"             # storage path of the background lib
+    library : np.ndarray = np.loadtxt(background_dir)                               # contains injected particle signals
+    shape : tuple = library.shape                                                   # (number, length) of particles in ^
+
+    # get n injected particles
+    def __new__(self, n : int, trace_length : int) -> tuple : 
+        
+        Injections = np.zeros((3, trace_length))
+        n_particles, length = InjectedBackground.shape
+        injections_start, injections_end = [], []
+
+        for _ in range(n):
+
+            injected_particle = InjectedBackground.library[np.random.randint(n_particles)]
+            injection_start = np.random.randint(0, trace_length - length)
+            injection_end = injection_start + length
+
+            for i in range(3): Injections[i][injection_start : injection_end] += injected_particle
+
+            injections_start.append(injection_start)
+            injections_end.append(injection_end)
+
+        return injections_start, injections_end, Injections
+
+# container for the combined trace
+class Trace(Signal):
+
+    def __init__(self, trace_options : list, baseline_data : np.ndarray, signal_data : tuple = None) :
+
+        self.ADC_to_VEM = trace_options[0]
+        self.length = trace_options[1]
+        self.sigma = trace_options[2]
+        self.mu = trace_options[3]
+        self.inject = trace_options[4] or self.poisson()
+
+        if signal_data is not None: 
+            super().__init__(signal_data, self.length)
+
+        self.injections_start, self.injections_end, self.Injected = InjectedBackground(self.inject, self.length)        
+        self.Baseline = baseline_data
+
+        self.pmt_1, self.pmt_2, self.pmt_3 = self.convert_to_VEM ( self.Baseline + self.Signal + self.Injected )
+
+    def poisson(self) -> int :
+        return np.random.poisson( GLOBAL.background_frequency * GLOBAL.single_bin_duration * self.length )
+
+    def convert_to_VEM(self, signal : np.ndarray) -> np.ndarray :
+        return np.floor(signal) / self.ADC_to_VEM
+
+    def __str__(self) -> str :
+
+        string = list("|" + " " * (self.length // 25) + "|")
+
+        for start, stop in zip(self.injections_start, self.injections_end):
+            start, stop = start // 25, stop // 25
+            string[start : start + 1] = "<", "b"
+            string[stop - 1 : stop] = "b", ">"
+
+        try:
+            string[self.signal_start // 25 : self.signal_start // 20 + 1] = "<", "S"
+            string[self.signal_stop // 25 : self.signal_stop // 20 + 1] = "S", ">"
+            metadata = f" {self.Energy:.4e} eV @ {self.SPDistance} m from core"
+        except AttributeError:
+            metadata = " Background trace"
+            pass
+
+
+        return "".join(string) + metadata
+
+    def __plot__(self) -> None :
+
+        x = range(self.length)
+
+        plt.plot(x, self.pmt_1, c = "green", label = "PMT #1", lw = 0.5)
+        plt.plot(x, self.pmt_2, c = "orange", label = "PMT #2", lw = 0.5)
+        plt.plot(x, self.pmt_3, c = "steelblue", label = "PMT #3", lw = 0.5)
+
+        try:
+            plt.axvline(self.signal_start, ls = "--", c = "red", lw = 2)
+            plt.axvline(self.signal_stop, ls = "--", c = "red", lw = 2)
+        except AttributeError: pass
+
+        for start, stop in zip(self.injections_start, self.injections_end):
+            plt.axvline(start, ls = "--", c = "gray")
+            plt.axvline(stop, ls = "--", c = "gray")
+
+        plt.ylabel("Signal strength / VEM")
+        plt.xlabel("Bin / 8.3 ns")
+        plt.legend()
+        plt.show()
 
 # Event wrapper for measurements of a SINGLE tank with 3 PMTs
 class VEMTrace():
@@ -187,10 +336,9 @@ class VEMTrace():
     def get_n_signal_background_bins(self, index : int, window_length : int) -> tuple : 
 
         try:
-            n_bkg_bins = 0
-            n_bkg_bins += len(np.unique(np.nonzero(self.Injected[:, index : index + window_length])[1]))
+            n_bkg_bins = len(np.unique(np.nonzero(self.Injected[:, index : index + window_length])[1]))
         except (AttributeError, TypeError):
-            pass
+            n_bkg_bins = 0
 
         try:
             n_sig_bins = len(np.unique(np.nonzero(self.Signal[:, index : index + window_length])[1]))

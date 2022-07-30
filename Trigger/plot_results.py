@@ -17,10 +17,10 @@ pt.signal_ROC("small_model_validation_data_real_background", label = "small Conv
 pt.signal_ROC("small_model_validation_data", label = "small Conv2d - model background", c = "green", ls = "solid")
 pt.signal_ROC("mock_fifth_validation_data_real_background_uncorrected", label = "single layer Conv2d 0.2 VEM - random traces", c = "darkblue", ls = "--")
 pt.signal_ROC("mock_fifth_validation_data_uncorrected", label = "single layer Conv2d 0.2 VEM - model background", c = "darkblue", ls = "solid")
-# pt.signal_ROC("mock_half_validation_data_real_background_uncorrected", label = "single layer Conv2d 0.5 VEM - random traces", c = "blue", ls = "--")
-# pt.signal_ROC("mock_half_validation_data_uncorrected", label = "single layer Conv2d 0.5 VEM - model background", c = "blue", ls = "solid")
-# pt.signal_ROC("mock_one_validation_data_real_background_uncorrected", label = "single layer Conv2d 1.0 VEM - random traces", c = "lightblue", ls = "--")
-# pt.signal_ROC("mock_one_validation_data_uncorrected", label = "single layer Conv2d 1.0 VEM - model background", c = "lightblue", ls = "solid")
+pt.signal_ROC("mock_half_validation_data_real_background_uncorrected", label = "single layer Conv2d 0.5 VEM - random traces", c = "blue", ls = "--")
+pt.signal_ROC("mock_half_validation_data_uncorrected", label = "single layer Conv2d 0.5 VEM - model background", c = "blue", ls = "solid")
+pt.signal_ROC("mock_one_validation_data_real_background_uncorrected", label = "single layer Conv2d 1.0 VEM - random traces", c = "lightblue", ls = "--")
+pt.signal_ROC("mock_one_validation_data_uncorrected", label = "single layer Conv2d 1.0 VEM - model background", c = "lightblue", ls = "solid")
 
 # global plot arguments
 plt.xlabel("False positive rate")

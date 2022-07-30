@@ -1,4 +1,3 @@
-from asyncore import read
 import tensorflow as tf
 import numpy as np
 import random
@@ -6,7 +5,7 @@ import typing
 import os
 
 # custom modules for specific use case
-from TriggerStudyBinaries.Signal import VEMTrace, Background, Baseline
+from TriggerStudyBinaries_v1.Signal import VEMTrace, Background, Baseline
 
 # Helper class (the actual generator) called by EventGenerator
 # See this websitefor help on a working example: shorturl.at/fFI09
@@ -54,15 +53,14 @@ class Generator(tf.keras.utils.Sequence):
                 n_stations = len(s) // 3
 
             if self.real_background:                                            # take random traces from buffer if real_background is True
-                try: 
                     b = self.__Baselines.get_baseline(self.__n_baselines, n_stations)
 
-                except IndexError:                                              # reload buffer with different file if it overflows
-                    self.__n_baselines = 0
-                    self.__Baselines = Baseline(np.random.randint(0, Baseline.n_files))
-                    b = self.__Baselines.get_baseline(self.__n_baselines, len(s) // 3)
-                finally:
-                    self.__n_baselines += n_stations                            # update pointer to not reload already loaded traces
+                    if b == -1:                                                 # reload buffer with different file if it overflows
+                                                                                # update pointer to not reload already loaded traces
+                        self.__n_baselines = 0
+                        self.__Baselines = Baseline(np.random.randint(0, Baseline.n_files))
+                        b = self.__Baselines.get_baseline(self.__n_baselines, len(s) // 3)
+                        self.__n_baselines += n_stations                            
             else:
                 b = [None for i in range(len(s) // 3)]                          # raise mock baseline traces if real_background is False
 
@@ -84,7 +82,16 @@ class Generator(tf.keras.utils.Sequence):
 
         except ZeroDivisionError:
 
-            b = self.__Baselines.get_baseline(self.__n_baselines, 1) if self.real_background else None 
+            try:
+                b = None if not self.real_background else self.__Baselines.get_baseline(self.__n_baselines, 1)[0]
+            
+            except TypeError:
+                if b == -1:                                                 # reload buffer with different file if it overflows
+                                                                            # update pointer to not reload already loaded traces
+                        self.__n_baselines = 0
+                        self.__Baselines = Baseline(np.random.randint(0, Baseline.n_files))
+                        b = self.__Baselines.get_baseline(self.__n_baselines, 1)[0]
+                        self.__n_baselines += 1
 
             Trace = VEMTrace(None, b, 
                              n_bins = self.trace_length, 
@@ -97,12 +104,10 @@ class Generator(tf.keras.utils.Sequence):
                 for i in range(0, self.trace_length - self.window_length, self.window_step):
                     label, pmt_data = Trace.get_trace_window(i, self.window_length, threshold = self.ignore_low_VEM)
                     labels.append(self.labels[label]), traces.append(pmt_data)
-                    self._backgrounds += 1
             else:
                 labels.append(self.labels[1]), traces.append(Trace)        
 
-        finally:
-            return np.array(traces), np.array(labels)
+        return np.array(traces), np.array(labels)
 
     # returns the number of batches per epoch
     def __len__(self) -> int :

@@ -8,6 +8,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
+\usepackage{newpxtext, newpxmath}
 
 % MICROTYPE
 \usepackage[protrusion=true,expansion,tracking,kerning,spacing]{microtype}
@@ -29,7 +30,7 @@
 % LANGUAGE
 \usepackage[english]{babel}
 \usepackage[htt]{hyphenat}
-\usepackage[style=alphabetic]{biblatex}
+\usepackage[style=numeric,sorting=none]{biblatex}
 \usepackage{csquotes}
 
 % HEADERS

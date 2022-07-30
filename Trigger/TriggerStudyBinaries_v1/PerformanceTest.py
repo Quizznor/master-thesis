@@ -5,9 +5,9 @@ import typing
 import os
 
 # custom modules for specific usecase
-from TriggerStudyBinaries.Classifier import TriggerClassifier, NNClassifier
-from TriggerStudyBinaries.Signal import VEMTrace, Background, Baseline
-from TriggerStudyBinaries.Generator import EventGenerator, Generator
+from TriggerStudyBinaries_v1.Classifier import TriggerClassifier, NNClassifier
+from TriggerStudyBinaries_v1.Signal import VEMTrace, Background, Baseline
+from TriggerStudyBinaries_v1.Generator import EventGenerator, Generator
 Estimator = typing.Union[TriggerClassifier, NNClassifier]
 
 def make_dataset(Classifier : Estimator, Dataset : Generator, save_path : str) -> typing.NoReturn :

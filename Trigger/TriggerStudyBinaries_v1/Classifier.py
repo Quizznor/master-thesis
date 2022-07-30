@@ -3,8 +3,8 @@ import tensorflow as tf
 import numpy as np
 
 # custom modules for specific use case
-from TriggerStudyBinaries.Signal import VEMTrace
-from TriggerStudyBinaries.Generator import EventGenerator
+from TriggerStudyBinaries_v1.Signal import VEMTrace
+from TriggerStudyBinaries_v1.Generator import EventGenerator
 
 class NeuralNetworkArchitectures():
 

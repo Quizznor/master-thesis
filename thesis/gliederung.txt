@@ -1,6 +1,10 @@
 GLIEDERUNG THESIS
 
 	1. Einleitung
+	2. Physikalischer Hintergrund
+		2.1 Air showers
+		2.2 ???
+		2.3 Profit
 	3. Auger
 		3.1 History
 		3.2 Measurement principle
