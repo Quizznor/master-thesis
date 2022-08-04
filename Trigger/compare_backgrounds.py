@@ -1,48 +1,42 @@
 from TriggerStudyBinaries_v2.__configure__ import *
+from scipy.stats import norm
 
-Data, _ = EventGenerator("all", force_inject = 3, real_background = True, seed = 29384)
+plt.rcParams.update({'font.size': 22})
 
-Data.__getitem__(0)
+TestRealBackground = EventGenerator("all", real_background = True, split = 1, prior = 0, force_inject = 0)
+TestModelBackground = EventGenerator("all", real_background = False, split = 1, prior = 0, force_inject = 0)
 
-# import matplotlib.pyplot as plt
-# import numpy as np
-# import scipy.stats
+c = ["steelblue", "orange"]
+l = ["random traces", "model background"]
 
-# SampleModel = EventGenerator(["19_19.5"], prior = 0, split = 1, real_background = False)
-# SampleReal = EventGenerator(["19_19.5"], prior = 0, split = 1, real_background = True)
-# fig, ax = plt.subplots(3,1, sharex = True)
-# [axis.set_ylabel(f"PMT #{i + 1}") for i, axis in enumerate(ax)]
-# ax[-1].set_xlabel("FADC count")
+for i, Dataset in enumerate([TestRealBackground, TestModelBackground]):
 
-# colors = ["steelblue", "orange"]
-# label = ["Model background", "Random traces"]
+    histogram = []
 
-# for j, Dataset in enumerate([SampleModel, SampleReal]):
+    for batch in range(Dataset.__len__()):
 
-#     if j == 0: continue
-#     bin_contents = [[] for i in range(3)]
+        print(f"Fetching batch {batch + 1}/{Dataset.__len__()}: {100 * (batch/Dataset.__len__()):.2f}%", end = "...\r")
 
-#     for batch in range(Dataset.__len__()):
+        traces, _ = Dataset.__getitem__(batch)
 
-#         print(f"Fetching batch {batch + 1}/{Dataset.__len__()}: {100 * (batch/Dataset.__len__()):.2f}%", end = "...\r")
+        for trace in traces:
 
-#         traces, _ = Dataset.__getitem__(batch, reduce = False)
+            histogram.append(np.mean(trace))
+    
+    # cut real background
+    if i == 0: 
+        mask = np.where(np.abs(histogram) < 0.01)[0]
+        histogram = np.array(histogram)[mask]
 
-#         for Trace in traces:
-#             for i, pmt in enumerate(Trace.Baseline):
-#                 for bin in pmt: bin_contents[i].append(bin)
+    histogram = np.array(histogram) * GLOBAL.ADC_to_VEM
+    mu, sigma = np.mean(histogram), np.std(histogram)
 
-#     for i in range(3):
+    n, bins, _ = plt.hist(histogram, histtype = "step", lw = 2, bins = 100, color = c[i], label = l[i] + f", n = {len(histogram)}", density = True)
+    plt.plot(bins, norm.pdf(bins, mu, sigma), ls = "--", lw = 2)
 
-#         mu, sigma =  np.mean(bin_contents[i]), np.std(bin_contents[i])
-#         ax[i].axvline(mu, c = colors[j], ls = "--")
-#         bins, edges = np.histogram(bin_contents[i], bins = 100)
-#         best_fit_line = scipy.stats.norm.pdf(edges, mu, sigma)
-#         ax[i].plot(edges[:-1], bins, lw = 2, color = colors[j], label = label[j])
+    print(f"{l[i]}: mu = {mu:.3f}, sigma = {sigma:.3f}")
 
-#         print(f"{label[j]} - PMT #{i + 1}: mu = {mu:.5f}, sigma = {sigma:.5f}")
-
-
-
-# ax[-1].legend()
-# plt.show()
+# plt.ylabel("# of occurences")
+plt.xlabel("Signal / ADC")
+plt.legend()
+plt.show()

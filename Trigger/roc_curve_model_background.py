@@ -1,15 +1,12 @@
-from TriggerStudyBinaries.Classifier import TriggerClassifier, NNClassifier
-from TriggerStudyBinaries.Signal import VEMTrace, Background, Baseline
-from TriggerStudyBinaries.Generator import EventGenerator, Generator
-import TriggerStudyBinaries.PerformanceTest as pt
+from TriggerStudyBinaries_v2.__configure__ import *
 
 _, AllEvents = EventGenerator("all", seed = True)
 
-# CurrentTrigger = TriggerClassifier()
-# pt.make_dataset(CurrentTrigger, AllEvents, "current_trigger_validation_data")
+CurrentTrigger = TriggerClassifier()
+pt.make_dataset(CurrentTrigger, AllEvents, "current_trigger_validation_data")
 
-# MockLinearModel = NNClassifier("mock_model_all_linear/model_2")
-# pt.make_dataset(MockLinearModel, AllEvents, "mock_linear_validation_data")
+MockLinearModel = NNClassifier("mock_model_all_linear/model_2")
+pt.make_dataset(MockLinearModel, AllEvents, "mock_linear_validation_data")
 
 LargeModel = NNClassifier("large_model/model_5")
 pt.make_dataset(LargeModel, AllEvents, "large_model_validation_data")
@@ -25,3 +22,5 @@ pt.make_dataset(CutHalfVEM, AllEvents, "mock_half_validation_data_uncorrected")
 
 CutOneVEM = NNClassifier("minimal_conv2d_cut_1.0VEM/model_2")
 pt.make_dataset(CutOneVEM, AllEvents, "mock_one_validation_data_uncorrected")
+
+AllEvents.unit_test()

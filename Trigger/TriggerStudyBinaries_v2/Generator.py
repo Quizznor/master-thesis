@@ -1,26 +1,23 @@
 from TriggerStudyBinaries_v2.__configure__ import *
-from TriggerStudyBinaries_v2.Signal import SignalBatch, Signal
-from TriggerStudyBinaries_v2.Signal import Trace, InjectedBackground
-from TriggerStudyBinaries_v2.Signal import Baseline, RandomTrace
 
 # See this website for help on a working example: shorturl.at/fFI09
 class EventGenerator():
 
     labels = \
     {
-        1: tf.keras.utils.to_categorical(1, 2, dtype = int),                    # Signal
-        0: tf.keras.utils.to_categorical(0, 2, dtype = int)                     # Background
+        1: tf.keras.utils.to_categorical(1, 2, dtype = int),                        # Signal
+        0: tf.keras.utils.to_categorical(0, 2, dtype = int)                         # Background
     }
 
     libraries = \
     {
-        "19_19.5" : "/cr/tempdata01/filip/QGSJET-II/protons/19_19.5/",
-        "18.5_19" : "/cr/tempdata01/filip/QGSJET-II/protons/18.5_19/",
-        "18_18.5" : "/cr/tempdata01/filip/QGSJET-II/protons/18_18.5/",
-        "17.5_18" : "/cr/tempdata01/filip/QGSJET-II/protons/17.5_18/",
-        "17_17.5" : "/cr/tempdata01/filip/QGSJET-II/protons/17_17.5/",
+        "16_16.5" : "/cr/tempdata01/filip/QGSJET-II/protons/16_16.5/",
         "16.5_17" : "/cr/tempdata01/filip/QGSJET-II/protons/16.5_17/",
-        "16_16.5" : "/cr/tempdata01/filip/QGSJET-II/protons/16_16.5/"
+        "17_17.5" : "/cr/tempdata01/filip/QGSJET-II/protons/17_17.5/",
+        "17.5_18" : "/cr/tempdata01/filip/QGSJET-II/protons/17.5_18/",
+        "18_18.5" : "/cr/tempdata01/filip/QGSJET-II/protons/18_18.5/",
+        "18.5_19" : "/cr/tempdata01/filip/QGSJET-II/protons/18.5_19/",
+        "19_19.5" : "/cr/tempdata01/filip/QGSJET-II/protons/19_19.5/"
     }
 
     def __new__(self, datasets : typing.Union[list, str], **kwargs : dict) -> typing.Union[tuple, "EventGenerator"] :
@@ -55,6 +52,7 @@ class EventGenerator():
         # set all desired environmental variables
         split = kwargs.get("split", GLOBAL.split)
         seed = kwargs.get("seed", GLOBAL.seed)
+        prior = kwargs.get("prior", GLOBAL.prior)
 
         ADC_to_VEM = kwargs.get("ADC_to_VEM", GLOBAL.ADC_to_VEM)
         n_bins = kwargs.get("n_bins", GLOBAL.n_bins)
@@ -67,14 +65,13 @@ class EventGenerator():
         sliding_window_length = kwargs.get("window", GLOBAL.window)
         sliding_window_step = kwargs.get("step", GLOBAL.step)
 
-        prior = kwargs.get("prior", GLOBAL.prior)
         trace_options = [ADC_to_VEM, n_bins, baseline_std, baseline_mean, n_injected, real_background]
         classifier_options = [ignore_low_VEM, sliding_window_length, sliding_window_step, prior]
         
         # set RNG seed if desired
         if seed:
-            random.seed(seed)      # does this perhaps already fix the numpy seeds?
-            np.random.seed(seed)   # numpy docs says this is legacy, maybe revisit?
+            random.seed(seed)                                                       # does this perhaps already fix the numpy seeds?
+            np.random.seed(seed)                                                    # numpy docs says this is legacy, maybe revisit?
 
         # get all signal files
         if isinstance(datasets, str):
@@ -109,38 +106,130 @@ class Generator(tf.keras.utils.Sequence):
 
     def __init__(self, signal_files : list, trace_options : list, classifier_options : list) :
 
-        self.ignore_low_VEM, self._window_length, self.window_step, self.prior = classifier_options
-        self.use_real_background, trace_options = trace_options[-1], trace_options[:-1]
-        self.trace_options = trace_options
+        self.ignore_low_VEM, self.window_length, self.window_step, self.prior = classifier_options
+        self.ADC_to_VEM, self.length, self.sigma, self.mu, self.n_injected, self.use_real_background = trace_options
         self.files = signal_files
 
         if self.use_real_background:
             self.RandomTraceBuffer = RandomTrace()
 
+    # number of batches in generator
     def __len__(self) -> int : 
         return len(self.files)
 
-    def __getitem__(self, index : int) -> tuple[np.ndarray] :
+    # generator method to create data on runtime
+    def __getitem__(self, index : int, full_trace : bool = False) -> tuple[np.ndarray] :
 
-        labels, traces = np.array([]), np.array([])
-        ADC_to_VEM, n_bins, mu, sigma, n_injected = self.trace_options
+        labels, traces = [], []
 
+        # Construct either gaussian or random trace baseline
+        if not self.use_real_background: baseline = Baseline(self.mu, self.sigma, self.length)
+        else: 
+            baseline = self.RandomTraceBuffer.get()
+            baseline += np.random.uniform(0, 1, size = (3, self.length))
+
+        # try to raise a valid trace (i.e. with signal)...
         try:
             if self.prior == 0: raise EmptyFileError
             else: event_file = self.files[index]
 
             for station in SignalBatch(event_file):
                 
-                # Build either gaussian or random trace baseline
-                if not self.use_real_background: baseline = Baseline(mu, sigma, n_bins)
-                else: baseline = self.RandomTraceBuffer.get()
+                # Add together baseline + signal and inject accidental muons
+                VEMTrace = Trace([self.ADC_to_VEM, self.length, self.sigma, self.mu, self.n_injected], baseline, station)
+                
+                if full_trace:
+                    traces.append(VEMTrace)
+                else:
+                    for index in self.__sliding_window__(VEMTrace):
+                        pmt_data, n_sig = VEMTrace.get_trace_window((index, index + self.window_length))
 
-                VEMTrace = Trace(self.trace_options, baseline, station)
-                VEMTrace.__plot__()
-        
+                        # mislabel low energy 
+                        if self.ignore_low_VEM: n_sig = 0 if VEMTrace.integrate(pmt_data) < self.ignore_low_VEM else n_sig
+
+                        traces.append(pmt_data), labels.append(EventGenerator.labels[1 if n_sig else 0])
+
+        # ... raise a mock background trace if this fails for various reasons
         except EmptyFileError:
-            print("alarm")
+            
+            VEMTrace = Trace([self.ADC_to_VEM, self.length, self.sigma, self.mu, self.n_injected], baseline)
 
-        print(event_file)
+            if full_trace:
+                traces.append(VEMTrace)
+            else:
+                for index in self.__sliding_window__(VEMTrace, override_prior = True):
+                    pmt_data, n_sig = VEMTrace.get_trace_window((index, index + self.window_length))
+                    traces.append(pmt_data), labels.append(EventGenerator.labels[1 if n_sig else 0])
 
-        return traces, labels
+        return np.array(traces), np.array(labels)
+
+    # calculate a sliding window range conforming (more or less) to a given prior  
+    def __sliding_window__(self, VEMTrace : Trace, override_prior : bool = False) -> range :
+
+        if np.isnan(np.NaN if override_prior else self.prior): start, stop = 0, VEMTrace.length - self.window_length
+        else:
+            signal_length = VEMTrace.signal_start - VEMTrace.signal_end
+            n_bkg = int((( self.window_length // self.window_step) +  signal_length // 10) * (1/self.prior - 1))
+            start = int(VEMTrace.signal_start - ( n_bkg / 2 * 10 + (self.window_length - np.random.randint(10))))
+            stop = int(VEMTrace.signal_end + ( n_bkg / 2 * 10))
+
+        # if calculated sliding window rages exceed trace boundaries, prior is kind of ignored
+
+        if stop > VEMTrace.length - self.window_length and start < 0:               # too small prior for this window
+            start, stop = 0, VEMTrace.length - self.window_length
+        elif stop > VEMTrace.length - self.window_length:                           # need to move window to the left
+            overshoot_by = stop - (VEMTrace.length - self.window_length)
+            start, stop = start - overshoot_by, stop - overshoot_by
+        elif start < 0: start, stop = start - start, stop - start                   # need to move window to the right
+
+        return range(start, stop, self.window_step)
+
+    # run some diagnostics to make sure dataset is in order
+    def unit_test(self, n_traces : int = None, full_traces : bool = True) -> None :
+
+        start = perf_counter_ns()
+
+        background_hist, signal_hist, baseline_hist = [], [], []
+        n_signals, n_backgrounds, n_injected = 0, 0, 0
+
+        if n_traces is None: n_traces = self.__len__()
+        
+        if full_traces:
+            for batch in range(n_traces):
+
+                elapsed = perf_counter_ns() - start
+                mean_per_step_ms = elapsed / (batch + 1) * 1e-6
+
+                traces, _ = self.__getitem__(batch, full_trace = full_traces)
+
+                print(f"{100 * (batch/n_traces):.2f}% - {mean_per_step_ms:.2f}ms/batch, ETA = {(n_traces - batch) * mean_per_step_ms * 1e-3:.0f}s {traces[0]}", end ="\r")
+                
+                for trace in traces:
+
+                    if trace.has_accidentals: 
+                        background_hist.append(np.mean(trace.Injected))
+                        n_injected += len(trace.injections_start)
+                    
+                    if trace.has_signal: 
+                        signal_hist.append(np.mean(trace.Signal))
+                        n_signals += 1
+                    else: n_backgrounds += 1
+
+                    baseline_hist.append(np.mean(trace.Baseline))
+
+        histogram_ranges = [(0.01,3), (0.01,2e5), None]
+        histogram_titles = ["Injected Background", "Signal", "Baseline"]
+        for i, histogram in enumerate([background_hist, signal_hist, baseline_hist]):
+
+            plt.figure()
+            plt.title(histogram_titles[i])
+            plt.hist(histogram, histtype = "step", range = histogram_ranges[i], bins = 100)
+            plt.yscale("log") if i != 2 else None
+
+            plt.xlabel("Signal / VEM")
+
+        print(f"\nTotal time: {(perf_counter_ns() - start) * 1e-9 :.2f}s - {n_signals + n_backgrounds} traces")
+        print(f"n_signal = {n_signals}, n_background = {n_backgrounds}")
+        print(f"n_injected = {n_injected} -> {n_injected / (self.length * (n_signals + n_backgrounds) * GLOBAL.single_bin_duration):.2f} Hz background")
+
+        plt.show()

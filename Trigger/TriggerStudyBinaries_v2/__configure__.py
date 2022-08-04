@@ -1,7 +1,9 @@
 from dataclasses import dataclass
+from time import perf_counter_ns
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import numpy as np
+import matplotlib
 import os, sys
 import random
 import typing
@@ -12,7 +14,7 @@ class EmptyFileError(Exception): pass
 class GLOBAL():
 
     # Trace details, can be overwritten in __new__ of EventGenerator
-    background_frequency        = 4665                                          # frequency of accidental injections
+    background_frequency        = 4665                                          # frequency of accidental injections / Hz
     single_bin_duration         = 8.3e-9                                        # time length of a single bin, in s                                               
     ADC_to_VEM                  = 215.9                                         # from David's Mail @ 7.06.22 3:30 pm
     n_bins                      = 2048                                          # 1 Bin = 8.3 ns, 2048 Bins = ~17. µs
@@ -23,16 +25,22 @@ class GLOBAL():
 
     # Generator details, can be overwritten in __new__ of EventGenerator
     split                       = 0.8                                           # Ratio of the training / validation events
+    prior                       = True                                          # Probability of a signal event in the data
     seed                        = False                                         # make RNG dice rolls reproducible via seed
-    prior                       = 0.5                                           # Probability of a signal event in the data
+    full_trace                  = False                                         # return entire trace instead of sliding window
     
     # Classifier details, can be overwritten in __new__ of EventGenerator
-    ignore_low_VEM              = None                                          # intentionally mislabel low VEM trace windows
+    ignore_low_VEM              = 0                                             # label signals under threshold as background
     window                      = 120                                           # Length (in bins) of the sliding window
     step                        = 10                                            # Sliding window analysis step size (in bins)
 
+from TriggerStudyBinaries_v2.Signal import SignalBatch, Signal
+from TriggerStudyBinaries_v2.Signal import Trace, InjectedBackground
+from TriggerStudyBinaries_v2.Signal import Baseline, RandomTrace
 from TriggerStudyBinaries_v2.Generator import EventGenerator
+from TriggerStudyBinaries_v2.Generator import Generator
+from TriggerStudyBinaries_v2.Classifier import NNClassifier
+from TriggerStudyBinaries_v2.Classifier import TriggerClassifier
+import TriggerStudyBinaries_v2.PerformanceTest as pt 
 
-
-# from TriggerStudyBinaries_v2.Classifier import TriggerClassifier, NNClassifier
-# from TriggerStudyBinaries_v2.Signal import VEMTrace, Background, Baseline
+plt.rcParams.update({'font.size': 22})

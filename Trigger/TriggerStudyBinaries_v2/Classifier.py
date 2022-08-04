@@ -1,5 +1,7 @@
 from TriggerStudyBinaries_v2.__configure__ import *
 
+# TODO rework this to some nicer form
+
 class NeuralNetworkArchitectures():
 
     ### Library functions to add layers #################
@@ -115,7 +117,6 @@ class NNClassifier(NeuralNetworkArchitectures):
 
             self.save(save_dir)
 
-
     def save(self, directory_path : str) -> typing.NoReturn : 
         self.model.save("/cr/data01/filip/models/" + directory_path + f"/model_{self.epochs}")
 
@@ -132,7 +133,6 @@ class NNClassifier(NeuralNetworkArchitectures):
         return ""
 
     # def convert_to_C(self, save_file : str) -> typing.NoReturn :
-
     #     # TODO
     #     pass
 
