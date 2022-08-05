@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 from time import perf_counter_ns
 import matplotlib.pyplot as plt
+from time import strftime
 import tensorflow as tf
+from time import gmtime
 import numpy as np
 import matplotlib
 import os, sys
@@ -40,6 +42,7 @@ from TriggerStudyBinaries_v2.Signal import Baseline, RandomTrace
 from TriggerStudyBinaries_v2.Generator import EventGenerator
 from TriggerStudyBinaries_v2.Generator import Generator
 from TriggerStudyBinaries_v2.Classifier import NNClassifier
+from TriggerStudyBinaries_v2.Classifier import Ensemble
 from TriggerStudyBinaries_v2.Classifier import TriggerClassifier
 import TriggerStudyBinaries_v2.PerformanceTest as pt 
 

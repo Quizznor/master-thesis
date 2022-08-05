@@ -237,27 +237,26 @@ def ROC(save_path : dict, **kwargs) -> None :
             "FN" : f"/cr/data01/filip/ROC_curves/{save_path}/false_negatives.csv"
         }
 
-    temp = [[],[]]
-    for i, p in enumerate(["TP","FP"]):
+    temp = [[],[],[],[]]
 
-        if os.path.getsize(save_file[p]):
-            temp[i] = np.loadtxt(save_file[p], usecols = 0)
-        else: temp[i] = np.array([0])
+    for i, p in enumerate(["TP", "TN", "FP", "FN"]):
+        temp[i] = np.loadtxt(save_file[p], usecols = 0)
 
-    y, x = temp
+    TP, TN, FP, FN = temp
+    TPs, TNs, FPs, FNs = len(TP), len(TN), len(FP), len(FN)
 
-    with open(save_file["TN"], "r") as TN, open(save_file["FN"], "r") as FN:
-        TNs, FNs = len(TN.readlines()), len(FN.readlines())
+    if kwargs.get("full_set", False):
+        y, x = np.array(list(TP) + list(TN)), np.array(list(FP) + list(FN))
+    else: y, x = TP, FP
 
-    FPs, TPs = len(x) if x[0] != 0 else 0, len(y) if y[0] != 0 else 0
-    accuracy = (TPs + TNs) / (TPs + FPs + TNs + FNs) * 100
+    accuracy = ( TNs + TPs ) / ( TPs + TNs + FNs + FPs ) * 100
 
-    print(save_path.ljust(60), f"{f'{TPs}'.ljust(7)} {f'{FPs}'.ljust(7)} {f'{TNs}'.ljust(7)} {f'{FNs}'.ljust(7)} {TPs + FPs + TNs + FNs} -> acc = {accuracy:.2f}%")
+    print(save_path.ljust(60), f"{f'{TPs}'.ljust(7)} {f'{FPs}'.ljust(7)} {f'{TNs}'.ljust(7)} {f'{FNs}'.ljust(7)} {len(x) + len(y)} -> acc = {accuracy:.2f}%")
     score_low, score_high = min([x.min(), y.min()]) if min([x.min(), y.min()]) > 0 else 0.01, max([x.max(), y.max()])
     last, current_x, current_y = score_low, 0, 0
     ROC_x, ROC_y = [],[]
 
-    for score_bin in np.geomspace(score_low, score_high, kwargs.get("n", 1000))[::-1]:
+    for score_bin in np.geomspace(score_low, score_high, kwargs.get("n", 100))[::-1]:
 
         this_x = ((last > x) & (x > score_bin)).sum()
         this_y = ((last > y) & (y > score_bin)).sum()
@@ -274,7 +273,7 @@ def ROC(save_path : dict, **kwargs) -> None :
     plt.ylim(-0.02,1.02)
     plt.rcParams.update({'font.size': 22})
     plt.xlabel("False positive rate"), plt.ylabel("True positive rate")
-    plt.plot(ROC_x, ROC_y, c = kwargs.get("c", "steelblue"), label = kwargs.get("label", "Classifier Performance"), ls = kwargs.get("ls", "solid"))
+    plt.plot(ROC_x, ROC_y, c = kwargs.get("c", "steelblue"), label = " ".join(save_path.split("_")[:2]), ls = kwargs.get("ls", "solid"))
     plt.plot([0,1],[0,1], ls = "--", c = "gray")
 
 # signal precision and recall curve

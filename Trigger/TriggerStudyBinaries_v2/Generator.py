@@ -5,8 +5,8 @@ class EventGenerator():
 
     labels = \
     {
-        1: tf.keras.utils.to_categorical(1, 2, dtype = int),                        # Signal
-        0: tf.keras.utils.to_categorical(0, 2, dtype = int)                         # Background
+        0: tf.keras.utils.to_categorical(0, 2, dtype = int),                        # Background
+        1: tf.keras.utils.to_categorical(1, 2, dtype = int)                         # Signal
     }
 
     libraries = \
@@ -125,8 +125,8 @@ class Generator(tf.keras.utils.Sequence):
         # Construct either gaussian or random trace baseline
         if not self.use_real_background: baseline = Baseline(self.mu, self.sigma, self.length)
         else: 
-            baseline = self.RandomTraceBuffer.get()
-            baseline += np.random.uniform(0, 1, size = (3, self.length))
+            baseline = self.RandomTraceBuffer.get()                                 # load INT baseline trace
+            baseline += np.random.uniform(0, 1, size = (3, self.length))            # convert it to FLOAT now
 
         # try to raise a valid trace (i.e. with signal)...
         try:
@@ -163,12 +163,14 @@ class Generator(tf.keras.utils.Sequence):
 
         return np.array(traces), np.array(labels)
 
-    # calculate a sliding window range conforming (more or less) to a given prior  
+    # calculate a sliding window range conforming to a given prior  
     def __sliding_window__(self, VEMTrace : Trace, override_prior : bool = False) -> range :
 
-        if np.isnan(np.NaN if override_prior else self.prior): start, stop = 0, VEMTrace.length - self.window_length
+        if np.isnan(np.NaN if override_prior else self.prior) or not VEMTrace.has_signal: 
+            start, stop = 0, VEMTrace.length - self.window_length
         else:
-            signal_length = VEMTrace.signal_start - VEMTrace.signal_end
+
+            signal_length = VEMTrace.signal_end - VEMTrace.signal_start
             n_bkg = int((( self.window_length // self.window_step) +  signal_length // 10) * (1/self.prior - 1))
             start = int(VEMTrace.signal_start - ( n_bkg / 2 * 10 + (self.window_length - np.random.randint(10))))
             stop = int(VEMTrace.signal_end + ( n_bkg / 2 * 10))
