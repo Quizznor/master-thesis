@@ -1,14 +1,5 @@
 from dataclasses import dataclass
-from time import perf_counter_ns
 import matplotlib.pyplot as plt
-from time import strftime
-import tensorflow as tf
-from time import gmtime
-import numpy as np
-import matplotlib
-import os, sys
-import random
-import typing
 
 class EmptyFileError(Exception): pass
 
@@ -35,15 +26,5 @@ class GLOBAL():
     ignore_low_VEM              = 0                                             # label signals under threshold as background
     window                      = 120                                           # Length (in bins) of the sliding window
     step                        = 10                                            # Sliding window analysis step size (in bins)
-
-from TriggerStudyBinaries_v2.Signal import SignalBatch, Signal
-from TriggerStudyBinaries_v2.Signal import Trace, InjectedBackground
-from TriggerStudyBinaries_v2.Signal import Baseline, RandomTrace
-from TriggerStudyBinaries_v2.Generator import EventGenerator
-from TriggerStudyBinaries_v2.Generator import Generator
-from TriggerStudyBinaries_v2.Classifier import NNClassifier
-from TriggerStudyBinaries_v2.Classifier import Ensemble
-from TriggerStudyBinaries_v2.Classifier import TriggerClassifier
-import TriggerStudyBinaries_v2.PerformanceTest as pt 
 
 plt.rcParams.update({'font.size': 22})

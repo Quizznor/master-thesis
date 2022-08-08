@@ -1,10 +1,11 @@
+from numba.experimental import jitclass
+from numba import njit, vectorize
 import numpy as np
 import os
 
 from .__config__ import *
 
 # container for simulated signal
-@dataclass
 class Signal():
 
     def __init__(self, pmt_data : np.ndarray, trace_length : int) -> None :
@@ -37,6 +38,7 @@ class Signal():
             self.Signal[i][self.signal_start : self.signal_end] += PMT
 
 # container for the combined trace
+@jitclass
 class Trace(Signal):
 
     def __init__(self, trace_options : list, baseline_data : np.ndarray, signal_data : tuple = None) :
@@ -67,20 +69,27 @@ class Trace(Signal):
         self.Baseline = baseline_data
 
         if self.has_accidentals and self.has_signal:
-            self.pmt_1, self.pmt_2, self.pmt_3 = self.convert_to_VEM ( self.Baseline + self.Signal + self.Injected )
+            self.pmt_1, self.pmt_2, self.pmt_3 = self.convert_to_VEM ( self.Baseline + self.Signal + self.Injected, self.ADC_to_VEM )
         elif self.has_accidentals:
-            self.pmt_1, self.pmt_2, self.pmt_3 = self.convert_to_VEM ( self.Baseline + self.Injected )
+            self.pmt_1, self.pmt_2, self.pmt_3 = self.convert_to_VEM ( self.Baseline + self.Injected, self.ADC_to_VEM )
         elif self.has_signal:
-            self.pmt_1, self.pmt_2, self.pmt_3 = self.convert_to_VEM ( self.Baseline + self.Signal )
-        else: self.pmt_1, self.pmt_2, self.pmt_3 = self.convert_to_VEM ( self.Baseline )
+            self.pmt_1, self.pmt_2, self.pmt_3 = self.convert_to_VEM ( self.Baseline + self.Signal, self.ADC_to_VEM )
+        else: self.pmt_1, self.pmt_2, self.pmt_3 = self.convert_to_VEM ( self.Baseline, self.ADC_to_VEM )
 
     # poissonian for background injection
     def poisson(self) -> int :
-        return np.random.poisson( GLOBAL.background_frequency * GLOBAL.single_bin_duration * self.length )
+
+        f = GLOBAL.background_frequency
+        t_bin = GLOBAL.single_bin_duration
+        n_bin = self.length
+
+        return self._poisson(f, t_bin, n_bin)
 
     # convert from ADC counts to VEM 
-    def convert_to_VEM(self, signal : np.ndarray) -> np.ndarray :
-        return np.floor(signal) / self.ADC_to_VEM
+    @staticmethod
+    # @njit
+    def convert_to_VEM(signal : np.ndarray, ADC_to_VEM : float) -> np.ndarray :
+        return np.floor(signal) / ADC_to_VEM
 
     # extract pmt data for a given trace window
     def get_trace_window(self, window : tuple) -> tuple : 
@@ -106,12 +115,13 @@ class Trace(Signal):
         return n_sig, n_bkg
 
     @staticmethod
+    # @njit
     # return the mean of integrated PMT signals for a given window
     def integrate(window : np.ndarray) -> float : 
         return np.mean(np.sum(window, axis = 1))
 
     # wrapper for pretty printing
-    # TODO work on overlaps
+    # TODO work on signal / background overlaps?
     def __repr__(self) -> str :
 
         reduce_by = 30
@@ -170,8 +180,17 @@ class Trace(Signal):
         plt.legend()
         plt.show()
 
+    # helper functions for numba #######################
+    @staticmethod
+    # @njit
+    def _poisson(f : float, t_bin : float, n_bin : int) -> int :
+        return np.random.poisson( f * t_bin * n_bin )
+
+
+
+    ####################################################
+
 # container for reading signal files
-@dataclass
 class SignalBatch():
 
     def __new__(self, trace_file : str) -> tuple:
@@ -185,14 +204,12 @@ class SignalBatch():
             yield np.array([signal[station], signal[station + 1], signal[station + 2]]) 
 
 # container for gaussian baseline
-@dataclass
 class Baseline():
 
     def __new__(self, mu, sigma, length) -> np.ndarray :
         return np.random.normal(mu, sigma, (3, length))
 
 # container for random traces
-@dataclass
 class RandomTrace():
 
     baseline_dir : str = "/cr/tempdata01/filip/iRODS/Background/"                   # storage path of the baseline lib
@@ -221,7 +238,6 @@ class RandomTrace():
         return self._these_traces[self.__current_files]
 
 # container for injected muons
-@dataclass
 class InjectedBackground():
 
     # TODO get simulations for three different PMTs

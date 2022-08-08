@@ -1,17 +1,18 @@
-from TriggerStudyBinaries_v2.__configure__ import *
-from scipy.stats import norm
+from TriggerStudyBinaries_v2 import *
 
 plt.rcParams.update({'font.size': 22})
 
-TestRealBackground = EventGenerator("all", real_background = True, split = 1, prior = 0, force_inject = 0)
-TestModelBackground = EventGenerator("all", real_background = False, split = 1, prior = 0, force_inject = 0)
+TestRealBackground = EventGenerator("all", real_background = True, split = 1, prior = 0, ADC_to_VEM = 1, force_inject = 0)
+TestModelBackground = EventGenerator("all", real_background = False, split = 1, prior = 0, ADC_to_VEM = 1)
 
 c = ["steelblue", "orange"]
 l = ["random traces", "model background"]
 
+fig, (ax1, ax2) = plt.subplots(2)
+
 for i, Dataset in enumerate([TestRealBackground, TestModelBackground]):
 
-    histogram = []
+    histo_mean, difference_mean = [], []
 
     for batch in range(Dataset.__len__()):
 
@@ -21,22 +22,19 @@ for i, Dataset in enumerate([TestRealBackground, TestModelBackground]):
 
         for trace in traces:
 
-            histogram.append(np.mean(trace))
-    
-    # cut real background
-    if i == 0: 
-        mask = np.where(np.abs(histogram) < 0.01)[0]
-        histogram = np.array(histogram)[mask]
+            diff = np.diff(trace)
 
-    histogram = np.array(histogram) * GLOBAL.ADC_to_VEM
-    mu, sigma = np.mean(histogram), np.std(histogram)
+            histo_mean.append(np.mean(trace))
+            difference_mean.append(np.mean(diff))
 
-    n, bins, _ = plt.hist(histogram, histtype = "step", lw = 2, bins = 100, color = c[i], label = l[i] + f", n = {len(histogram)}", density = True)
-    plt.plot(bins, norm.pdf(bins, mu, sigma), ls = "--", lw = 2)
+    n, bins, _ = ax1.hist(histo_mean, histtype = "step", lw = 2, bins = 100, range = (-1,1), color = c[i], label = l[i] + f", n = {len(histo_mean)}", density = True)
+    n, bins, _ = ax2.hist(difference_mean, histtype = "step", lw = 2, bins = 30, range = (-0.05,0.05), color = c[i], label = l[i] + f", n = {len(difference_mean)}", density = True)
 
-    print(f"{l[i]}: mu = {mu:.3f}, sigma = {sigma:.3f}")
+    print(f"{l[i]}: mu = {np.mean(histo_mean):.3f}, diff = {np.mean(difference_mean):.6f}")
 
-# plt.ylabel("# of occurences")
-plt.xlabel("Signal / ADC")
-plt.legend()
+ax1.set_ylabel("Histogram")
+ax2.set_ylabel("Difference")
+ax1.set_xlabel("Signal / ADC")
+ax2.set_xlabel("Signal / ADC")
+
 plt.show()

@@ -1,4 +1,4 @@
-from TriggerStudyBinaries_v2.__configure__ import *
+from TriggerStudyBinaries_v2 import *
 
 plt.rcParams.update({'font.size': 18})
 

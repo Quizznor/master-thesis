@@ -238,17 +238,18 @@ class Generator(tf.keras.utils.Sequence):
 
         histogram_ranges = [(0.01,3), (0.01,2e5), None]
         histogram_titles = ["Injected Background", "Signal", "Baseline"]
-        for i, histogram in enumerate([background_hist, signal_hist, baseline_hist]):
+        # for i, histogram in enumerate([background_hist, signal_hist, baseline_hist]):
 
-            plt.figure()
-            plt.title(histogram_titles[i])
-            plt.hist(histogram, histtype = "step", range = histogram_ranges[i], bins = 100)
-            plt.yscale("log") if i != 2 else None
+            # plt.figure()
+            # plt.title(histogram_titles[i])
+            # plt.hist(histogram, histtype = "step", range = histogram_ranges[i], bins = 100)
+            # plt.yscale("log") if i != 2 else None
 
-            plt.xlabel("Signal / VEM")
+            # plt.xlabel("Signal / VEM")
 
         print(f"\nTotal time: {(perf_counter_ns() - start) * 1e-9 :.2f}s - {n_signals + n_backgrounds} traces")
         print(f"n_signal = {n_signals}, n_background = {n_backgrounds}")
         print(f"n_injected = {n_injected} -> {n_injected / (self.length * (n_signals + n_backgrounds) * GLOBAL.single_bin_duration):.2f} Hz background")
+        print("")
 
-        plt.show()
+        # plt.show()

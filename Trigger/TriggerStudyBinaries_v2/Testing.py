@@ -1,4 +1,7 @@
-from TriggerStudyBinaries_v2.__configure__ import *
+from .__config__ import *
+from .Signal import *
+from .Generator import *
+from .Classifier import *
 
 Estimator = typing.Union[TriggerClassifier, NNClassifier]
 

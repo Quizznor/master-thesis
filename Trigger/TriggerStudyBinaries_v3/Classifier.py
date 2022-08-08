@@ -1,4 +1,6 @@
+from numba.experimental import jitclass
 from time import strftime, gmtime
+from numba import njit, vectorize
 
 from .__config__ import *
 from .Signal import *
