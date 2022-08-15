@@ -1,6 +1,6 @@
-from TriggerStudyBinaries_v2.__configure__ import *
+from TriggerStudyBinaries_v4 import *
 
-AllEvents = EventGenerator("all")
-Models = Ensemble("one_layer_conv2d")
+AllEvents = EventGenerator("all", ignore_low_vem = 4.63)
 
-Models.train(AllEvents, 5)
+TestModel = NNClassifier("one_layer_conv2d")
+TestModel.train(AllEvents, 10, "one_layer_conv2d_4.63VEM")

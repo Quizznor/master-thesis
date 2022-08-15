@@ -1,26 +1,43 @@
-from TriggerStudyBinaries_v2.__configure__ import *
+from TriggerStudyBinaries_v4 import *
 
-_, AllEvents = EventGenerator("all", seed = True)
+# reseed the random number generator
+def set_seed(seed : int) -> None : 
+    np.random.seed(seed)
+    random.seed(seed)
+
+_, AllEvents = EventGenerator("all", seed = 42)
 
 CurrentTrigger = TriggerClassifier()
-pt.make_dataset(CurrentTrigger, AllEvents, "current_trigger_validation_data")
+make_dataset(CurrentTrigger, AllEvents, "current_trigger_validation_data")
+
+set_seed(42)
 
 MockLinearModel = NNClassifier("mock_model_all_linear/model_2")
-pt.make_dataset(MockLinearModel, AllEvents, "mock_linear_validation_data")
+make_dataset(MockLinearModel, AllEvents, "one_layer_conv2d_validation_data")
 
-LargeModel = NNClassifier("large_model/model_5")
-pt.make_dataset(LargeModel, AllEvents, "large_model_validation_data")
+set_seed(42)
 
-SmallConv2d = NNClassifier("small_conv2d/model_10")
-pt.make_dataset(SmallConv2d, AllEvents, "small_model_validation_data")
+CutFifthVEM = NNClassifier("minimal_conv2d_cut_0.20VEM/model_4")
+make_dataset(CutFifthVEM, AllEvents, "one_layer_conv2d_cut_0.20VEM_validation_data")
 
-CutFifthVEM = NNClassifier("minimal_conv2d_cut_0.2VEM/model_4")
-pt.make_dataset(CutFifthVEM, AllEvents, "mock_fifth_validation_data_uncorrected")
+set_seed(42)
 
-CutHalfVEM = NNClassifier("minimal_conv2d_cut_0.5VEM/model_10")
-pt.make_dataset(CutHalfVEM, AllEvents, "mock_half_validation_data_uncorrected")
+CutHalfVEM = NNClassifier("minimal_conv2d_cut_0.50VEM/model_10")
+make_dataset(CutHalfVEM, AllEvents, "one_layer_conv2d_cut_0.50VEM_validation_data")
 
-CutOneVEM = NNClassifier("minimal_conv2d_cut_1.0VEM/model_2")
-pt.make_dataset(CutOneVEM, AllEvents, "mock_one_validation_data_uncorrected")
+set_seed(42)
+
+CutOneVEM = NNClassifier("minimal_conv2d_cut_1.00VEM/model_2")
+make_dataset(CutOneVEM, AllEvents, "one_layer_conv2d_cut_1.00VEM_validation_data")
+
+set_seed(42)
+
+CutTwoVEM = NNClassifier("one_layer_conv2d_2.00VEM/ensemble_1/model_4/model_5")
+make_dataset(CutTwoVEM, AllEvents, "one_layer_conv2d_cut_2.00VEM_validation_data")
+
+set_seed(42)
+
+CutFiveVEM = NNClassifier("one_layer_conv2d_4.63VEM/model_2")
+make_dataset(CutFiveVEM, AllEvents, "one_layer_conv2d_cut_4.63VEM_validation_data")
 
 AllEvents.unit_test()

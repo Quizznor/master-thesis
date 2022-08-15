@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 
 class EmptyFileError(Exception): pass
 class SlidingWindowError(Exception): pass
+class EarlyStoppingError(Exception): pass
 
 @dataclass
 class GLOBAL():
@@ -29,5 +30,6 @@ class GLOBAL():
     ignore_low_VEM              = 0                                             # label signals under threshold as background
     window                      = 120                                           # Length (in bins) of the sliding window
     step                        = 10                                            # Sliding window analysis step size (in bins)
+    early_stopping_patience     = 1000                                          # number of batches for early stopping patience
 
 plt.rcParams.update({'font.size': 22})

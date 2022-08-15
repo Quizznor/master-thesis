@@ -43,6 +43,16 @@ class NeuralNetworkArchitectures():
             cls.model.add(tf.keras.layers.BatchNormalization(**kwargs))
     #####################################################
 
+    # doesn't really work all well with the dataset log E = 16-16.5 
+    # since empty files raise background traces, which get scaled UP
+    @staticmethod   # 96 parameters
+    def __normed_one_layer_conv2d__(cls : "NNClassifier") -> None :
+
+        NeuralNetworkArchitectures.add_input(cls, shape = (3, 120, 1))
+        NeuralNetworkArchitectures.add_norm(cls)
+        NeuralNetworkArchitectures.add_conv2d(cls, filters = 1, kernel_size = 3, strides = 3)
+        NeuralNetworkArchitectures.add_output(cls, units = 2, activation = "softmax")
+
     @staticmethod   # 92 parameters
     def __one_layer_conv2d__(cls : "NNClassifier") -> None :
 
@@ -86,6 +96,7 @@ class NNClassifier(NeuralNetworkArchitectures):
 
     models = \
         {
+            "normed_one_layer_conv2d" : NeuralNetworkArchitectures.__normed_one_layer_conv2d__,
             "one_layer_conv2d" : NeuralNetworkArchitectures.__one_layer_conv2d__,
             "one_layer_conv2d_0.5VEM" : NeuralNetworkArchitectures.__one_layer_conv2d__,
             "one_layer_conv2d_1.0VEM" : NeuralNetworkArchitectures.__one_layer_conv2d__,
@@ -95,13 +106,17 @@ class NNClassifier(NeuralNetworkArchitectures):
             "large_conv2d" : NeuralNetworkArchitectures.__large_conv2d__
         }
 
-    def __init__(self, set_architecture = None, supress_print : bool = False) -> None :
+    def __init__(self, set_architecture = None, supress_print : bool = False, **kwargs) -> None :
 
         r'''
         :set_architecture ``str``: one of
         
         -- path to existing network (relative to /cr/data01/filip/models/)
-        -- examples of architectures, see model dictionary above 
+        -- examples of architectures, see NeuralNetworkArchitectures
+
+        :Keyword arguments:
+        
+        * *early_stopping_patience* (``int``) -- number of batches without improvement before training is stopped
         '''
 
         super().__init__()
@@ -117,20 +132,27 @@ class NNClassifier(NeuralNetworkArchitectures):
             except OSError:
                 sys.exit(f"\nCouldn't find path: '/cr/data01/filip/models/{set_architecture}', exiting now\n")
 
-        self.model.compile(loss = 'categorical_crossentropy', optimizer = 'adam', metrics = 'accuracy', run_eagerly = True)
+        self.model.compile(loss = 'categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy'], run_eagerly = True)
         self.model.build()
+        
+        EarlyStopping = BatchwiseEarlyStopping(kwargs.get("early_stopping_patience", GLOBAL.early_stopping_patience))
+
+        self.callbacks = [EarlyStopping,]
+        
         not supress_print and print(self)
 
     def train(self, Datasets : tuple, epochs : int, save_dir : str, **kwargs) -> None :
         
         TrainingSet, ValidationSet = Datasets
-        verbosity = kwargs.get("verbose", 2)
 
-        for i in range(self.epochs, epochs):
-            print(f"Epoch {i + 1}/{epochs}")
-            self.model.fit(TrainingSet, validation_data = ValidationSet, epochs = 1, verbose = verbosity)
-            self.epochs += 1
-
+        try:
+            for i in range(self.epochs, epochs):
+                print(f"Epoch {i + 1}/{epochs}")
+                self.model.fit(TrainingSet, validation_data = ValidationSet, epochs = 1, verbose = 1, callbacks = self.callbacks)
+                self.epochs += 1
+                self.save(save_dir)
+        except EarlyStoppingError: 
+            self.epochs = "converged"
             self.save(save_dir)
 
     def save(self, directory_path : str) -> None : 
@@ -197,7 +219,7 @@ class Ensemble(NNClassifier):
                 instance.model.fit(TrainingSet, validation_data = ValidationSet, epochs = 1)
                 instance.epochs = instance.epochs + 1
 
-                instance.save(self.name + f"/ensemble_{i}/model_{epoch}")
+                instance.save(self.name + f"/ensemble_{i}/")
 
         random.shuffle(TrainingSet.files)
         random.shuffle(ValidationSet.files)
@@ -256,7 +278,32 @@ class TriggerClassifier():
         else:
             return False
 
+# Early stopping callback that gets evaluated at the end of each batch
+class BatchwiseEarlyStopping(tf.keras.callbacks.Callback):
+
+        def __init__(self, patience : int) -> None :
+            self.patience = patience
+        
+        def on_train_begin(self, logs : dict = None) -> None :
+            
+            self.current_patience = 0
+            self.best_loss = np.Inf
+
+        def on_batch_end(self, batch, logs : dict = None) -> None :
+
+            if logs.get("accuracy") >= 0.99:
+                current_loss = logs.get("loss")
+                if np.less(current_loss, self.best_loss):
+                    self.best_loss = current_loss
+                    self.current_patience = 0
+                else:
+                    self.current_patience += 1
+
+                    if self.current_patience >= self.patience:
+                        print(f"\nEarly stopping of training after {self.current_patience} batches with no improvement")
+                        raise EarlyStoppingError
+
+
+# TODO
 class BayesianClassifier():
-    
-    # TODO
     pass

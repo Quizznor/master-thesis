@@ -266,10 +266,10 @@ class Generator(tf.keras.utils.Sequence):
                     
                     if trace.has_signal: 
 
-                        # signal_length = trace.signal_end - trace.signal_start
-                        # sliding_window = self.__sliding_window__(trace)
-                        # window_length = (sliding_window[-1] - sliding_window[0]) - 2 * self.window_length
-                        # priors.append(signal_length / window_length)
+                        signal_length = trace.signal_end - trace.signal_start
+                        sliding_window = self.__sliding_window__(trace)
+                        window_length = (sliding_window[-1] - sliding_window[0]) - 2 * self.window_length
+                        priors.append(signal_length / window_length)
                         
                         signal_hist.append(np.mean(trace.Signal))
                         n_signals += 1
@@ -282,19 +282,19 @@ class Generator(tf.keras.utils.Sequence):
 
         histogram_ranges = [(0.01,3), (0.01,2e5), None]
         histogram_titles = ["Injected Background", "Signal", "Baseline"]
-        # for i, histogram in enumerate([background_hist, signal_hist, baseline_hist]):
+        for i, histogram in enumerate([background_hist, signal_hist, baseline_hist]):
 
-        #     plt.figure()
-        #     plt.title(histogram_titles[i])
-        #     plt.hist(histogram, histtype = "step", range = histogram_ranges[i], bins = 100, lw = 2)
-        #     plt.yscale("log") if i != 2 else None
+            plt.figure()
+            plt.title(histogram_titles[i])
+            plt.hist(histogram, histtype = "step", range = histogram_ranges[i], bins = 100, lw = 2)
+            plt.yscale("log") if i != 2 else None
 
-        #     plt.xlabel("Signal / VEM")
+            plt.xlabel("Signal / VEM")
 
-        # plt.figure()
-        # plt.title("Distribution of priors")
-        # plt.axvline(self.prior, c = "gray", ls = "--", lw = "2", label = "required")
-        # plt.hist(priors, range = (0,1), bins = 50, histtype = "step", label = "returned", lw = 2)
+        plt.figure()
+        plt.title("Distribution of priors")
+        plt.axvline(self.prior, c = "gray", ls = "--", lw = "2", label = "required")
+        plt.hist(priors, range = (0,1), bins = 50, histtype = "step", label = "returned", lw = 2)
 
         print(f"\nTotal time: {(perf_counter_ns() - start) * 1e-9 :.2f}s - {n_signals + n_backgrounds} traces")
         print(f"n_signal = {n_signals}, n_background = {n_backgrounds}")

@@ -143,7 +143,7 @@ class Generator(tf.keras.utils.Sequence):
             for station in SignalBatch(event_file):
                 
                 # Add together baseline + signal and inject accidental muons
-                VEMTrace = Trace([self.ADC_to_VEM, self.length, self.sigma, self.mu, self.n_injected], baseline, station)
+                VEMTrace = Trace([self.ADC_to_VEM, self.length, self.n_injected], baseline, station)
                 
                 if full_trace:
                     traces.append(VEMTrace)
@@ -159,7 +159,7 @@ class Generator(tf.keras.utils.Sequence):
         # ... raise a mock background trace if this fails for various reasons
         except EmptyFileError:
             
-            VEMTrace = Trace([self.ADC_to_VEM, self.length, self.sigma, self.mu, self.n_injected], baseline)
+            VEMTrace = Trace([self.ADC_to_VEM, self.length, self.n_injected], baseline)
 
             if full_trace:
                 traces.append(VEMTrace)
@@ -173,7 +173,7 @@ class Generator(tf.keras.utils.Sequence):
     # calculate a sliding window range conforming (in most cases at least) to a given prior  
     def __sliding_window__(self, VEMTrace : Trace, override_prior : bool = False) -> range :
 
-        if np.isnan(np.NaN if override_prior else self.prior) or not VEMTrace.has_signal: 
+        if override_prior or not VEMTrace.has_signal: 
             start, stop = 0, VEMTrace.length - self.window_length                   # return whole trace for e.g. background traces 
         else:
 
@@ -197,10 +197,7 @@ class Generator(tf.keras.utils.Sequence):
             
             start = max(signal_middle - int(0.5 * length), 0)
             stop = min(signal_middle + int(0.5 * length), VEMTrace.length - self.window_length)
-
-            # if there's any kind of over/undershoot in sliding window prior is miscalculated a bit
                 
-
         return range(start, stop, self.window_step)
 
     # run some diagnostics to make sure dataset is in order
@@ -250,5 +247,6 @@ class Generator(tf.keras.utils.Sequence):
         print(f"\nTotal time: {(perf_counter_ns() - start) * 1e-9 :.2f}s - {n_signals + n_backgrounds} traces")
         print(f"n_signal = {n_signals}, n_background = {n_backgrounds}")
         print(f"n_injected = {n_injected} -> {n_injected / (self.length * (n_signals + n_backgrounds) * GLOBAL.single_bin_duration):.2f} Hz background")
-
+        print()
+        
         plt.show()
