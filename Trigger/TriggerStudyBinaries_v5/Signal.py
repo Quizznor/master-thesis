@@ -1,5 +1,3 @@
-from numba.experimental import jitclass
-from numba import njit, vectorize
 import numpy as np
 import os
 
@@ -77,20 +75,17 @@ class Trace(Signal):
         else: self.pmt_1, self.pmt_2, self.pmt_3 = self.convert_to_VEM ( self.Baseline, self.ADC_to_VEM )
 
     # poissonian for background injection
-    # jitted function for performance
     def poisson(self) -> int :
 
-        f = GLOBAL.background_frequency
-        t_bin = GLOBAL.single_bin_duration
-        n_bin = self.length
-
-        return self._poisson(f, t_bin, n_bin)
+        return np.random.poisson( GLOBAL.background_frequency * GLOBAL.single_bin_duration * self.length )
 
     # extract pmt data plus label for a given trace window 
     # semi-jitted function for performance
     def get_trace_window(self, window : tuple) -> tuple : 
 
-        pmt_1, pmt_2, pmt_3 = self._cut(self.pmt_1, self.pmt_2, self.pmt_3, window)
+        start, stop = window
+
+        pmt_1, pmt_2, pmt_3 = self.pmt_1[start : stop], self.pmt_2[start : stop], self.pmt_3[start : stop]
         label = self.calculate_signal_overlap(window)
 
         if np.array([pmt_1, pmt_2, pmt_3]).shape != (3,120):
@@ -105,17 +100,15 @@ class Trace(Signal):
     def calculate_signal_overlap(self, window : tuple) -> int :
         
         if self.has_signal: 
-            return self._calculate_signal_overlap((self.signal_start, self.signal_end), window)
+            return len(range(max(window[0], self.signal_start), min(window[-1], self.signal.end)))
         else: return 0
 
     @staticmethod
-    @njit
     # return the mean of integrated PMT signals for a given window
     def integrate(window : np.ndarray) -> float : 
         return np.mean(np.sum(window, axis = 1))
 
     @staticmethod
-    @njit
     # convert from ADC counts to VEM 
     def convert_to_VEM(signal : np.ndarray, ADC_to_VEM : float) -> np.ndarray :
         return np.floor(signal) / ADC_to_VEM
@@ -178,24 +171,6 @@ class Trace(Signal):
         plt.legend()
         plt.show()
 
-    # helper functions for numba #######################
-    @staticmethod
-    @njit
-    def _poisson(f : float, t_bin : float, n_bin : int) -> int :
-        return np.random.poisson( f * t_bin * n_bin )
-
-    @staticmethod
-    @njit
-    def _calculate_signal_overlap(signal : tuple, window : tuple) -> int :
-        return len(range(max(window[0], signal[0]), min(window[-1], signal[1])))
-
-    @staticmethod
-    @njit
-    def _cut(pmt_1 : np.ndarray, pmt_2 : np.ndarray, pmt_3 : np.ndarray, window : tuple) -> tuple :
-        
-        start, stop = window
-        return (pmt_1[start : stop], pmt_2[start : stop], pmt_3[start : stop])
-    ####################################################
 
 # container for reading signal files
 class SignalBatch():

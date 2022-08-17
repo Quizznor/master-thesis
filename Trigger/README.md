@@ -9,6 +9,8 @@
     * Optimize runtime via numba
     * Fix a bug with sliding window range
 * TriggerStudyBinaries_4
-    * Switch to binary cross entropy
+    * Check out binary cross entropy -> doesn't seem to converge as good
     * Implement NNClassifier callbacks
-    * Add batch normalization to input
+    * Add batch normalization to input -> not worth it either (probably?)
+* TriggerStudyBinaries_5
+    * revert back to NOT using numba, doesn't seem to be worthwile

@@ -44,7 +44,7 @@ class Trace(Signal):
         self.ADC_to_VEM = trace_options[0]
         self.length = trace_options[1]
 
-        if trace_options[4] is not None:
+        if trace_options[2] is not None:
             self.inject = trace_options[2]
         else: self.inject = self.poisson()
 
