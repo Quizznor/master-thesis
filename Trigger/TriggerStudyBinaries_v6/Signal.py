@@ -195,7 +195,7 @@ class Baseline():
 # @jitclass # ?
 class RandomTrace():
 
-    baseline_dir : str = "/cr/tempdata01/filip/iRODS/Background/"                   # storage path of the baseline lib
+    baseline_dir : str = "/cr/tempdata01/filip/iRODS/corrected/"                    # storage path of the baseline lib
     all_files : np.ndarray = np.asarray(os.listdir(baseline_dir))                   # container for all baseline files
     all_n_files : int = len(all_files)                                              # number of available baseline files
 
@@ -209,8 +209,7 @@ class RandomTrace():
         else:
             these_traces = np.loadtxt(RandomTrace.baseline_dir + RandomTrace.all_files[index])
 
-        these_traces = np.split(these_traces, len(these_traces) // 3)               # group random traces by pmt    
-        self._these_traces = np.array([station[:,1:] for station in these_traces])  # add them to this dataclass
+        self._these_traces = np.split(these_traces, len(these_traces) // 3)         # group random traces by pmt
 
     # get random traces for a single stations
     def get(self) -> np.ndarray : 

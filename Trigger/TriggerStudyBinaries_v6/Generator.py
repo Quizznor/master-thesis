@@ -43,7 +43,7 @@ class EventGenerator():
         __:VEM traces:______________________________________________________________
 
         * *real_background* (``bool``) -- use real background from random traces
-        * *ADC_to_VEM* (``float``) -- ADC to VEM conversion factor, for UB <-> UUB
+        * *adc_to_vem* (``float``) -- ADC to VEM conversion factor, for UB <-> UUB
         * *n_bins* (``int``) -- generate a baseline with <trace_length> bins
         * *force_inject* (``int``) -- force the injection of <force_inject> background particles
         * *sigma* (``float``) -- baseline std in ADC counts, ignored for real_background
@@ -133,7 +133,7 @@ class Generator(tf.keras.utils.Sequence):
         if not self.use_real_background: baseline = Baseline(self.mu, self.sigma, self.length)
         else: 
             baseline = self.RandomTraceBuffer.get()                                 # load INT baseline trace
-            baseline += np.random.uniform(0, 1, size = (3, self.length))            # convert it to FLOAT now
+            # baseline += np.random.uniform(0, 1, size = (3, self.length))            # convert it to FLOAT now
 
         # try to raise a valid trace (i.e. with signal)...
         try:

@@ -1,3 +1,4 @@
+from cmath import tau
 from time import strftime, gmtime
 from abc import abstractmethod
 
@@ -25,9 +26,6 @@ class Classifier():
             print(f"{100 * (batch/n_traces):.2f}% - {mean_per_step_ms:.2f}ms/batch, ETA = {(n_traces - batch) * mean_per_step_ms * 1e-3:.0f}s", end ="\r")
             
             trace, _ = RandomTraces.__getitem__(batch, full_trace = True)
-
-            # TODO
-            raise NotImplementedError
 
 # Wrapper for tf.keras.Sequential model with some additional functionalities
 class NNClassifier(Classifier):
@@ -221,7 +219,6 @@ class NNClassifier(Classifier):
         self.layers[layer](**kwargs)
 
 
-
 # Class for streamlined handling of multiple NNs with the same architecture
 class Ensemble(NNClassifier):
 
@@ -284,18 +281,15 @@ class TriggerClassifier(Classifier):
 
     def __init__(self) : super().__init__()
 
-    def __call__(self, trace : np.ndarray) -> int : 
+    def __call__(self, trace : np.ndarray) -> bool : 
         
         # Threshold of 3.2 immediately gets promoted to T2
         # Threshold of 1.75 if a T3 has already been issued
 
-        if self.absolute_threshold_trigger(1.75, trace) or self.time_over_threshold_trigger(trace):
-            return 1
-        else: 
-            return 0 
+        return self.Th(3.2, trace) or self.ToT(trace) or self.ToTd(trace) or self.MoPS(trace)
 
     # method to check for (coincident) absolute signal threshold
-    def absolute_threshold_trigger(self, threshold : float, signal : np.ndarray) -> bool : 
+    def Th(self, threshold : float, signal : np.ndarray) -> bool : 
 
         pmt_1, pmt_2, pmt_3 = signal
 
@@ -312,7 +306,7 @@ class TriggerClassifier(Classifier):
         return False
 
     # method to check for elevated baseline threshold trigger
-    def time_over_threshold_trigger(self, signal : np.ndarray) -> bool : 
+    def ToT(self, signal : np.ndarray) -> bool : 
 
         threshold     = 0.2      # bins above this threshold are 'active'
 
@@ -329,6 +323,26 @@ class TriggerClassifier(Classifier):
         else:
             return False
 
+    # method to check for elevated baseline of deconvoluted signal
+    def ToTd(self, signal : np.ndarray) -> bool : 
+
+        # for information on this see GAP note 2018-01
+        dt      = 8.3                                                               # UUB bin width
+        tau     = 67                                                                # decay constant
+        decay   = np.exp(-dt/tau)                                                   # decay term
+
+        deconvoluted_trace = [(signal[i] - signal[i-1] * decay)/(1 - decay) for i in range(1,len(signal))]
+        deconvoluted_trace = np.array([list(signal[0]) + deconvoluted_trace])
+        
+        return self.ToT(deconvoluted_trace)
+
+    # method to count positive flanks in an FADC trace
+    def MoPS(self, signal : np.ndarray) -> bool : 
+
+        # as per GAP note 2018-01; an exact offline reconstruction of the trigger is not possible
+        # Can this be fixed in some way? perhaps with modified integration threshold INT?
+        return False 
+
 
 class BayesianClassifier(Classifier):
     
@@ -342,7 +356,7 @@ class BayesianClassifier(Classifier):
     #     self.quotient = self.signal / self.background
     #     self.threshold = threshold
 
-    def __call__(self, trace : np.ndarray) -> int : 
+    def __call__(self, trace : np.ndarray) -> bool : 
         
         # mock_likelihood = 0
 

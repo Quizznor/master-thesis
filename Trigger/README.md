@@ -10,7 +10,12 @@
     * Fix a bug with sliding window range
 * TriggerStudyBinaries_4
     * Check out binary cross entropy -> doesn't seem to converge as good
-    * Implement NNClassifier callbacks
     * Add batch normalization to input -> not worth it either (probably?)
+    * Implement NNClassifier callbacks
 * TriggerStudyBinaries_5
     * revert back to NOT using numba, doesn't seem to be worthwile
+    * implement naive bayes classifier as a cross check
+* TriggerStudyBinaries_v6
+    * Correct hardware Th1 trigger to only raise T2
+    * Recalculate baseline for random traces
+    * Implement ToTd trigger, look at MoPS trigger
