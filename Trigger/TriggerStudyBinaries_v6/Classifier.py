@@ -324,17 +324,20 @@ class TriggerClassifier(Classifier):
             return False
 
     # method to check for elevated baseline of deconvoluted signal
+    # first bin of trace is ignored, this shouldn't matter too much hopefully
     def ToTd(self, signal : np.ndarray) -> bool : 
 
         # for information on this see GAP note 2018-01
         dt      = 8.3                                                               # UUB bin width
         tau     = 67                                                                # decay constant
         decay   = np.exp(-dt/tau)                                                   # decay term
+        deconvoluted_trace = []
 
-        deconvoluted_trace = [(signal[i] - signal[i-1] * decay)/(1 - decay) for i in range(1,len(signal))]
-        deconvoluted_trace = np.array([list(signal[0]) + deconvoluted_trace])
-        
-        return self.ToT(deconvoluted_trace)
+        for pmt in signal:
+            deconvoluted_pmt = [(pmt[i] - pmt[i-1] * decay)/(1 - decay) for i in range(1,len(pmt))]
+            deconvoluted_trace.append(deconvoluted_pmt)
+ 
+        return self.ToT(np.array(deconvoluted_trace))
 
     # method to count positive flanks in an FADC trace
     def MoPS(self, signal : np.ndarray) -> bool : 

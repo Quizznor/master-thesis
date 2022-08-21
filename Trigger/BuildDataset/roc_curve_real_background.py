@@ -1,4 +1,4 @@
-from TriggerStudyBinaries_v5 import *
+from TriggerStudyBinaries_v6 import *
 
 # reseed the random number generator
 def set_seed(seed : int) -> None : 
@@ -37,10 +37,10 @@ _, AllEvents = EventGenerator("all", seed = 42, real_background = True, force_in
 
 # set_seed(42)
 
-# CutFiveVEM = NNClassifier("one_layer_conv2d_4.63VEM/model_converged")
-# make_dataset(CutFiveVEM, AllEvents, "one_layer_conv2d_cut_4.63VEM_random_traces")
+CutFiveVEM = NNClassifier("one_layer_conv2d_4.63VEM/model_2")
+make_dataset(CutFiveVEM, AllEvents, "one_layer_conv2d_cut_4.63VEM_random_traces")
 
 BayesClassifier = BayesianClassifier()
 make_dataset(BayesClassifier, AllEvents, f"bayes_LHQ_random_traces")
 
-# AllEvents.unit_test()
+AllEvents.unit_test()
