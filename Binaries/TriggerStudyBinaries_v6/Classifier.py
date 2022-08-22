@@ -58,85 +58,85 @@ class NNClassifier(Classifier):
         ### Library functions to add layers #################
         if True: # so that this can be collapsed in editor =)
             @staticmethod
-            def add_input(cls, **kwargs) -> None :
-                cls.model.add(tf.keras.layers.Input(**kwargs))
+            def add_input(model, **kwargs) -> None :
+                model.add(tf.keras.layers.Input(**kwargs))
 
             @staticmethod
-            def add_dense(cls, **kwargs) -> None : 
-                cls.model.add(tf.keras.layers.Dense(**kwargs))
+            def add_dense(model, **kwargs) -> None : 
+                model.add(tf.keras.layers.Dense(**kwargs))
 
             @staticmethod
-            def add_conv1d(cls, **kwargs) -> None : 
-                cls.model.add(tf.keras.layers.Conv1D(**kwargs))
+            def add_conv1d(model, **kwargs) -> None : 
+                model.add(tf.keras.layers.Conv1D(**kwargs))
 
             @staticmethod
-            def add_conv2d(cls, **kwargs) -> None : 
-                cls.model.add(tf.keras.layers.Conv2D(**kwargs))
+            def add_conv2d(model, **kwargs) -> None : 
+                model.add(tf.keras.layers.Conv2D(**kwargs))
 
             @staticmethod
-            def add_flatten(cls, **kwargs) -> None : 
-                cls.model.add(tf.keras.layers.Flatten(**kwargs))
+            def add_flatten(model, **kwargs) -> None : 
+                model.add(tf.keras.layers.Flatten(**kwargs))
 
             @staticmethod
-            def add_output(cls, **kwargs) -> None : 
-                cls.model.add(tf.keras.layers.Flatten())
-                cls.model.add(tf.keras.layers.Dense(**kwargs))
+            def add_output(model, **kwargs) -> None : 
+                model.add(tf.keras.layers.Flatten())
+                model.add(tf.keras.layers.Dense(**kwargs))
 
             @staticmethod
-            def add_dropout(cls, **kwargs) -> None : 
-                cls.model.add(tf.keras.layers.Dropout(**kwargs))
+            def add_dropout(model, **kwargs) -> None : 
+                model.add(tf.keras.layers.Dropout(**kwargs))
 
             @staticmethod
-            def add_norm(cls, **kwargs) -> None : 
-                cls.model.add(tf.keras.layers.BatchNormalization(**kwargs))
+            def add_norm(model, **kwargs) -> None : 
+                model.add(tf.keras.layers.BatchNormalization(**kwargs))
         #####################################################
 
         # doesn't really work all well with the dataset log E = 16-16.5 
         # since empty files raise background traces, which get scaled UP
         # 96 parameters
-        def __normed_one_layer_conv2d__(self, cls : "NNClassifier") -> None :
+        def __normed_one_layer_conv2d__(self, model) -> None :
 
-            self.add_input(cls, shape = (3, 120, 1))
-            self.add_norm(cls)
-            self.add_conv2d(cls, filters = 1, kernel_size = 3, strides = 3)
-            self.add_output(cls, units = 2, activation = "softmax")
+            self.add_input(model, shape = (3, 120, 1))
+            self.add_norm(model)
+            self.add_conv2d(model, filters = 1, kernel_size = 3, strides = 3)
+            self.add_output(model, units = 2, activation = "softmax")
 
         # 92 parameters
-        def __one_layer_conv2d__(self, cls : "NNClassifier") -> None :
+        def __one_layer_conv2d__(self, model) -> None :
 
-            self.add_input(cls, shape = (3, 120, 1))
-            self.add_conv2d(cls, filters = 1, kernel_size = 3, strides = 3)
-            self.add_output(cls, units = 2, activation = "softmax")
+            self.add_input(model, shape = (3, 120, 1))
+            self.add_conv2d(model, filters = 1, kernel_size = 3, strides = 3)
+            self.add_output(model, units = 2, activation = "softmax")
 
 
         # 55 parameters
-        def __two_layer_conv2d__(self, cls : "NNClassifier") -> None :
+        def __two_layer_conv2d__(self, model) -> None :
 
-            self.add_input(cls, shape = (3, 120, 1))
-            self.add_conv2d(cls, filters = 1, kernel_size = 3, strides = 3)
-            self.add_conv1d(cls, filters = 1, kernel_size = 2, strides = 2)
-            self.add_output(cls, units = 2, activation = "softmax")
+            self.add_input(model, shape = (3, 120, 1))
+            self.add_conv2d(model, filters = 1, kernel_size = 3, strides = 3)
+            self.add_conv1d(model, filters = 1, kernel_size = 2, strides = 2)
+            self.add_output(model, units = 2, activation = "softmax")
         
 
         # 35 parameters
-        def __minimal_conv2d__(self, cls : "NNClassifier") -> None :
+        def __minimal_conv2d__(self, model) -> None :
 
-            self.add_input(cls, shape = (3, 120,1))
-            self.add_conv2d(cls, filters = 2, kernel_size = (3,2), strides = 2)
-            self.add_conv1d(cls, filters = 1, kernel_size = 2, strides = 2)
-            self.add_conv1d(cls, filters = 1, kernel_size = 3, strides = 3)
-            self.add_conv1d(cls, filters = 1, kernel_size = 3, strides = 3)
-            self.add_output(cls, units = 2, activation = "softmax")
+            self.add_input(model, shape = (3, 120,1))
+            self.add_conv2d(model, filters = 2, kernel_size = (3,2), strides = 2)
+            self.add_conv1d(model, filters = 1, kernel_size = 2, strides = 2)
+            self.add_conv1d(model, filters = 1, kernel_size = 3, strides = 3)
+            self.add_conv1d(model, filters = 1, kernel_size = 3, strides = 3)
+            self.add_output(model, units = 2, activation = "softmax")
 
         # 606 parameters
-        def __large_conv2d__(self, cls : "NNClassifier") -> None : 
+        def __large_conv2d__(self, model) -> None : 
 
-            self.add_input(cls, shape = (3, 120,1))
-            self.add_conv2d(cls, filters = 2, kernel_size = (3,1), strides = 2)
-            self.add_conv1d(cls, filters = 4, kernel_size = 3, strides = 3)
-            self.add_conv1d(cls, filters = 8, kernel_size = 3, strides = 3)
-            self.add_conv1d(cls, filters = 16, kernel_size = 3, strides = 3)
-            self.add_output(cls, units = 2, activation = "softmax")
+            self.add_input(model, shape = (3, 120,1))
+            self.add_conv2d(model, filters = 2, kernel_size = (3,1), strides = 2)
+            self.add_conv1d(model, filters = 4, kernel_size = 3, strides = 3)
+            self.add_conv1d(model, filters = 8, kernel_size = 3, strides = 3)
+            self.add_conv1d(model, filters = 16, kernel_size = 3, strides = 3)
+            self.add_output(model, units = 2, activation = "softmax")
 
     models = \
         {
@@ -167,7 +167,7 @@ class NNClassifier(Classifier):
 
         try:
             self.model = tf.keras.Sequential()
-            self.models[set_architecture](self)
+            self.models[set_architecture](self.Architectures, self.model)
             self.epochs = 0
         except KeyError:
             try:
@@ -349,7 +349,7 @@ class TriggerClassifier(Classifier):
 
 class BayesianClassifier(Classifier):
     
-    def __init__(self, threshold : float) -> None :
+    def __init__(self) -> None :
 
         super().__init__()
 

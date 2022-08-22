@@ -133,7 +133,7 @@ class Generator(tf.keras.utils.Sequence):
         if not self.use_real_background: baseline = Baseline(self.mu, self.sigma, self.length)
         else: 
             baseline = self.RandomTraceBuffer.get()                                 # load INT baseline trace
-            # baseline += np.random.uniform(0, 1, size = (3, self.length))            # convert it to FLOAT now
+            baseline += np.random.uniform(0, 1, size = (3, self.length))            # convert it to FLOAT now
 
         # try to raise a valid trace (i.e. with signal)...
         try:
