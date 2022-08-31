@@ -5,7 +5,6 @@ plt.rcParams.update({'font.size': 18})
 # pt.ROC("large_model_validation_data", c = "yellow", ls = "solid") # -> trash
 # pt.ROC("small_model_validation_data", c = "green", ls = "solid") # -> trash
 
-<<<<<<< HEAD
 # # model background
 # ROC("current_trigger_validation_data", ls = "solid", c = "k")
 # ROC("one_layer_conv2d_cut_0.00VEM_validation_data", c = "orange", ls = "solid")
@@ -81,7 +80,7 @@ ROC(NetworkTenCut, "validation_data_downsampled", c = "orange")
 
 plt.legend()
 plt.show()
-=======
+
 # model background
 ROC("current_trigger_validation_data", ls = "solid", c = "k")
 ROC("one_layer_conv2d_cut_0.00VEM_validation_data", c = "orange", ls = "solid")
@@ -110,4 +109,4 @@ ROC("bayes_LHQ_random_traces", c = "steelblue", ls = "--")
 
 plt.legend(ncol = 2)
 plt.show()
->>>>>>> parent of f698288... Implement downsampling
+

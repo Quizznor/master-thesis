@@ -176,6 +176,8 @@ class NNClassifier(Classifier):
         {
             "normed_one_layer_conv2d" : Architectures.__normed_one_layer_conv2d__,
             "minimal_conv2d_0.00VEM_downsampled" : Architectures.__one_layer_conv2d__,
+            "one_layer_conv2d_0.20VEM" : Architectures.__one_layer_conv2d__,
+            "minimal_conv2d_0.20VEM_downsampled" : Architectures.__one_layer_conv2d__,
             "one_layer_conv2d_0.50VEM" : Architectures.__one_layer_conv2d__,
             "minimal_conv2d_0.50VEM_downsampled" : Architectures.__one_layer_conv2d__,
             "one_layer_conv2d_1.00VEM" : Architectures.__one_layer_conv2d__,
