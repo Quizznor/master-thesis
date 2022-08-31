@@ -3,6 +3,7 @@
 anaconda3/
 condor_binaries/
 scripts/binaries/__pycache__/*
+__CONDOR__/
 
 scripts/CDAS_triggers/io
 scripts/CDAS_triggers/sd
