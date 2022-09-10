@@ -1,37 +1,37 @@
-from TriggerStudyBinaries_v5 import *
+from TriggerStudyBinaries_v7 import *
 
 plt.rcParams.update({'font.size': 18})
 
-# pt.ROC("large_model_validation_data", c = "yellow", ls = "solid") # -> trash
-# pt.ROC("small_model_validation_data", c = "green", ls = "solid") # -> trash
+# pt.PRC("large_model_validation_data", c = "yellow", ls = "solid") # -> trash
+# pt.PRC("small_model_validation_data", c = "green", ls = "solid") # -> trash
 
 # # model background
-# ROC("current_trigger_validation_data", ls = "solid", c = "k")
-# ROC("one_layer_conv2d_cut_0.00VEM_validation_data", c = "orange", ls = "solid")
-# # ROC("one_layer_conv2d_cut_0.20VEM_validation_data", c = "darkblue", ls = "solid")
-# # ROC("one_layer_conv2d_cut_0.50VEM_validation_data", c = "blue", ls = "solid")
-# # ROC("one_layer_conv2d_cut_1.00VEM_validation_data", c = "lightblue", ls = "solid")
-# # ROC("one_layer_conv2d_cut_2.00VEM_validation_data", c = "yellow", ls = "solid")
-# # ROC("one_layer_conv2d_cut_4.63VEM_validation_data", c = "green", ls = "solid")
-# ROC("one_layer_conv2d_cut_10.0VEM_validation_data", c = "brown", ls = "solid")
-# # ROC("bayes_m249_validation_data", c = "darksalmon", ls = "solid")
-# # ROC("bayes_m244_validation_data", c = "lime", ls = "solid")
-# # ROC("bayes_LHQ_validation_data", c = "steelblue", ls = "solid")
+# PRC("current_trigger_validation_data", ls = "solid", c = "k")
+# PRC("one_layer_conv2d_cut_0.00VEM_validation_data", c = "orange", ls = "solid")
+# # PRC("one_layer_conv2d_cut_0.20VEM_validation_data", c = "darkblue", ls = "solid")
+# # PRC("one_layer_conv2d_cut_0.50VEM_validation_data", c = "blue", ls = "solid")
+# # PRC("one_layer_conv2d_cut_1.00VEM_validation_data", c = "lightblue", ls = "solid")
+# # PRC("one_layer_conv2d_cut_2.00VEM_validation_data", c = "yellow", ls = "solid")
+# # PRC("one_layer_conv2d_cut_4.63VEM_validation_data", c = "green", ls = "solid")
+# PRC("one_layer_conv2d_cut_10.0VEM_validation_data", c = "brown", ls = "solid")
+# # PRC("bayes_m249_validation_data", c = "darksalmon", ls = "solid")
+# # PRC("bayes_m244_validation_data", c = "lime", ls = "solid")
+# # PRC("bayes_LHQ_validation_data", c = "steelblue", ls = "solid")
 
 # print()
 
 # # model background
-# ROC("current_trigger_random_traces", ls = "--", c = "k")
-# ROC("one_layer_conv2d_cut_0.00VEM_random_traces", c = "orange", ls = "--")
-# # ROC("one_layer_conv2d_cut_0.20VEM_random_traces", c = "darkblue", ls = "--")
-# # ROC("one_layer_conv2d_cut_0.50VEM_random_traces", c = "blue", ls = "--")
-# # ROC("one_layer_conv2d_cut_1.00VEM_random_traces", c = "lightblue", ls = "--")
-# # ROC("one_layer_conv2d_cut_2.00VEM_random_traces", c = "yellow", ls = "--")
-# # ROC("one_layer_conv2d_cut_4.63VEM_random_traces", c = "green", ls = "--")
-# ROC("one_layer_conv2d_cut_10.0VEM_random_traces", c = "brown", ls = "--")
-# # ROC("bayes_m249_random_traces", c = "darksalmon", ls = "--")
-# # ROC("bayes_m244_random_traces", c = "lime", ls = "--")
-# # ROC("bayes_LHQ_random_traces", c = "steelblue", ls = "--")
+# PRC("current_trigger_random_traces", ls = "--", c = "k")
+# PRC("one_layer_conv2d_cut_0.00VEM_random_traces", c = "orange", ls = "--")
+# # PRC("one_layer_conv2d_cut_0.20VEM_random_traces", c = "darkblue", ls = "--")
+# # PRC("one_layer_conv2d_cut_0.50VEM_random_traces", c = "blue", ls = "--")
+# # PRC("one_layer_conv2d_cut_1.00VEM_random_traces", c = "lightblue", ls = "--")
+# # PRC("one_layer_conv2d_cut_2.00VEM_random_traces", c = "yellow", ls = "--")
+# # PRC("one_layer_conv2d_cut_4.63VEM_random_traces", c = "green", ls = "--")
+# PRC("one_layer_conv2d_cut_10.0VEM_random_traces", c = "brown", ls = "--")
+# # PRC("bayes_m249_random_traces", c = "darksalmon", ls = "--")
+# # PRC("bayes_m244_random_traces", c = "lime", ls = "--")
+# # PRC("bayes_LHQ_random_traces", c = "steelblue", ls = "--")
 
 # plt.legend(ncol = 2)
 
@@ -58,55 +58,70 @@ plt.rcParams.update({'font.size': 18})
 
 CurrentTrigger = HardwareClassifier()
 NetworkNoCut = NNClassifier("minimal_conv2d_cut_0.00VEM/model_converged", supress_print = True)
-NetworkFifthCut = NNClassifier("minimal_conv2d_cut_0.20VEM/model_converged", supress_print = True)
-NetworkHalfCut = NNClassifier("minimal_conv2d_cut_0.50VEM/model_converged", supress_print = True)
-NetworkOneCut = NNClassifier("minimal_conv2d_cut_1.00VEM/model_converged", supress_print = True)
-NetworkTenCut = NNClassifier("minimal_conv2d_cut_10.0VEM/model_converged", supress_print = True)
-
 
 print("\nDATASET".ljust(72) + "TP      FP      TN      FN     sum")
-ROC(CurrentTrigger, "validation_data", c = "k", ls = "--")
-ROC(CurrentTrigger, "validation_data_downsampled", c = "k")
-ROC(NetworkNoCut, "validation_data", c = "green", ls = "--")
-ROC(NetworkNoCut, "validation_data_downsampled", c = "green")
-ROC(NetworkFifthCut, "validation_data", c = "steelblue", ls = "--")
-ROC(NetworkFifthCut, "validation_data_downsampled", c = "steelblue")
-ROC(NetworkHalfCut, "validation_data", c = "yellow", ls = "--")
-ROC(NetworkHalfCut, "validation_data_downsampled", c = "yellow")
-ROC(NetworkOneCut, "validation_data", c = "darksalmon", ls = "--")
-ROC(NetworkOneCut, "validation_data_downsampled", c = "darksalmon")
-ROC(NetworkTenCut, "validation_data", c = "orange", ls = "--")
-ROC(NetworkTenCut, "validation_data_downsampled", c = "orange")
-
-plt.legend()
-plt.show()
-
-# model background
-ROC("current_trigger_validation_data", ls = "solid", c = "k")
-ROC("one_layer_conv2d_cut_0.00VEM_validation_data", c = "orange", ls = "solid")
-# ROC("one_layer_conv2d_cut_0.20VEM_validation_data", c = "darkblue", ls = "solid")
-# ROC("one_layer_conv2d_cut_0.50VEM_validation_data", c = "blue", ls = "solid")
-# ROC("one_layer_conv2d_cut_1.00VEM_validation_data", c = "lightblue", ls = "solid")
-# ROC("one_layer_conv2d_cut_2.00VEM_validation_data", c = "yellow", ls = "solid")
-ROC("one_layer_conv2d_cut_4.63VEM_validation_data", c = "green", ls = "solid")
-# ROC("bayes_m249_validation_data", c = "darksalmon", ls = "solid")
-# ROC("bayes_m244_validation_data", c = "lime", ls = "solid")
-ROC("bayes_LHQ_validation_data", c = "steelblue", ls = "solid")
+PRC(CurrentTrigger, "validation_data", c = "k", ls = "--")
+PRC(CurrentTrigger, "validation_data_downsampled", c = "k")
 
 print()
 
-# model background
-ROC("current_trigger_random_traces", ls = "--", c = "k")
-ROC("one_layer_conv2d_cut_0.00VEM_random_traces", c = "orange", ls = "--")
-# ROC("one_layer_conv2d_cut_0.20VEM_random_traces", c = "darkblue", ls = "--")
-# ROC("one_layer_conv2d_cut_0.50VEM_random_traces", c = "blue", ls = "--")
-# ROC("one_layer_conv2d_cut_1.00VEM_random_traces", c = "lightblue", ls = "--")
-# ROC("one_layer_conv2d_cut_2.00VEM_random_traces", c = "yellow", ls = "--")
-ROC("one_layer_conv2d_cut_4.63VEM_random_traces", c = "green", ls = "--")
-# ROC("bayes_m249_random_traces", c = "darksalmon", ls = "--")
-# ROC("bayes_m244_random_traces", c = "lime", ls = "--")
-ROC("bayes_LHQ_random_traces", c = "steelblue", ls = "--")
+PRC(NetworkNoCut, "validation_data", c = "green", ls = "--")
+PRC(NetworkNoCut, "validation_data_downsampled", c = "green")
 
-plt.legend(ncol = 2)
+NetworkNoCut = NNClassifier("minimal_conv2d_0.00VEM_downsampled/model_3", supress_print = True)
+PRC(NetworkNoCut, "validation_data", c = "green", ls = ":")
+
+print()
+
+NetworkFifthCut = NNClassifier("minimal_conv2d_cut_0.20VEM/model_converged", supress_print = True)
+PRC(NetworkFifthCut, "validation_data", c = "steelblue", ls = "--")
+PRC(NetworkFifthCut, "validation_data_downsampled", c = "steelblue")
+
+NetworkFifthCut = NNClassifier("minimal_conv2d_0.20VEM_downsampled/model_3", supress_print = True)
+PRC(NetworkFifthCut, "validation_data", c = "steelblue", ls = ":")
+
+print()
+
+NetworkHalfCut = NNClassifier("minimal_conv2d_cut_0.50VEM/model_converged", supress_print = True)
+PRC(NetworkHalfCut, "validation_data", c = "yellow", ls = "--")
+PRC(NetworkHalfCut, "validation_data_downsampled", c = "yellow")
+
+NetworkHalfCut = NNClassifier("minimal_conv2d_0.50VEM_downsampled/model_3", supress_print = True)
+PRC(NetworkHalfCut, "validation_data", c = "yellow", ls = ":")
+
+print()
+
+NetworkOneCut = NNClassifier("minimal_conv2d_cut_1.00VEM/model_converged", supress_print = True)
+PRC(NetworkOneCut, "validation_data", c = "darksalmon", ls = "--")
+PRC(NetworkOneCut, "validation_data_downsampled", c = "darksalmon")
+
+NetworkOneCut = NNClassifier("minimal_conv2d_1.00VEM_downsampled/model_3", supress_print = True)
+PRC(NetworkOneCut, "validation_data", c = "darksalmon", ls = ":")
+
+print()
+
+NetworkTenCut = NNClassifier("minimal_conv2d_cut_10.0VEM/model_converged", supress_print = True)
+PRC(NetworkTenCut, "validation_data", c = "orange", ls = "--")
+PRC(NetworkTenCut, "validation_data_downsampled", c = "orange")
+
+NetworkTenCut = NNClassifier("minimal_conv2d_3.00VEM_downsampled/model_3", supress_print = True)
+PRC(NetworkTenCut, "validation_data", c = "orange", ls = ":")
+
+print()
+
+# print("\nDATASET".ljust(72) + "TP      FP      TN      FN     sum")
+# PRC(CurrentTrigger, "validation_data", c = "k", ls = "--")
+# PRC(CurrentTrigger, "validation_data_downsampled", c = "k")
+# PRC(NetworkNoCut, "validation_data", c = "green", ls = "--")
+# PRC(NetworkNoCut, "validation_data_downsampled", c = "green")
+# PRC(NetworkFifthCut, "validation_data", c = "steelblue", ls = "--")
+# PRC(NetworkFifthCut, "validation_data_downsampled", c = "steelblue")
+# PRC(NetworkHalfCut, "validation_data", c = "yellow", ls = "--")
+# PRC(NetworkHalfCut, "validation_data_downsampled", c = "yellow")
+# PRC(NetworkOneCut, "validation_data", c = "darksalmon", ls = "--")
+# PRC(NetworkOneCut, "validation_data_downsampled", c = "darksalmon")
+# PRC(NetworkTenCut, "validation_data", c = "orange", ls = "--")
+# PRC(NetworkTenCut, "validation_data_downsampled", c = "orange")
+
+# plt.legend()
 plt.show()
-
