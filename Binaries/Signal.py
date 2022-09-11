@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 from .__config__ import *
 
@@ -82,27 +83,16 @@ class Trace(Signal):
         return np.random.poisson( GLOBAL.background_frequency * GLOBAL.single_bin_duration * self.length )
 
     # extract pmt data plus label for a given trace window 
-    def get_trace_window(self, window : tuple, skip_integral : bool = False) -> tuple : 
+    def get_trace_window(self, window : tuple, skip_integral : bool = False, skip_metadata : bool = True) -> tuple : 
 
         start, stop = window
 
         pmt_1, pmt_2, pmt_3 = self.pmt_1[start : stop], self.pmt_2[start : stop], self.pmt_3[start : stop]
         label = self.calculate_signal_overlap(window)
+        metadata = np.array([label, self.Energy, self.SPDistance, self.Zenith]) if not skip_metadata and self.has_signal else [label, None, None, None]
+        integral = None if skip_integral else self.integrate(window)
 
-        # used some time ago for debugging purposes
-        # if np.array([pmt_1, pmt_2, pmt_3]).shape != (3,120):
-            
-        #     print(window, self.signal_start, self.signal_end)
-        #     raise StopIteration
-
-        if not skip_integral:
-            integral = self.integrate(window)
-
-            return np.array([pmt_1, pmt_2, pmt_3]), label, integral
-
-        else: return np.array([pmt_1, pmt_2, pmt_3]), label
-
-        
+        return np.array([pmt_1, pmt_2, pmt_3]), label, integral, metadata        
 
     # calculate number of bins of signal in sliding window
     def calculate_signal_overlap(self, window : tuple) -> int :

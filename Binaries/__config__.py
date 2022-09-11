@@ -1,8 +1,7 @@
-import os
-import sys
-
 from dataclasses import dataclass
 import matplotlib.pyplot as plt
+import matplotlib.cm as cmap
+
 
 class EmptyFileError(Exception): pass
 class SlidingWindowError(Exception): pass

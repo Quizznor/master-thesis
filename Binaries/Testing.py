@@ -3,8 +3,6 @@ from .Signal import *
 from .Generator import *
 from .Classifier import *
 
-import matplotlib.cm as cmap
-
 def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -> float :
 
     TPs, FPs = 0, 0
@@ -32,48 +30,39 @@ def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -
          open(save_file["FP"], "a") as FP, \
          open(save_file["FN"], "a") as FN:
 
-        for batch in range(Dataset.__len__()):
-
-            traces, _ = Dataset.__getitem__(batch, full_trace = True)
+         for batch, (traces, true_labels, metadata) in enumerate(Dataset): 
 
             print(f"Fetching batch {batch + 1}/{Dataset.__len__()}: {100 * (batch/Dataset.__len__()):.2f}%", end = "...\r")
 
-            for VEMTrace in traces:
+            for predicted_label, true_label, info in zip(Classifier(traces), true_labels, metadata):
 
-                # ignore mock background traces
-                if not VEMTrace.has_signal: 
-                    continue
+                Integral, (SignalBins, Energy, SPDistance, Zenith) = info
+                true_label = true_label.argmax()
 
-                for i in Dataset.__sliding_window__(VEMTrace):
+                if true_label:
+                    if predicted_label:
+                        prediction = TP
+                        TPs += 1
+                    else: prediction = FN
+                
+                    # save more metadata for traces containing signal
+                    save_string = f"{Integral:.3f} {int(SignalBins)} {Energy:.3e} {int(SPDistance)} {Zenith:.3f}"
+                
+                else:
+                    if predicted_label:
+                        prediction = FP
+                        FPs += 1
+                    else: prediction = TN
 
-                    pmt_data, n_sig, integral = VEMTrace.get_trace_window((i, i + Dataset.window_length))
+                    # only save signal and number of background bins
+                    save_string = f"{Integral:.3f}"
 
-                    # mislabel low energy traces
-                    if Dataset.ignore_low_VEM: n_sig = 0 if integral < Dataset.ignore_low_VEM else n_sig
-
-                    if n_sig:
-                        if Classifier(pmt_data):
-                            prediction = TP
-                            TPs += 1
-                        else: prediction = FN
-
-                        # save more metadata for traces containing signal
-                        save_string = f"{integral:.3f} {n_sig} {VEMTrace.Energy:.3e} {VEMTrace.SPDistance:.0f} {VEMTrace.Zenith:.3f}"
-
-                    else:
-                        if Classifier(pmt_data):
-                            prediction = FP
-                            FPs += 1
-                        else: prediction = TN
-
-                        # only save signal and number of background bins
-                        save_string = f"{integral:.3f}"
-
-                    prediction.write(save_string + "\n")
+                prediction.write(save_string + "\n")
     
     return TPs / (TPs + FPs)
 
 
+'''
 # trigger efficiency over signal
 def signal_efficiency(save_path : str, **kwargs) -> None : 
 
@@ -428,3 +417,4 @@ def spd_energy(save_path : str, **kwargs) -> None :
 # class EnsembleTesting(Ensemble):
 
 #     def __init__(self, Classifier : str) -> None : pass
+'''

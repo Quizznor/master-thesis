@@ -1,8 +1,8 @@
+from curses import meta
 from time import perf_counter_ns
 import tensorflow as tf
 import typing
 import random
-import sys
 
 from .__config__ import *
 from .Signal import *
@@ -118,9 +118,16 @@ class Generator(tf.keras.utils.Sequence):
 
     def __init__(self, signal_files : list, trace_options : list, classifier_options : list) :
 
-        self.ignore_low_VEM, self.window_length, self.window_step, self.prior = classifier_options
-        self.q_peak, self.q_charge, self.length, self.sigma, self.mu, self.n_injected, self.downsampling, self.use_real_background = trace_options
+        self.ignore_low_VEM, self.prior = classifier_options[0], classifier_options[-1]
+        self.window_length, self.window_step = classifier_options[1], classifier_options[2]
+
+        self.q_peak, self.q_charge = trace_options[0], trace_options[1]
+        self.length, self.n_injected = trace_options[2], trace_options[5]
+        self.sigma, self.mu = trace_options[3], trace_options[4]
+        self.downsampling, self.use_real_background = trace_options[6], trace_options[6]
         self.files = signal_files
+
+        self.trace_options = [self.q_peak, self.q_charge, self.length, self.sigma, self.mu, self.n_injected, self.downsampling]
 
         self.__iteration_index = 0
 
@@ -132,9 +139,10 @@ class Generator(tf.keras.utils.Sequence):
         return len(self.files)
 
     # generator method to create data on runtime
-    def __getitem__(self, index : int, full_trace : bool = False) -> tuple[np.ndarray] :
+    def __getitem__(self, index : int, full_trace : bool = False, skip_integral : bool = False, skip_metadata : bool = True) -> tuple[np.ndarray] :
 
         labels, traces = [], []
+        metadata_per_batch = []
 
         # Construct either gaussian or random trace baseline
         if not self.use_real_background: 
@@ -152,13 +160,14 @@ class Generator(tf.keras.utils.Sequence):
             for station in SignalBatch(event_file):
                 
                 # Add together baseline + signal and inject accidental muons
-                VEMTrace = Trace([self.q_peak, self.q_charge, self.length, self.sigma, self.mu, self.n_injected, self.downsampling], baseline, station)
+                VEMTrace = Trace(self.trace_options, baseline, station)
                 
                 if full_trace:
                     traces.append(VEMTrace)
                 else:
                     for index in self.__sliding_window__(VEMTrace):
-                        pmt_data, n_sig, integral = VEMTrace.get_trace_window((index, index + self.window_length))
+                        pmt_data, n_sig, integral, metadata = VEMTrace.get_trace_window((index, index + self.window_length), skip_integral, skip_metadata)
+                        metadata_per_batch.append([integral, metadata])
 
                         # mislabel low energy 
                         if self.ignore_low_VEM: n_sig = 0 if integral < self.ignore_low_VEM else n_sig
@@ -168,17 +177,20 @@ class Generator(tf.keras.utils.Sequence):
         # ... raise a mock background trace if this fails for various reasons
         except EmptyFileError:
             
-            VEMTrace = Trace([self.q_peak, self.q_charge, self.length, self.sigma, self.mu, self.n_injected, self.downsampling], baseline)
+            VEMTrace = Trace(self.trace_options, baseline)
 
             if full_trace:
                 traces.append(VEMTrace)
             else:
                 for index in self.__sliding_window__(VEMTrace, override_prior = True):
-                    pmt_data, n_sig, _ = VEMTrace.get_trace_window((index, index + self.window_length))
+                    pmt_data, n_sig, integral, metadata = VEMTrace.get_trace_window((index, index + self.window_length), skip_integral, skip_metadata)
                     traces.append(pmt_data), labels.append(EventGenerator.labels[1 if n_sig else 0])
+                    metadata_per_batch.append([integral, metadata])
 
-        print()
-        return np.array(traces), np.array(labels)
+        if skip_metadata:
+            return np.array(traces), np.array(labels)
+        else:
+            return np.array(traces), np.array(labels), np.array(metadata_per_batch)
 
     # calculate a sliding window range conforming (in most cases at least) to a given prior
     def __sliding_window__(self, VEMTrace : Trace, override_prior : bool = False) -> range :
@@ -209,13 +221,12 @@ class Generator(tf.keras.utils.Sequence):
 
         return range(start, stop, self.window_step)
 
-
     # make this class iterable, yields (traces), (labels) iteratively
     def __iter__(self, full_trace : bool = False) -> typing.Generator[tuple, None, StopIteration] : 
 
-        while self.__iteration_index <= self.__len__():
+        while self.__iteration_index < self.__len__():
 
-            yield self.__getitem__(self.__iteration_index, full_trace)
+            yield self.__getitem__(self.__iteration_index, full_trace, skip_integral = False, skip_metadata = False)
             self.__iteration_index += 1
 
         return StopIteration
@@ -232,7 +243,7 @@ class Generator(tf.keras.utils.Sequence):
 
         for i in self.__sliding_window__(traces[0]):
 
-            window, n_sig, _ = traces[0].get_trace_window((i, i + self.window_length))
+            window, n_sig, _, _ = traces[0].get_trace_window((i, i + self.window_length), True, True)
 
             if n_sig: n_sigs += 1
             else: n_bkgs += 1
@@ -299,7 +310,7 @@ class Generator(tf.keras.utils.Sequence):
                     for index in self.__sliding_window__(trace):
 
                         i, f = index, index + self.window_length
-                        _, n_sig, integral = trace.get_trace_window((i, f))
+                        _, n_sig, integral, _ = trace.get_trace_window((i, f))
                         if self.ignore_low_VEM: n_sig = 0 if integral < self.ignore_low_VEM else n_sig
 
                         if n_sig: has_label.append(integral)
