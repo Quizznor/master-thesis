@@ -256,12 +256,19 @@ class NNClassifier(Classifier):
     def save(self, directory_path : str) -> None : 
         self.model.save(f"/cr/data01/filip/models/{directory_path}/model_{self.epochs}")
 
-    def __call__(self, signal : np.ndarray) -> bool :
+    def __call__(self, signal : np.ndarray) -> typing.Union[bool, tuple] :
 
         # 1 if the network thinks it's seeing a signal
         # 0 if the network thinks it's seening background 
 
-        return np.array(self.model( tf.expand_dims([signal], axis = -1) )).argmax()        
+        if len(signal.shape) == 3:                                                  # predict on batch
+            predictions = self.model.predict_on_batch(signal)
+
+            return np.array([prediction.argmax() for prediction in predictions])
+
+        elif len(signal.shape) == 2:                                                # predict on sample
+            
+            return np.array(self.model( tf.expand_dims([signal], axis = -1) )).argmax()        
 
     def __str__(self) -> str :
         self.model.summary()
