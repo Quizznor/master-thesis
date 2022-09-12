@@ -70,12 +70,20 @@ class Trace(Signal):
         self.Baseline = baseline_data
 
         if self.has_accidentals and self.has_signal:
-            self.pmt_1, self.pmt_2, self.pmt_3 = self.convert_to_VEM( self.Baseline + self.Signal + self.Injected, self.q_peak )
+            self.pmt_1, self.pmt_2, self.pmt_3 = self.convert_to_VEM( self.Baseline, self.Signal, self.Injected, mode = "peak" )
+            self.int_1, self.int_2, self.int_3 = self.convert_to_VEM( self.Baseline, self.Signal, self.Injected, mode = "charge" )
+
         elif self.has_accidentals and not self.has_signal:
-            self.pmt_1, self.pmt_2, self.pmt_3 = self.convert_to_VEM( self.Baseline + self.Injected, self.q_peak )
+            self.pmt_1, self.pmt_2, self.pmt_3 = self.convert_to_VEM( self.Baseline, self.Injected, mode = "peak" )
+            self.int_1, self.int_2, self.int_3 = self.convert_to_VEM( self.Baseline, self.Injected, mode = "charge" )
+        
         elif self.has_signal and not self.has_accidentals:
-            self.pmt_1, self.pmt_2, self.pmt_3 = self.convert_to_VEM( self.Baseline + self.Signal, self.q_peak )
-        else: self.pmt_1, self.pmt_2, self.pmt_3 = self.convert_to_VEM( self.Baseline, self.q_peak )
+            self.pmt_1, self.pmt_2, self.pmt_3 = self.convert_to_VEM( self.Baseline, self.Signal, mode = "peak" )
+            self.int_1, self.int_2, self.int_3 = self.convert_to_VEM( self.Baseline, self.Signal, mode = "charge" )
+        
+        else: 
+            self.pmt_1, self.pmt_2, self.pmt_3 = self.convert_to_VEM( self.Baseline, mode = "peak" )
+            self.int_1, self.int_2, self.int_3 = self.convert_to_VEM( self.Baseline, mode = "charge" )
 
     # poissonian for background injection
     def poisson(self) -> int :
@@ -105,15 +113,20 @@ class Trace(Signal):
     def integrate(self, window : np.ndarray) -> float : 
 
         start, stop = window
-        trace_window = self.Baseline[:, start : stop] / self.q_charge
 
-        if self.has_accidentals: trace_window += self.Injected[:, start : stop] / GLOBAL.q_charge
-        if self.has_signal: trace_window += self.Signal[:, start : stop] / GLOBAL.q_charge
-
-        return np.mean(np.sum(trace_window, axis = 1))
+        return np.mean(np.sum([self.int_1[start : stop], self.int_2[start : stop], self.int_3[start : stop]], axis = 1))
 
     # convert from ADC counts to VEM 
-    def convert_to_VEM(self, signal : np.ndarray, ADC_to_VEM : float) -> np.ndarray :
+    def convert_to_VEM(self, *args, mode : str) -> np.ndarray :
+
+        ADC_to_VEM = self.q_peak if mode == "peak" else self.q_charge
+        simulated = GLOBAL.q_peak if mode == "peak" else GLOBAL.q_charge
+        factor = ADC_to_VEM / simulated
+
+        particles = (np.array(args[1:]).sum(axis = 0) if len(args) != 2 else np.array(args[1])) * factor
+        baseline = args[0]
+
+        signal = baseline + particles
 
         if self.downsample: 
             signal = self.apply_downsampling(signal)
