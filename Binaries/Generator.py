@@ -190,7 +190,7 @@ class Generator(tf.keras.utils.Sequence):
         if skip_metadata:
             return np.array(traces), np.array(labels)
         else:
-            return np.array(traces), np.array(labels), np.array(metadata_per_batch)
+            return np.array(traces), np.array(labels), metadata_per_batch
 
     # calculate a sliding window range conforming (in most cases at least) to a given prior
     def __sliding_window__(self, VEMTrace : Trace, override_prior : bool = False) -> range :
@@ -275,7 +275,7 @@ class Generator(tf.keras.utils.Sequence):
         if n_traces is None: n_traces = self.__len__()
         
         if full_traces:
-            for batch in range(n_traces):
+            for batch in range(int(n_traces)):
 
                 elapsed = perf_counter_ns() - start
                 mean_per_step_ms = elapsed / (batch + 1) * 1e-6
@@ -311,6 +311,7 @@ class Generator(tf.keras.utils.Sequence):
 
                         i, f = index, index + self.window_length
                         _, n_sig, integral, _ = trace.get_trace_window((i, f))
+
                         if self.ignore_low_VEM: n_sig = 0 if integral < self.ignore_low_VEM else n_sig
 
                         if n_sig: has_label.append(integral)
@@ -335,9 +336,10 @@ class Generator(tf.keras.utils.Sequence):
         plt.figure()
         plt.title("Sliding window integral")
         plt.axvline(self.ignore_low_VEM, c = "gray", ls = "--", lw = 2, label = "low VEM cut")
-        plt.hist(has_no_label, bins = 50, histtype = "step", label = "label - Background", range = (0,20))
-        plt.hist(has_label, bins = 50, histtype = "step", label = "label - Signal", range = (0,20))
+        plt.hist(has_no_label, bins = 500, histtype = "step", label = f"Background: n = {len(has_no_label)}", range = (-1,20), ls = "--")
+        plt.hist(has_label, bins = 500, histtype = "step", label = f"Signal: n = {len(has_label)}", range = (-1,20), ls = "--")
         plt.xlabel("Integrated signal / VEM")
+        plt.yscale("log")
         plt.legend()
 
         print(f"\n\nTotal time: {(perf_counter_ns() - start) * 1e-9 :.2f}s - {n_signals + n_backgrounds} traces")

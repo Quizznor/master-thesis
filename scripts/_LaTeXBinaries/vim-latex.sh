@@ -45,4 +45,4 @@ fi
 # then
 #   nohup zathura $ROOT_PDF &
 #   sleep 0.3 && i3-msg [title="ranger"] focus
-# fis
+# fi
