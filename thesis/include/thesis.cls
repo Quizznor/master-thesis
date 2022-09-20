@@ -54,7 +54,7 @@
 \sisetup{per-mode=fraction}
 \sisetup{separate-uncertainty=true}
 \sisetup{range-phrase=~bis~}
-\sisetup{output-decimal-marker = {,}}
+\sisetup{output-decimal-marker = {.}}
 \DeclareSIUnit\sample{S}
 \DeclareSIUnit\roothertz{\ensuremath{\sqrt{\text{\hertz}}}}
 \usepackage[version=4]{mhchem}
