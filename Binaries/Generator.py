@@ -63,13 +63,13 @@ class EventGenerator():
         seed = kwargs.get("seed", GLOBAL.seed)
         prior = kwargs.get("prior", GLOBAL.prior)
 
-        q_peak = kwargs.get("q_peak", GLOBAL.q_peak)
-        q_charge = kwargs.get("q_charge", GLOBAL.q_charge)
+        q_peak = [kwargs.get("q_peak", GLOBAL.q_peak) for i in range(3)]
+        q_charge = [kwargs.get("q_charge", GLOBAL.q_charge) for i in range(3)]
         n_bins = kwargs.get("n_bins", GLOBAL.n_bins)
         baseline_std = kwargs.get("sigma", GLOBAL.baseline_std)
         baseline_mean = kwargs.get("mu", GLOBAL.baseline_mean)
-        n_injected = kwargs.get("force_inject", GLOBAL.force_inject )
         real_background = kwargs.get("real_background", GLOBAL.real_background)
+        n_injected = kwargs.get("force_inject", GLOBAL.force_inject ) if not real_background else 0
         downsampling = kwargs.get("apply_downsampling", GLOBAL.downsampling)
 
         ignore_low_VEM = kwargs.get("ignore_low_vem", GLOBAL.ignore_low_VEM)
@@ -147,13 +147,13 @@ class Generator(tf.keras.utils.Sequence):
         # Construct either gaussian or random trace baseline
         if not self.use_real_background: 
             baseline = Baseline(self.mu, self.sigma, self.length)
-        else: 
-            
+        else:
             self.q_peak, self.q_charge, baseline = self.RandomTraceBuffer.get()     # load INT baseline trace
             baseline += np.random.uniform(0, 1, size = (3, self.length))            # convert it to FLOAT now
 
         # try to raise a valid trace (i.e. with signal)...
         try:
+
             if self.prior == 0: raise EmptyFileError
             else: event_file = self.files[index]
 
@@ -162,6 +162,7 @@ class Generator(tf.keras.utils.Sequence):
                 # Add together baseline + signal and inject accidental muons
                 VEMTrace = Trace(self.trace_options, baseline, station)
                 
+
                 if full_trace:
                     traces.append(VEMTrace)
                 else:
@@ -176,7 +177,7 @@ class Generator(tf.keras.utils.Sequence):
 
         # ... raise a mock background trace if this fails for various reasons
         except EmptyFileError:
-            
+
             VEMTrace = Trace(self.trace_options, baseline)
 
             if full_trace:

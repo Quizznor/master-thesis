@@ -77,7 +77,7 @@ class NNClassifier(Classifier):
 
         def on_batch_end(self, batch, logs : dict = None) -> None :
 
-            if logs.get("accuracy") >= 0.99:
+            if logs.get("accuracy") >= 0.985:
                 current_loss = logs.get("loss")
                 if np.less(current_loss, self.best_loss):
                     self.best_loss = current_loss
@@ -175,47 +175,39 @@ class NNClassifier(Classifier):
     models = \
         {
             "normed_one_layer_conv2d" : Architectures.__normed_one_layer_conv2d__,
-            "minimal_conv2d_0.00VEM_downsampled" : Architectures.__one_layer_conv2d__,
-            "one_layer_conv2d_0.20VEM" : Architectures.__one_layer_conv2d__,
-            "minimal_conv2d_0.20VEM_downsampled" : Architectures.__one_layer_conv2d__,
-            "one_layer_conv2d_0.50VEM" : Architectures.__one_layer_conv2d__,
-            "minimal_conv2d_0.50VEM_downsampled" : Architectures.__one_layer_conv2d__,
-            "one_layer_conv2d_1.00VEM" : Architectures.__one_layer_conv2d__,
-            "minimal_conv2d_1.00VEM_downsampled" : Architectures.__one_layer_conv2d__,
-            "one_layer_conv2d_3.00VEM" : Architectures.__one_layer_conv2d__,
-            "minimal_conv2d_3.00VEM_downsampled" : Architectures.__one_layer_conv2d__,
             "one_layer_conv2d" : Architectures.__one_layer_conv2d__,
             "two_layer_conv2d" : Architectures.__two_layer_conv2d__,
             "minimal_conv2d" : Architectures.__minimal_conv2d__,
             "large_conv2d" : Architectures.__large_conv2d__
         }
 
-    def __init__(self, set_architecture = None, supress_print : bool = False, **kwargs) -> None :
+    def __init__(self, name : str, set_architecture = None, supress_print : bool = False, **kwargs) -> None :
 
         r'''
-        :set_architecture ``str``: one of
-        
-        -- path to existing network (relative to /cr/data01/filip/models/)
-        -- examples of architectures, see NeuralNetworkArchitectures
+        :name ``str``: specifies the name of the NN and directory in /cr/data01/filip/models/
+        :set_architecture ``str``: specifies the architecture (upon first initialization)
 
         :Keyword arguments:
         
         * *early_stopping_patience* (``int``) -- number of batches without improvement before training is stopped
         '''
 
-        super().__init__(set_architecture)
+        super().__init__(name)
 
-        try:
+        if set_architecture is None:
+
+            try:
+                self.model = tf.keras.models.load_model("/cr/data01/filip/models/" + name + "/model_converged/")
+                self.epochs = "converged"
+            except ImportError:
+                choice = input(f"\nSelect epoch from {os.listdir('/cr/data01/filip/models/' + name)}\n Model: ")
+                self.model = tf.keras.models.load_model("/cr/data01/filip/models/" + name + choice)
+                self.epochs = int(choice[-1])
+        else:
+
             self.model = tf.keras.Sequential()
             self.models[set_architecture](self.Architectures, self.model)
             self.epochs = 0
-        except KeyError:
-            try:
-                self.model = tf.keras.models.load_model("/cr/data01/filip/models/" + set_architecture)
-                try: self.epochs = int(set_architecture[-1])
-                except ValueError: self.epochs = 100
-            except OSError:
-                sys.exit(f"\nCouldn't find path: '/cr/data01/filip/models/{set_architecture}', exiting now\n")
 
         self.model.compile(loss = 'categorical_crossentropy', optimizer = 'adam', metrics = [tf.keras.metrics.Precision(), 'accuracy'], run_eagerly = True)
         self.model.build()
@@ -223,8 +215,8 @@ class NNClassifier(Classifier):
         EarlyStopping = self.BatchwiseEarlyStopping(kwargs.get("early_stopping_patience", GLOBAL.early_stopping_patience))
 
         self.callbacks = [EarlyStopping,]
-        
         not supress_print and print(self)
+
 
     def train(self, Datasets : tuple, epochs : int) -> None :
         
@@ -243,7 +235,6 @@ class NNClassifier(Classifier):
         # provide some metadata
         print("\nTraining exited normally. Onto providing metadata now...")
 
-        os.system(f"mkdir -p /cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve")
         true_positive_rate = make_dataset(self, ValidationSet, f"validation_data")
 
         with open(f"/cr/data01/filip/models/{self.name}/metrics.csv", "w") as metadata:
@@ -282,18 +273,24 @@ class NNClassifier(Classifier):
 # Class for streamlined handling of multiple NNs with the same architecture
 class Ensemble(NNClassifier):
 
-    def __init__(self, set_architecture : str, n_models : int = GLOBAL.n_ensembles) -> None :
+    def __init__(self, name : str, set_architecture : str = None, n_models : int = GLOBAL.n_ensembles) -> None :
+
+        r'''
+        :name ``str``: specifies the name of the NN and directory in /cr/data01/filip/models/ENSEMBLES/
+        :set_architecture ``str``: specifies the architecture (upon first initialization)
+
+        :Keyword arguments:
+        
+        * *early_stopping_patience* (``int``) -- number of batches without improvement before training is stopped
+        '''
 
         supress_print = False
         self.models = []
 
         try:
 
-            # does this work?
-            last_epoch = len(os.listdir("/cr/data01/filip/models/" + set_architecture + f"ensemble_1/")) - 1
-
             for i in range(1, n_models + 1):
-                ThisModel = NNClassifier(set_architecture + f"ensemble_{i}/model_{last_epoch}", supress_print)
+                ThisModel = NNClassifier("ENSEMBLES/" + name, set_architecture, supress_print)
                 self.models.append(ThisModel)
 
                 supress_print = True
@@ -301,7 +298,7 @@ class Ensemble(NNClassifier):
         except OSError:
             for i in range(n_models):
 
-                ThisModel = NNClassifier(set_architecture, supress_print)
+                ThisModel = NNClassifier("ENSEMBLES/" + name, set_architecture, supress_print)
                 self.models.append(ThisModel)
 
                 supress_print = True
@@ -322,7 +319,7 @@ class Ensemble(NNClassifier):
             print(f"Model {i}/{len(self.models)}, {elapsed}s elapsed")
 
             for epoch in range(instance.epochs, epochs):
-                instance.model.fit(TrainingSet, validation_data = ValidationSet, epochs = 1, verbose = 0)
+                instance.model.fit(TrainingSet, validation_data = ValidationSet, epochs = 1, verbose = 1)
                 instance.epochs = instance.epochs + 1
 
                 instance.save(self.name + f"/ensemble_{i}/")
