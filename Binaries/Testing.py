@@ -6,7 +6,7 @@ from .Classifier import *
 def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -> float :
 
     TPs, FPs = 0, 0
-    save_path = "/cr/data01/filip/models/" + Classifier.name + "/ROC_curve/" + save_dir
+    save_path = "/cr/data01/filip/models/" + Classifier.name + f"model_{Classifier.epoch}/ROC_curve/" + save_dir
 
     if not os.path.isdir(save_path): os.system(f"mkdir -p {save_path}")
 
@@ -60,6 +60,128 @@ def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -
                 prediction.write(save_string + "\n")
     
     return TPs / (TPs + FPs)
+
+# signal strength roc curve (TPR vs FPR)
+def ROC(Estimator : Classifier, dataset : dict, **kwargs) -> None :
+
+    save_file = \
+        {
+            "TP" : f"/cr/data01/filip/models/{Estimator.name}/ROC_curve/{dataset}/true_positives.csv",
+            "TN" : f"/cr/data01/filip/models/{Estimator.name}/ROC_curve/{dataset}/true_negatives.csv",
+            "FP" : f"/cr/data01/filip/models/{Estimator.name}/ROC_curve/{dataset}/false_positives.csv",
+            "FN" : f"/cr/data01/filip/models/{Estimator.name}/ROC_curve/{dataset}/false_negatives.csv"
+        }
+
+    temp = [[],[],[],[]]
+
+    if not os.path.isdir(f"/cr/data01/filip/models/{Estimator.name}/ROC_curve/{dataset}"):
+        print("Not a valid dataset. Valid datasets are:")
+        for file in os.listdir(f"/cr/data01/filip/models/{Estimator.name}/ROC_curve/{dataset}"):
+            print("\t", file)
+        sys.exit()
+
+    for i, p in enumerate(["TP", "TN", "FP", "FN"]):
+        temp[i] = np.loadtxt(save_file[p], usecols = 0)
+
+    TP, TN, FP, FN = temp
+    TPs, TNs, FPs, FNs = len(TP), len(TN), len(FP), len(FN)
+
+    if kwargs.get("full_set", False):
+        y, x = np.array(list(TP) + list(TN)), np.array(list(FP) + list(FN))
+    else: y, x = TP, FP
+
+    x = np.clip(x, a_min = 1e-6, a_max = None)
+    y = np.clip(y, a_min = 1e-6, a_max = None)
+
+    TPR = ( TPs ) / ( TPs + FPs ) * 100
+    ACC = ( TPs + TNs ) / ( TPs + FPs + TNs + FNs ) * 100
+
+    print(f"{Estimator.name} {dataset}".ljust(70), f"{f'{TPs}'.ljust(7)} {f'{FPs}'.ljust(7)} {f'{TNs}'.ljust(7)} {f'{FNs}'.ljust(7)}{f'{TPs + FPs + TNs + FNs}'.ljust(7)} -> Acc = {ACC:.2f}%, TPR = {TPR:.4f}%")
+    score_low, score_high = min([x.min(), y.min()]), max([x.max(), y.max()])
+    last, current_x, current_y = score_low, 0, 0
+    ROC_x, ROC_y = [],[]
+
+    bins = np.geomspace(score_low, score_high, kwargs.get("n", 100))[::-1]
+    norm = len(x) + len(y)
+
+    for score_bin in bins:
+
+        this_x = ((last >= x) & (x > score_bin)).sum()
+        this_y = ((last >= y) & (y > score_bin)).sum()
+        
+        current_x += this_x / norm
+        current_y += this_y / norm
+        
+        ROC_y.append(current_y), ROC_x.append(current_x)
+
+        last = score_bin
+    
+    ROC_x.append(1), ROC_y.append(1)
+
+    plt.xlim(-0.02,1.02)
+    plt.ylim(-0.02,1.02)
+    plt.rcParams.update({'font.size': 22})
+    plt.xlabel("False positive rate"), plt.ylabel("True positive rate")
+    plt.plot(ROC_x, ROC_y, c = kwargs.get("c", "steelblue"), label = Estimator.name + " " + " ".join(dataset.split("_")[:5]), ls = kwargs.get("ls", "solid"), lw = 2)
+    # plt.scatter(ROC_x, ROC_y)
+    
+    plt.plot([0,1],[0,1], ls = "--", c = "gray")
+
+# signal precision and recall curve
+def PRC(Estimator : Classifier, dataset : dict, **kwargs) -> None :
+
+    save_file = \
+        {
+            "TP" : f"/cr/data01/filip/models/{Estimator.name}/ROC_curve/{dataset}/true_positives.csv",
+            "TN" : f"/cr/data01/filip/models/{Estimator.name}/ROC_curve/{dataset}/true_negatives.csv",
+            "FP" : f"/cr/data01/filip/models/{Estimator.name}/ROC_curve/{dataset}/false_positives.csv",
+            "FN" : f"/cr/data01/filip/models/{Estimator.name}/ROC_curve/{dataset}/false_negatives.csv"
+        }
+
+    temp = [[],[],[]]
+    for i, p in enumerate(["TP","FP", "FN"]):
+
+        if os.path.getsize(save_file[p]):
+            temp[i] = np.loadtxt(save_file[p], usecols = 0)
+        else: temp[i] = np.array([0])
+
+    TP, FP, FN = [np.array(entry) for entry in temp]
+
+    TP = np.clip(TP, a_min = 1e-6, a_max = None)
+    FP = np.clip(FP, a_min = 1e-6, a_max = None)
+    FN = np.clip(FN, a_min = 1e-6, a_max = None)
+
+    score_low = min([TP.min(), FP.min(), FN.min()])
+    score_high = max([TP.max(), FP.max(), FN.max()])
+    last = score_low
+    PRC_x, PRC_y = [],[]
+
+    for score_bin in np.geomspace(score_low, score_high, kwargs.get("n", 100))[::-1]:
+
+        this_tp = ((last >= TP) & (TP > score_bin)).sum()
+        this_fp = ((last >= FP) & (FP > score_bin)).sum()
+        this_fn = ((last >= FN) & (FN > score_bin)).sum()
+        last = score_bin
+
+        if this_tp + this_fn != 0 and this_tp + this_fp != 0:
+            this_x = this_tp / (this_tp + this_fn)                                  # recall
+            this_y = this_tp / (this_tp + this_fp)                                  # precision
+
+        else: continue
+
+        # print(f"{last:.2e} -> {score_bin:.2e}: {this_x}, {this_y}")
+        
+        PRC_y.append(this_y), PRC_x.append(this_x)
+
+    PRC_y.sort()
+    PRC_x.sort()
+
+    plt.xlim(-0.02,1.02)
+    plt.ylim(0.48,1.02)
+    plt.rcParams.update({'font.size': 22})
+    plt.xlabel("Efficiency"), plt.ylabel("Precision")
+    plt.plot(1 - np.array(PRC_x), PRC_y, c = kwargs.get("c", "steelblue"), label = Estimator.name + " " + " ".join(dataset.split("_")[:5]), ls = kwargs.get("ls", "solid"))
+    plt.plot([0,1],[0.5,0.5,], ls = "--", c = "gray")
 
 
 '''
@@ -226,129 +348,6 @@ def bin_comparison(save_path : str, **kwargs) -> None :
 
     plt.xlabel("# signal bins")
     plt.ylabel("# background bins")
-
-
-# signal strength roc curve (TPR vs FPR)
-def ROC(Estimator : Classifier, dataset : dict, **kwargs) -> None :
-
-    save_file = \
-        {
-            "TP" : f"/cr/data01/filip/models/{Estimator.name}/ROC_curve/{dataset}/true_positives.csv",
-            "TN" : f"/cr/data01/filip/models/{Estimator.name}/ROC_curve/{dataset}/true_negatives.csv",
-            "FP" : f"/cr/data01/filip/models/{Estimator.name}/ROC_curve/{dataset}/false_positives.csv",
-            "FN" : f"/cr/data01/filip/models/{Estimator.name}/ROC_curve/{dataset}/false_negatives.csv"
-        }
-
-    temp = [[],[],[],[]]
-
-    if not os.path.isdir(f"/cr/data01/filip/models/{Estimator.name}/ROC_curve/{dataset}"):
-        print("Not a valid dataset. Valid datasets are:")
-        for file in os.listdir(f"/cr/data01/filip/models/{Estimator.name}/ROC_curve/{dataset}"):
-            print("\t", file)
-        sys.exit()
-
-    for i, p in enumerate(["TP", "TN", "FP", "FN"]):
-        temp[i] = np.loadtxt(save_file[p], usecols = 0)
-
-    TP, TN, FP, FN = temp
-    TPs, TNs, FPs, FNs = len(TP), len(TN), len(FP), len(FN)
-
-    if kwargs.get("full_set", False):
-        y, x = np.array(list(TP) + list(TN)), np.array(list(FP) + list(FN))
-    else: y, x = TP, FP
-
-    x = np.clip(x, a_min = 1e-6, a_max = None)
-    y = np.clip(y, a_min = 1e-6, a_max = None)
-
-    TPR = ( TPs ) / ( TPs + FPs ) * 100
-    ACC = ( TPs + TNs ) / ( TPs + FPs + TNs + FNs ) * 100
-
-    print(f"{Estimator.name} {dataset}".ljust(70), f"{f'{TPs}'.ljust(7)} {f'{FPs}'.ljust(7)} {f'{TNs}'.ljust(7)} {f'{FNs}'.ljust(7)}{f'{TPs + FPs + TNs + FNs}'.ljust(7)} -> Acc = {ACC:.2f}%, TPR = {TPR:.4f}%")
-    score_low, score_high = min([x.min(), y.min()]), max([x.max(), y.max()])
-    last, current_x, current_y = score_low, 0, 0
-    ROC_x, ROC_y = [],[]
-
-    bins = np.geomspace(score_low, score_high, kwargs.get("n", 100))[::-1]
-    norm = len(x) + len(y)
-
-    for score_bin in bins:
-
-        this_x = ((last >= x) & (x > score_bin)).sum()
-        this_y = ((last >= y) & (y > score_bin)).sum()
-        
-        current_x += this_x / norm
-        current_y += this_y / norm
-        
-        ROC_y.append(current_y), ROC_x.append(current_x)
-
-        last = score_bin
-    
-    ROC_x.append(1), ROC_y.append(1)
-
-    plt.xlim(-0.02,1.02)
-    plt.ylim(-0.02,1.02)
-    plt.rcParams.update({'font.size': 22})
-    plt.xlabel("False positive rate"), plt.ylabel("True positive rate")
-    plt.plot(ROC_x, ROC_y, c = kwargs.get("c", "steelblue"), label = Estimator.name + " " + " ".join(dataset.split("_")[:5]), ls = kwargs.get("ls", "solid"), lw = 2)
-    # plt.scatter(ROC_x, ROC_y)
-    
-    plt.plot([0,1],[0,1], ls = "--", c = "gray")
-
-# signal precision and recall curve
-def PRC(Estimator : Classifier, dataset : dict, **kwargs) -> None :
-
-    save_file = \
-        {
-            "TP" : f"/cr/data01/filip/models/{Estimator.name}/ROC_curve/{dataset}/true_positives.csv",
-            "TN" : f"/cr/data01/filip/models/{Estimator.name}/ROC_curve/{dataset}/true_negatives.csv",
-            "FP" : f"/cr/data01/filip/models/{Estimator.name}/ROC_curve/{dataset}/false_positives.csv",
-            "FN" : f"/cr/data01/filip/models/{Estimator.name}/ROC_curve/{dataset}/false_negatives.csv"
-        }
-
-    temp = [[],[],[]]
-    for i, p in enumerate(["TP","FP", "FN"]):
-
-        if os.path.getsize(save_file[p]):
-            temp[i] = np.loadtxt(save_file[p], usecols = 0)
-        else: temp[i] = np.array([0])
-
-    TP, FP, FN = [np.array(entry) for entry in temp]
-
-    TP = np.clip(TP, a_min = 1e-6, a_max = None)
-    FP = np.clip(FP, a_min = 1e-6, a_max = None)
-    FN = np.clip(FN, a_min = 1e-6, a_max = None)
-
-    score_low = min([TP.min(), FP.min(), FN.min()])
-    score_high = max([TP.max(), FP.max(), FN.max()])
-    last = score_low
-    PRC_x, PRC_y = [],[]
-
-    for score_bin in np.geomspace(score_low, score_high, kwargs.get("n", 100))[::-1]:
-
-        this_tp = ((last >= TP) & (TP > score_bin)).sum()
-        this_fp = ((last >= FP) & (FP > score_bin)).sum()
-        this_fn = ((last >= FN) & (FN > score_bin)).sum()
-        last = score_bin
-
-        if this_tp + this_fn != 0 and this_tp + this_fp != 0:
-            this_x = this_tp / (this_tp + this_fn)                                  # recall
-            this_y = this_tp / (this_tp + this_fp)                                  # precision
-
-        else: continue
-
-        # print(f"{last:.2e} -> {score_bin:.2e}: {this_x}, {this_y}")
-        
-        PRC_y.append(this_y), PRC_x.append(this_x)
-
-    PRC_y.sort()
-    PRC_x.sort()
-
-    plt.xlim(-0.02,1.02)
-    plt.ylim(0.48,1.02)
-    plt.rcParams.update({'font.size': 22})
-    plt.xlabel("Efficiency"), plt.ylabel("Precision")
-    plt.plot(1 - np.array(PRC_x), PRC_y, c = kwargs.get("c", "steelblue"), label = Estimator.name + " " + " ".join(dataset.split("_")[:5]), ls = kwargs.get("ls", "solid"))
-    plt.plot([0,1],[0.5,0.5,], ls = "--", c = "gray")
 
 # spd efficiency w.r.t energy
 def spd_energy(save_path : str, **kwargs) -> None :

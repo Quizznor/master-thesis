@@ -1,6 +1,4 @@
-from TriggerStudyBinaries_v7 import *
-
-plt.rcParams.update({'font.size': 18})
+from Binaries import *
 
 # pt.PRC("large_model_validation_data", c = "yellow", ls = "solid") # -> trash
 # pt.PRC("small_model_validation_data", c = "green", ls = "solid") # -> trash
@@ -57,55 +55,61 @@ plt.rcParams.update({'font.size': 18})
 #              label="log E")
 
 CurrentTrigger = HardwareClassifier()
-NetworkNoCut = NNClassifier("minimal_conv2d_cut_0.00VEM/model_converged", supress_print = True)
+# NetworkNoCut = NNClassifier("minimal_conv2d_cut_0.00VEM/model_converged", supress_print = True)
 
 print("\nDATASET".ljust(72) + "TP      FP      TN      FN     sum")
-PRC(CurrentTrigger, "validation_data", c = "k", ls = "--")
-PRC(CurrentTrigger, "validation_data_downsampled", c = "k")
+ROC(CurrentTrigger, "random_traces", c = "k", ls = "--")
 
-print()
+# print()
 
-PRC(NetworkNoCut, "validation_data", c = "green", ls = "--")
-PRC(NetworkNoCut, "validation_data_downsampled", c = "green")
+# PRC(NetworkNoCut, "validation_data", c = "green", ls = "--")
+# PRC(NetworkNoCut, "validation_data_downsampled", c = "green")
 
-NetworkNoCut = NNClassifier("minimal_conv2d_0.00VEM_downsampled/model_3", supress_print = True)
-PRC(NetworkNoCut, "validation_data", c = "green", ls = ":")
+# NetworkNoCut = NNClassifier("minimal_conv2d_0.00VEM_downsampled/model_3", supress_print = True)
+# PRC(NetworkNoCut, "validation_data", c = "green", ls = ":")
 
-print()
+# print()
 
-NetworkFifthCut = NNClassifier("minimal_conv2d_cut_0.20VEM/model_converged", supress_print = True)
-PRC(NetworkFifthCut, "validation_data", c = "steelblue", ls = "--")
-PRC(NetworkFifthCut, "validation_data_downsampled", c = "steelblue")
+# NetworkFifthCut = NNClassifier("minimal_conv2d_cut_0.20VEM/model_converged", supress_print = True)
+# PRC(NetworkFifthCut, "validation_data", c = "steelblue", ls = "--")
+# PRC(NetworkFifthCut, "validation_data_downsampled", c = "steelblue")
 
-NetworkFifthCut = NNClassifier("minimal_conv2d_0.20VEM_downsampled/model_3", supress_print = True)
-PRC(NetworkFifthCut, "validation_data", c = "steelblue", ls = ":")
+# NetworkFifthCut = NNClassifier("minimal_conv2d_0.20VEM_downsampled/model_3", supress_print = True)
+# PRC(NetworkFifthCut, "validation_data", c = "steelblue", ls = ":")
 
-print()
+# print()
 
-NetworkHalfCut = NNClassifier("minimal_conv2d_cut_0.50VEM/model_converged", supress_print = True)
-PRC(NetworkHalfCut, "validation_data", c = "yellow", ls = "--")
-PRC(NetworkHalfCut, "validation_data_downsampled", c = "yellow")
+# NetworkHalfCut = NNClassifier("minimal_conv2d_cut_0.50VEM/model_converged", supress_print = True)
+# PRC(NetworkHalfCut, "validation_data", c = "yellow", ls = "--")
+# PRC(NetworkHalfCut, "validation_data_downsampled", c = "yellow")
 
-NetworkHalfCut = NNClassifier("minimal_conv2d_0.50VEM_downsampled/model_3", supress_print = True)
-PRC(NetworkHalfCut, "validation_data", c = "yellow", ls = ":")
+# NetworkHalfCut = NNClassifier("minimal_conv2d_0.50VEM_downsampled/model_3", supress_print = True)
+# PRC(NetworkHalfCut, "validation_data", c = "yellow", ls = ":")
 
-print()
+# print()
 
-NetworkOneCut = NNClassifier("minimal_conv2d_cut_1.00VEM/model_converged", supress_print = True)
-PRC(NetworkOneCut, "validation_data", c = "darksalmon", ls = "--")
-PRC(NetworkOneCut, "validation_data_downsampled", c = "darksalmon")
+# NetworkOneCut = NNClassifier("minimal_conv2d_cut_1.00VEM/model_converged", supress_print = True)
+# PRC(NetworkOneCut, "validation_data", c = "darksalmon", ls = "--")
+# PRC(NetworkOneCut, "validation_data_downsampled", c = "darksalmon")
 
-NetworkOneCut = NNClassifier("minimal_conv2d_1.00VEM_downsampled/model_3", supress_print = True)
-PRC(NetworkOneCut, "validation_data", c = "darksalmon", ls = ":")
+# NetworkOneCut = NNClassifier("minimal_conv2d_1.00VEM_downsampled/model_3", supress_print = True)
+# PRC(NetworkOneCut, "validation_data", c = "darksalmon", ls = ":")
 
-print()
+# print()
 
-NetworkTenCut = NNClassifier("minimal_conv2d_cut_10.0VEM/model_converged", supress_print = True)
-PRC(NetworkTenCut, "validation_data", c = "orange", ls = "--")
-PRC(NetworkTenCut, "validation_data_downsampled", c = "orange")
+# NetworkTenCut = NNClassifier("minimal_conv2d_cut_10.0VEM/model_converged", supress_print = True)
+# PRC(NetworkTenCut, "validation_data", c = "orange", ls = "--")
+# PRC(NetworkTenCut, "validation_data_downsampled", c = "orange")
 
-NetworkTenCut = NNClassifier("minimal_conv2d_3.00VEM_downsampled/model_3", supress_print = True)
-PRC(NetworkTenCut, "validation_data", c = "orange", ls = ":")
+# NetworkTenCut = NNClassifier("minimal_conv2d_3.00VEM_downsampled/model_3", supress_print = True)
+# PRC(NetworkTenCut, "validation_data", c = "orange", ls = ":")
+
+
+NNTest = NNClassifier("minimal_conv2d_real_background/model_converged", "minimal_conv2d_real_background/model_converged", supress_print = True)
+NNFiltered = NNClassifier("minimal_conv2d_stations_filtered/model_converged", "minimal_conv2d_stations_filtered/model_converged", supress_print = True)
+
+ROC(NNTest, "validation_data")
+ROC(NNFiltered, "validation_data")
 
 print()
 
