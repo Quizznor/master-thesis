@@ -26,26 +26,36 @@ class Classifier():
 
             elapsed = perf_counter_ns() - start
             mean_per_step_ms = elapsed / (batch + 1) * 1e-6
+            to_str = lambda x : f"{int(x//3600)}h {int((x % 3600)//60)}m"
 
-            print(f"{100 * (batch/n_traces):.2f}% - {mean_per_step_ms:.2f}ms/batch, ETA = {(n_traces - batch) * mean_per_step_ms * 1e-3:.0f}s          ", end ="\r")
-            
-            traces, _ = RandomTraces.__getitem__(batch, full_trace = True)
-            trace = traces[0]
-            
-            for index in RandomTraces.__sliding_window__(trace):
+            print(f"{100 * (batch/n_traces):.2f}% - {mean_per_step_ms:.2f}ms/batch, ETA = {to_str((n_traces - batch) * mean_per_step_ms * 1e-3)}          ", end ="\r")
 
-                window, _ = trace.get_trace_window((index, index + RandomTraces.window_length), skip_integral = True)
-                
-                if self.__call__(window):
+            if type(self) == type(HardwareClassifier()):
 
-                    n_total_triggered += 1
+                traces, _ = RandomTraces.__getitem__(batch, full_trace = True)
+                trace = traces[0]
 
-                    if n_total_triggered < 10:
-                        trigger_examples.append(trace)
+                for index in RandomTraces.__sliding_window__(trace):
 
-                    # perhaps skipping the entire trace isn't exactly accurate
-                    # but then again just skipping one window seems wrong also
-                    break
+                    window, _, _, _ = trace.get_trace_window((index, index + RandomTraces.window_length), skip_integral = True)
+                    
+                    if self.__call__(window):
+
+                        n_total_triggered += 1
+
+                        if n_total_triggered < 10:
+                            trigger_examples.append(trace)
+
+                        # perhaps skipping the entire trace isn't exactly accurate
+                        # but then again just skipping one window seems wrong also
+                        break
+
+            else:
+
+                for (traces, _, _) in RandomTraces:
+
+                    if np.any(self.__call__(traces)):
+                        n_total_triggered += 1              
 
         total_trace_duration = GLOBAL.single_bin_duration * GLOBAL.n_bins * n_traces
         trigger_frequency = n_total_triggered / total_trace_duration
@@ -197,9 +207,9 @@ class NNClassifier(Classifier):
         if set_architecture is None:
 
             try:
-                self.model = tf.keras.models.load_model("/cr/data01/filip/models/" + name + "/model_converged/")
+                self.model = tf.keras.models.load_model("/cr/data01/filip/models/" + name + "/model_converged")
                 self.epochs = "converged"
-            except ImportError:
+            except OSError:
                 choice = input(f"\nSelect epoch from {os.listdir('/cr/data01/filip/models/' + name)}\n Model: ")
                 self.model = tf.keras.models.load_model("/cr/data01/filip/models/" + name + choice)
                 self.epochs = int(choice[-1])
@@ -230,7 +240,7 @@ class NNClassifier(Classifier):
         except EarlyStoppingError: 
             self.epochs = "converged"
 
-        self.save(self.name)
+        self.save()
 
         # provide some metadata
         print("\nTraining exited normally. Onto providing metadata now...")
@@ -244,8 +254,8 @@ class NNClassifier(Classifier):
             metadata.write(f"val_tpr {true_positive_rate}")
 
 
-    def save(self, directory_path : str) -> None : 
-        self.model.save(f"/cr/data01/filip/models/{directory_path}/model_{self.epochs}")
+    def save(self) -> None : 
+        self.model.save(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}")
 
     def __call__(self, signal : np.ndarray) -> typing.Union[bool, tuple] :
 
@@ -287,45 +297,33 @@ class Ensemble(NNClassifier):
         supress_print = False
         self.models = []
 
-        try:
+        for i in range(1, n_models + 1):
+            ThisModel = NNClassifier("ENSEMBLES/" + name + f"/ensemble_{i}/", set_architecture, supress_print)
+            self.models.append(ThisModel)
 
-            for i in range(1, n_models + 1):
-                ThisModel = NNClassifier("ENSEMBLES/" + name, set_architecture, supress_print)
-                self.models.append(ThisModel)
+            supress_print = True
 
-                supress_print = True
-
-        except OSError:
-            for i in range(n_models):
-
-                ThisModel = NNClassifier("ENSEMBLES/" + name, set_architecture, supress_print)
-                self.models.append(ThisModel)
-
-                supress_print = True
-
-        self.name = set_architecture
+        self.name = "ENSEMBLE_" + name
 
         print(f"{self.name}: {n_models} models successfully initiated\n")
+
 
     def train(self, Datasets : tuple, epochs : int, **kwargs) -> None:
 
         start = perf_counter_ns()
-        TrainingSet, ValidationSet = Datasets
 
         for i, instance in enumerate(self.models,1):
 
-            elapsed = strftime('%H:%M:%S', gmtime((perf_counter_ns() - start)*1e-9))
+            time_spent = (perf_counter_ns() - start) * 1e-9
+            elapsed = strftime('%H:%M:%S', gmtime(time_spent))
+            eta = strftime('%H:%M:%S', gmtime(time_spent * (len(self.models)/i - 1)))
 
-            print(f"Model {i}/{len(self.models)}, {elapsed}s elapsed")
+            print(f"Model {i}/{len(self.models)}, {elapsed} elapsed, ETA = {eta}")
 
-            for epoch in range(instance.epochs, epochs):
-                instance.model.fit(TrainingSet, validation_data = ValidationSet, epochs = 1, verbose = 1)
-                instance.epochs = instance.epochs + 1
+            instance.train(Datasets, epochs)
 
-                instance.save(self.name + f"/ensemble_{i}/")
-
-        random.shuffle(TrainingSet.files)
-        random.shuffle(ValidationSet.files)
+        random.shuffle(Datasets[0].files)                                           # shuffle training set
+        random.shuffle(Datasets[1].files)                                           # shuffle validation set
 
     def __call__(self, trace : np.ndarray) -> list :
 

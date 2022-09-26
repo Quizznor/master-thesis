@@ -5,61 +5,77 @@ from .Classifier import *
 
 def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -> float :
 
-    TPs, FPs = 0, 0
-    save_path = "/cr/data01/filip/models/" + Classifier.name + f"model_{Classifier.epoch}/ROC_curve/" + save_dir
+    if isinstance(Classifier, NNClassifier):
 
-    if not os.path.isdir(save_path): os.system(f"mkdir -p {save_path}")
+        TPs, FPs = 0, 0
+        save_path = "/cr/data01/filip/models/" + Classifier.name + f"/model_{Classifier.epochs}/ROC_curve/" + save_dir
 
-    save_file = \
-        {
-            "TP" : f"{save_path}/true_positives.csv",
-            "TN" : f"{save_path}/true_negatives.csv",
-            "FP" : f"{save_path}/false_positives.csv",
-            "FN" : f"{save_path}/false_negatives.csv"
-        }
+        if not os.path.isdir(save_path): os.system(f"mkdir -p {save_path}")
 
-    # overwrite old data
-    for file in save_file.values():
-        if os.path.isfile(file): os.system(f"rm -rf {file}")
+        save_file = \
+            {
+                "TP" : f"{save_path}/true_positives.csv",
+                "TN" : f"{save_path}/true_negatives.csv",
+                "FP" : f"{save_path}/false_positives.csv",
+                "FN" : f"{save_path}/false_negatives.csv"
+            }
 
-        os.system(f"touch {file}")
+        # overwrite old data
+        for file in save_file.values():
+            if os.path.isfile(file): os.system(f"rm -rf {file}")
 
-    # open all files only once, increases performance
-    with open(save_file["TP"], "a") as TP, \
-         open(save_file["TN"], "a") as TN, \
-         open(save_file["FP"], "a") as FP, \
-         open(save_file["FN"], "a") as FN:
+            os.system(f"touch {file}")
 
-         for batch, (traces, true_labels, metadata) in enumerate(Dataset): 
+        # open all files only once, increases performance
+        with open(save_file["TP"], "a") as TP, \
+            open(save_file["TN"], "a") as TN, \
+            open(save_file["FP"], "a") as FP, \
+            open(save_file["FN"], "a") as FN:
 
-            print(f"Fetching batch {batch + 1}/{Dataset.__len__()}: {100 * (batch/Dataset.__len__()):.2f}%", end = "...\r")
+            for batch, (traces, true_labels, metadata) in enumerate(Dataset): 
 
-            for predicted_label, true_label, info in zip(Classifier(traces), true_labels, metadata):
+                print(f"Fetching batch {batch + 1}/{Dataset.__len__()}: {100 * (batch/Dataset.__len__()):.2f}%", end = "...\r")
 
-                Integral, (SignalBins, Energy, SPDistance, Zenith) = info
-                true_label = true_label.argmax()
+                for predicted_label, true_label, info in zip(Classifier(traces), true_labels, metadata):
 
-                if true_label:
-                    if predicted_label:
-                        prediction = TP
-                        TPs += 1
-                    else: prediction = FN
-                
-                    # save more metadata for traces containing signal
-                    save_string = f"{Integral:.3f} {int(SignalBins)} {Energy:.3e} {int(SPDistance)} {Zenith:.3f}"
-                
-                else:
-                    if predicted_label:
-                        prediction = FP
-                        FPs += 1
-                    else: prediction = TN
+                    Integral, (SignalBins, Energy, SPDistance, Zenith) = info
+                    true_label = true_label.argmax()
 
-                    # only save signal and number of background bins
-                    save_string = f"{Integral:.3f}"
+                    if true_label:
+                        if predicted_label:
+                            prediction = TP
+                            TPs += 1
+                        else: prediction = FN
+                    
+                        # save more metadata for traces containing signal
+                        save_string = f"{Integral:.3f} {int(SignalBins)} {Energy:.3e} {int(SPDistance)} {Zenith:.3f}"
+                    
+                    else:
+                        if predicted_label:
+                            prediction = FP
+                            FPs += 1
+                        else: prediction = TN
 
-                prediction.write(save_string + "\n")
-    
-    return TPs / (TPs + FPs)
+                        # only save signal and number of background bins
+                        save_string = f"{Integral:.3f}"
+
+                    prediction.write(save_string + "\n")
+        
+        return TPs / (TPs + FPs)
+
+    elif isinstance(Classifier, Ensemble):
+
+        start = perf_counter_ns()
+
+        for i, instance in enumerate(Classifier.models,1):
+
+            time_spent = (perf_counter_ns() - start) * 1e-9
+            elapsed = strftime('%H:%M:%S', gmtime(time_spent))
+            eta = strftime('%H:%M:%S', gmtime(time_spent * (len(Classifier.models)/i - 1)))
+
+            print(f"Model {i}/{len(Classifier.models)}, {elapsed} elapsed, ETA = {eta}")
+
+            make_dataset(instance, Dataset)
 
 # signal strength roc curve (TPR vs FPR)
 def ROC(Estimator : Classifier, dataset : dict, **kwargs) -> None :

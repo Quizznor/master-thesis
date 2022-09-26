@@ -36,7 +36,7 @@ class GLOBAL():
     ignore_low_VEM              = 0                                             # label signals under threshold as background
     window                      = 120                                           # Length (in bins) of the sliding window
     step                        = 10                                            # Sliding window analysis step size (in bins)
-    early_stopping_patience     = 10000                                         # number of batches for early stopping patience
+    early_stopping_patience     = 5000                                          # number of batches for early stopping patience
     n_production_traces         = int(1e6)                                      # how many random traces to look at for predictions
     n_ensembles                 = 10                                            # how many networks of same architecture to train
 
