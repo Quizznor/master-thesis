@@ -147,7 +147,7 @@ class Trace(Signal):
                 self.injections_start = [start // 3 for start in self.injections_start ]
                 self.injections_end = [end // 3 for end in self.injections_end ]
 
-            self.length = self.length // 3
+            self.length = GLOBAL.n_bins // 3
 
         for i, pmt in enumerate(signal):
             signal[i] = np.floor(pmt) / ADC_to_VEM[i]
