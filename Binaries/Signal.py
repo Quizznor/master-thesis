@@ -166,7 +166,7 @@ class Trace(Signal):
         kFirCoefficients = [ 5, 0, 12, 22, 0, -61, -96, 0, 256, 551, 681, 551, 256, 0, -96, -61, 0, 22, 12, 0, 5 ]
         buffer_length = int(0.5 * len(kFirCoefficients))
         kFirNormalizationBitShift = 11
-        # kADCSaturation = 4095                             # bit shift not really needed
+        # kADCsaturation = 4095                             # bit shift not really needed
 
         n_bins_uub      = np.shape(trace)[1]                # original trace length
         n_bins_ub       = int(n_bins_uub / 3)               # downsampled trace length
@@ -287,7 +287,7 @@ class RandomTrace():
         if index is None:
             random_file = RandomTrace.all_files[np.random.randint(RandomTrace.all_n_files)]
 
-            # values come from $TMPDATA/iRODS/MonitoringData/read_monitoring_data.ipynb
+            # values come from $TMPDATA/iRODS/MonitoringData/read_monitoring_data.ipynb -> monitoring files
             if "nuria" in random_file:
                 self.q_peak = [180.23, 182.52, 169.56]
                 self.q_charge = [3380.59, 3508.69, 3158.88]

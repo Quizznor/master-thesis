@@ -247,7 +247,7 @@ class NNClassifier(Classifier):
 
         true_positive_rate = make_dataset(self, ValidationSet, f"validation_data")
 
-        with open(f"/cr/data01/filip/models/{self.name}/metrics.csv", "w") as metadata:
+        with open(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/metrics.csv", "w") as metadata:
             for key, value in self.history.history.items():
                 metadata.write(f"{key} {value[0]}\n")
 
@@ -322,8 +322,11 @@ class Ensemble(NNClassifier):
 
             instance.train(Datasets, epochs)
 
-        random.shuffle(Datasets[0].files)                                           # shuffle training set
-        random.shuffle(Datasets[1].files)                                           # shuffle validation set
+            random.shuffle(Datasets[0].files)                                       # shuffle training set
+            random.shuffle(Datasets[1].files)                                       # shuffle validation set
+
+            Datasets[0].__iteration_index = 0                                       # reset iteration index
+            Datasets[1].__iteration_index = 0                                       # reset iteration index
 
     def __call__(self, trace : np.ndarray) -> list :
 
@@ -409,10 +412,10 @@ class BayesianClassifier(Classifier):
 
         super().__init__("BayesianClassifier")
 
-    #     self.bin_centers = np.loadtxt("/cr/data01/filip/models/naive_bayes_classifier/bins.csv")
-    #     self.signal = np.loadtxt("/cr/data01/filip/models/naive_bayes_classifier/signal.csv")
-    #     self.background = np.loadtxt("/cr/data01/filip/models/naive_bayes_classifier/background.csv")
-    #     self.quotient = self.signal / self.background
+        self.bin_centers = np.loadtxt("/cr/data01/filip/models/naive_bayes_classifier/bins.csv")
+        self.signal = np.loadtxt("/cr/data01/filip/models/naive_bayes_classifier/signal.csv")
+        self.background = np.loadtxt("/cr/data01/filip/models/naive_bayes_classifier/background.csv")
+        self.quotient = self.signal / self.background
     #     self.threshold = threshold
 
     def __call__(self, trace : np.ndarray) -> bool : 

@@ -5,7 +5,9 @@ from .Classifier import *
 
 def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -> float :
 
-    if isinstance(Classifier, NNClassifier):
+    from .Classifier import Ensemble
+
+    if not isinstance(Classifier, Ensemble):
 
         TPs, FPs = 0, 0
         save_path = "/cr/data01/filip/models/" + Classifier.name + f"/model_{Classifier.epochs}/ROC_curve/" + save_dir
@@ -63,7 +65,7 @@ def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -
         
         return TPs / (TPs + FPs)
 
-    elif isinstance(Classifier, Ensemble):
+    else:
 
         start = perf_counter_ns()
 

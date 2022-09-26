@@ -5,5 +5,6 @@ AllEvents = EventGenerator("all", real_background = True)
 
 # _ = input("\nPress ENTER to continue")
 
-TestEnsemble = Ensemble("minimal_conv2d_real_background", "one_layer_conv2d", n_models = 10)
+TestEnsemble = Ensemble("minimal_conv2d_real_background", "one_layer_conv2d", n_models = 9)
+
 TestEnsemble.train(AllEvents, 3)
