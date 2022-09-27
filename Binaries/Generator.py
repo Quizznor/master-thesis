@@ -349,3 +349,12 @@ class Generator(tf.keras.utils.Sequence):
         print("")
 
         plt.show()
+
+    # reset the internal state of the generator
+    def __reset__(self) -> None : 
+
+        random.shuffle(self.files)
+        self.__iteration_index = 0
+
+    def iteration_index(self):
+        return self.__iteration_index

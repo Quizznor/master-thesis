@@ -286,28 +286,28 @@ class RandomTrace():
 
         if index is None:
             random_file = RandomTrace.all_files[np.random.randint(RandomTrace.all_n_files)]
-
-            # values come from $TMPDATA/iRODS/MonitoringData/read_monitoring_data.ipynb -> monitoring files
-            if "nuria" in random_file:
-                self.q_peak = [180.23, 182.52, 169.56]
-                self.q_charge = [3380.59, 3508.69, 3158.88]
-            elif "lo_qui_don" in random_file:
-                self.q_peak = [164.79, 163.49, 174.71]
-                self.q_charge = [2846.67, 2809.48, 2979.65]
-            elif "jaco" in random_file:
-                self.q_peak = [189.56, 156.48, 168.20]
-                self.q_charge = [3162.34, 2641.25, 2840.97]
-            elif "peru" in random_file:
-                self.q_peak = [164.02, 176.88, 167.37]
-                self.q_charge = [2761.37, 3007.72, 2734.63]
-            else:
-                print("Station not found! THIS SHOULD NOT HAPPEN")
-                self.q_peak = [GLOBAL.q_peak for i in range(3)]
-                self.q_charge = [GLOBAL.q_charge for i in range(3)]
-
-            these_traces = np.loadtxt(RandomTrace.baseline_dir + random_file)
         else:
-            these_traces = np.loadtxt(RandomTrace.baseline_dir + RandomTrace.all_files[index])
+            random_file = RandomTrace.all_files[index]
+
+        these_traces = np.loadtxt(RandomTrace.baseline_dir + random_file)
+
+        # values come from $TMPDATA/iRODS/MonitoringData/read_monitoring_data.ipynb -> monitoring files
+        if "nuria" in random_file:
+            self.q_peak = [180.23, 182.52, 169.56]
+            self.q_charge = [3380.59, 3508.69, 3158.88]
+        elif "lo_qui_don" in random_file:
+            self.q_peak = [164.79, 163.49, 174.71]
+            self.q_charge = [2846.67, 2809.48, 2979.65]
+        elif "jaco" in random_file:
+            self.q_peak = [189.56, 156.48, 168.20]
+            self.q_charge = [3162.34, 2641.25, 2840.97]
+        elif "peru" in random_file:
+            self.q_peak = [164.02, 176.88, 167.37]
+            self.q_charge = [2761.37, 3007.72, 2734.63]
+        else:
+            print("Station not found! THIS SHOULD NOT HAPPEN")
+            self.q_peak = [GLOBAL.q_peak for i in range(3)]
+            self.q_charge = [GLOBAL.q_charge for i in range(3)]
 
         self._these_traces = np.split(these_traces, len(these_traces) // 3)         # group random traces by pmt
 

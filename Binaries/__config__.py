@@ -6,6 +6,7 @@ import matplotlib.cm as cmap
 class EmptyFileError(Exception): pass
 class SlidingWindowError(Exception): pass
 class EarlyStoppingError(Exception): pass
+class SignalError(Exception): pass
 
 @dataclass
 class GLOBAL():

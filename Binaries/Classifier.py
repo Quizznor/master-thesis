@@ -69,6 +69,12 @@ class Classifier():
 
         for trace in trigger_examples: trace.__plot__()
 
+    def performance(self, dataset : str) -> tuple : 
+
+        pass
+ 
+
+
 from .Testing import *
 
 # Wrapper for tf.keras.Sequential model with some additional functionalities
@@ -312,6 +318,8 @@ class Ensemble(NNClassifier):
 
         start = perf_counter_ns()
 
+        print("dataset iteration index:", Datasets[0].iteration_index(), Datasets[1].iteration_index())
+
         for i, instance in enumerate(self.models,1):
 
             time_spent = (perf_counter_ns() - start) * 1e-9
@@ -322,11 +330,8 @@ class Ensemble(NNClassifier):
 
             instance.train(Datasets, epochs)
 
-            random.shuffle(Datasets[0].files)                                       # shuffle training set
-            random.shuffle(Datasets[1].files)                                       # shuffle validation set
-
-            Datasets[0].__iteration_index = 0                                       # reset iteration index
-            Datasets[1].__iteration_index = 0                                       # reset iteration index
+            Datasets[0].__reset__()
+            Datasets[1].__reset__()
 
     def __call__(self, trace : np.ndarray) -> list :
 
