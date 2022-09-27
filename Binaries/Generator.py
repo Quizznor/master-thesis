@@ -232,6 +232,12 @@ class Generator(tf.keras.utils.Sequence):
 
         return StopIteration
 
+    # reset the internal state of the generator
+    def __reset__(self) -> None : 
+
+        random.shuffle(self.files)
+        self.__iteration_index = 0
+
     # check properties of the sliding window, prior, start/stop etc.
     def check_sliding_window(self, batch : int) -> None :
 
@@ -251,18 +257,7 @@ class Generator(tf.keras.utils.Sequence):
 
             print(i, window.shape, n_sig, "->", n_sigs, n_bkgs)
 
-        print(f"\nGiven prior: {self.prior} <-> {n_sigs / (n_sigs + n_bkgs)} this prior")
-
-    # check if __getitem__ returns sensible batches
-    def check_output(self, batch : int) -> None :
-
-        traces, _ = self.__getitem__(batch)
-
-        if traces.shape[0] == 0:
-
-            print(f"Something went wrong with batch {batch}: full shape {traces.shape} ")
-
-            raise StopIteration      
+        print(f"\nGiven prior: {self.prior} <-> {n_sigs / (n_sigs + n_bkgs)} this prior")    
 
     # run some diagnostics to make sure dataset is in order
     def unit_test(self, n_traces : int = None, full_traces : bool = True) -> None :
@@ -349,12 +344,3 @@ class Generator(tf.keras.utils.Sequence):
         print("")
 
         plt.show()
-
-    # reset the internal state of the generator
-    def __reset__(self) -> None : 
-
-        random.shuffle(self.files)
-        self.__iteration_index = 0
-
-    def iteration_index(self):
-        return self.__iteration_index
