@@ -3,7 +3,7 @@
 
    \author Javier Gonzalez
    \version $Id: DummyCentralTrigger.cc 23092 2013-03-20 15:02:38Z darko $
-   \date 08 Dec 2011
+   \date 31 Mar 2022
 */
 
 static const char CVSId[] =
@@ -46,7 +46,6 @@ DummyCentralTriggerDense::Init()
   fDefaultWindow = TimeInterval(1000*microsecond);
   return eSuccess;
 }
-
 
 VModule::ResultFlag
 DummyCentralTriggerDense::Run(evt::Event & event)

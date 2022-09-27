@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 import matplotlib.pyplot as plt
 import matplotlib.cm as cmap
+from matplotlib.patches import Rectangle
+from matplotlib.colors import BoundaryNorm
+from matplotlib.colorbar import ColorbarBase
 
 
 class EmptyFileError(Exception): pass

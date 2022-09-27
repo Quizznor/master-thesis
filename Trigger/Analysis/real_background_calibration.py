@@ -78,7 +78,7 @@ for index in range(RandomTrace.all_n_files):
 
             params = np.polyfit(x, y, 2)
             model_fit = parabola(x_smooth, *popt)
-            peak_estimate = x_smooth[np.argmax(model_fit)]
+            peak_estimate = params[0]
 
             # axes[i].plot(x_smooth, model_fit, lw = 2, label = r"$\mathrm{VEM}_\mathrm{Peak} = $" + f"{peak_estimate:.2f}", c = colors[i])
             # axes[i].legend()
