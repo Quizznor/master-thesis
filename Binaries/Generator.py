@@ -1,4 +1,3 @@
-from curses import meta
 from time import perf_counter_ns
 import tensorflow as tf
 import typing
