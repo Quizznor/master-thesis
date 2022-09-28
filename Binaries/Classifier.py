@@ -544,8 +544,6 @@ class Ensemble(NNClassifier):
 
     def ROC(self, dataset : str) -> None :
 
-        # colors = ["steelblue", "orange", "green", "brown", "black", "yellow", "fuchsia", "chocolate", "tomato", "darkkhaki"]
-
         try:
             if header_was_called: pass
 
@@ -555,6 +553,18 @@ class Ensemble(NNClassifier):
         for i, model in enumerate(self.models):
 
             model.ROC(dataset, title = f"{self.name}", label = f"model instance {i}")
+
+    def PRC(self, dataset : str) -> None :
+
+        try:
+            if header_was_called: pass
+
+        except NameError:
+            self.__header__()
+
+        for i, model in enumerate(self.models):
+
+            model.PRC(dataset, title = f"{self.name}", label = f"model instance {i}")
 
 # Wrapper for currently employed station-level triggers (T1, T2, ToT, etc.)
 # Information on magic numbers comes from Davids Mail on 03.03.22 @ 12:30pm
