@@ -11,11 +11,11 @@ This chapter offers a brief look into the measurement principle and setup of the
 \autoref{sec:surface-detector} and critical in understanding the analysis presented in \autoref{chap:station-triggers}. For a more complete 
 overview on the experiment, information regarding the fluoresence detector can be found in \autoref{sec:fluoresence-detector}. Notes on the event
 reconstruction are found in \autoref{sec:event-reconstruction}. If not explicitly stated otherwise, information is adpoted from the Pierre Auger 
-observatory design report \cite{DesignReport}.
+observatory design report \cite{DesignReport}. 
 
 \begin{figure}
 	\centering
-	\includegraphics[width=0.9\textwidth]{plots/auger_array.png}
+	\includegraphics[width=0.9\textwidth]{imgs/auger_array.png}
 	\caption{Overview of the Pierre Auger observatory. The four different FD sites (respective FOV shown with blue lines) sit at the edge of
 	the detector area and monitor the night sky above the SD array consisting of 1600 water tanks (black dots). Two laser facilities, the 
 	e\textbf{X}treme (XLF) and \textbf{C}entral \textbf{L}aser \textbf{F}acility (CLF) are located in the middle of the array to measure 
@@ -29,19 +29,22 @@ observatory design report \cite{DesignReport}.
 
 The fluoresence detector consists of a total of 27 fluoresence telescopes at 4 different sites (compare \autoref{fig:auger-array}). Each telescope
 monitors a \SI{30}{\degree} x \SI{30}{\degree} window of the night sky. This results in an effective FOV of roughly \SI{180}{\degree} x 
-\SI{30}{\degree} per FD station, with an exception of Coihueco, where three additional telescopes (\textbf{H}igh \textbf{E}levation \textbf{A}uger
-\textbf{T}elescope) are installed to enable monitoring of higher zenith angles ($\SI{30}{\degree}\leq\theta\leq\SI{60}{\degree}$) to increase
-sensitivity for showers of lower energies (compare \autoref{chap:physical-background}).
+\SI{30}{\degree} per FD station, with an exception of Coihueco, where three additional telescopes - HEAT (\textbf{H}igh \textbf{E}levation 
+\textbf{A}uger \textbf{T}elescope) - are installed to enable monitoring of higher zenith angles ($\SI{30}{\degree}\leq\theta\leq\SI{60}{\degree}$) and
+increase sensitivity for showers of lower energies (compare \autoref{chap:physical-background}).
 
-The individual telescopes consists of a \SI{3.6}{\meter} by \SI{3.6}{\meter}, curved mirror, which reflect light onto 440 photomultipliers (PMTs)
-that make up the pixels of the photo sensor. Since the setup needs to be extremely sensitive to UV light in order to see traces of air showers, 
-its operation is limited to the argentinian nautical (? \TODO) night.
+The individual telescopes consist of \SI{3.6}{\meter} by \SI{3.6}{\meter}, curved mirrors, which reflect light onto 440 photomultipliers (PMTs)
+each, that make up the pixels of the photo sensor. Since the setup needs to be extremely sensitive to UV light in order to see flouresence caused by
+extensive air showers, its operation is limited to moonless astronomical nights ($\measuredangle(\,\text{Sun},\,\text{Horizon})\lesssim-18^{\circ}$). 
+
+\TODO{FD photo?}
 
 \section{Surface Detector (SD)}
 \label{sec:surface-detector}
 
 the surface detector consists of a multitude of individually operating stations. Each station is made up of a \SI{12000}{\litre} tank filled with 
-highly purified water and equipped with three PMTs that detect Cherenkov light. Gathered data  
+highly purified water and equipped with three PMTs that detect Cherenkov light. Onboard electronics, the \textbf{U}nified \textbf{B}oard (UB) or
+\textbf{U}pgraded \textbf{U}nified \textbf{B}oard (UUB) read out measurement data. 
 
 \section{Trigger Procedure and Event Reconstruction}
 \label{sec:event-reconstruction}

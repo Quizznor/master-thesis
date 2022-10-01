@@ -10,6 +10,7 @@ GLIEDERUNG THESIS
 		3.2 Measurement principle
 		- Flouresence detector (FD)
 		- Surface detector (SD)
+		- Trigger process & Event reconstruction
 	4. Various triggers
 		4.1 Th, ToT, ToTd, MoPS
 		4.2 Trigger mechanisms
