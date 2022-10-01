@@ -1,7 +1,6 @@
 from time import perf_counter_ns
 import tensorflow as tf
 import typing
-import random
 
 from .__config__ import *
 from .Signal import *
@@ -68,7 +67,7 @@ class EventGenerator():
         baseline_std = kwargs.get("sigma", GLOBAL.baseline_std)
         baseline_mean = kwargs.get("mu", GLOBAL.baseline_mean)
         real_background = kwargs.get("real_background", GLOBAL.real_background)
-        n_injected = kwargs.get("force_inject", GLOBAL.force_inject ) if not real_background else 0
+        n_injected = kwargs.get("force_inject", GLOBAL.force_inject )
         downsampling = kwargs.get("apply_downsampling", GLOBAL.downsampling)
 
         ignore_low_VEM = kwargs.get("ignore_low_vem", GLOBAL.ignore_low_VEM)
@@ -125,6 +124,8 @@ class Generator(tf.keras.utils.Sequence):
         self.sigma, self.mu = trace_options[3], trace_options[4]
         self.downsampling, self.use_real_background = trace_options[6], trace_options[6]
         self.files = signal_files
+
+        if self.use_real_background and self.n_injected is None: self.n_injected = 0
 
         self.trace_options = [self.q_peak, self.q_charge, self.length, self.sigma, self.mu, self.n_injected, self.downsampling]
 

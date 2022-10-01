@@ -1,4 +1,5 @@
 import numpy as np
+import random
 import os
 
 from .__config__ import *
@@ -276,32 +277,38 @@ class Baseline():
 # TODO pair with q_peak and q_charge values
 class RandomTrace():
 
-    baseline_dir : str = "/cr/tempdata01/filip/iRODS/corrected/"                    # storage path of the baseline lib
-    all_files : np.ndarray = np.asarray(os.listdir(baseline_dir))                   # container for all baseline files
-    all_n_files : int = len(all_files)                                              # number of available baseline files
+    baseline_dir : str = "/cr/tempdata01/filip/iRODS/"                              # storage path of the station folders
+    # all_files : np.ndarray = np.asarray(os.listdir(baseline_dir))                   # container for all baseline files
+    # all_n_files : int = len(all_files)                                              # number of available baseline files
 
-    def __init__(self, index : int = None) -> None : 
+    def __init__(self, station : str = None, index : int = None) -> None : 
+
+        self.station = random.choice(["nuria", "peru", "jaco"]) if station is not None else station.lower()
+
+        all_files = np.asarray(os.listdir(RandomTrace.baseline_dir + station))      # container for all baseline files
+        self.all_n_files = len(all_files)                                           # number of available baseline files
 
         self.__current_files = 0                                                    # number of traces already raised
 
         if index is None:
-            random_file = RandomTrace.all_files[np.random.randint(RandomTrace.all_n_files)]
+            self.random_file = all_files[np.random.randint(self.all_n_files)]
         else:
-            random_file = RandomTrace.all_files[index]
+            self.random_file = all_files[index]
 
-        these_traces = np.loadtxt(RandomTrace.baseline_dir + random_file)
+        these_traces = np.loadtxt(RandomTrace.baseline_dir + station + "/" + self.random_file)
 
+        # IF YOU WANT TO USE DAY AVERAGE FROM ONLINE ESTIMATE #########################################
         # values come from $TMPDATA/iRODS/MonitoringData/read_monitoring_data.ipynb -> monitoring files
-        if "nuria" in random_file:
+        if "nuria" in self.random_file:
             self.q_peak = [180.23, 182.52, 169.56]
             self.q_charge = [3380.59, 3508.69, 3158.88]
-        elif "lo_qui_don" in random_file:
+        elif "lo_qui_don" in self.random_file:
             self.q_peak = [164.79, 163.49, 174.71]
             self.q_charge = [2846.67, 2809.48, 2979.65]
-        elif "jaco" in random_file:
+        elif "jaco" in self.random_file:
             self.q_peak = [189.56, 156.48, 168.20]
             self.q_charge = [3162.34, 2641.25, 2840.97]
-        elif "peru" in random_file:
+        elif "peru" in self.random_file:
             self.q_peak = [164.02, 176.88, 167.37]
             self.q_charge = [2761.37, 3007.72, 2734.63]
         else:
@@ -322,7 +329,7 @@ class RandomTrace():
         
         except IndexError:                                                          # reload buffer on overflow
 
-            self.__init__()
+            self.__init__(station = self.station)
             return self.get()
 
 # container for injected muons

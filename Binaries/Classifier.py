@@ -15,7 +15,7 @@ class Classifier():
     def __call__(self) -> int : raise NotImplementedError
 
     # test the trigger rate of the classifier on random traces
-    def production_test(self, n_traces : int = GLOBAL.n_production_traces, **kwargs) -> None :
+    def production_test(self, n_traces : int = GLOBAL.n_production_traces, **kwargs) -> list :
 
         start = perf_counter_ns()
         n_total_triggered = 0
@@ -24,15 +24,15 @@ class Classifier():
         RandomTraces = EventGenerator(["19_19.5"], split = 1, force_inject = 0, real_background = True, prior = 0, **kwargs)
         RandomTraces.files = np.zeros(n_traces)
 
-        for batch in range(RandomTraces.__len__()):
+        if type(self) == type(HardwareClassifier()):
 
-            elapsed = perf_counter_ns() - start
-            mean_per_step_ms = elapsed / (batch + 1) * 1e-6
-            to_str = lambda x : f"{int(x//3600)}h {int((x % 3600)//60)}m"
+            for batch in range(RandomTraces.__len__()):
 
-            print(f"{100 * (batch/n_traces):.2f}% - {mean_per_step_ms:.2f}ms/batch, ETA = {to_str((n_traces - batch) * mean_per_step_ms * 1e-3)}          ", end ="\r")
+                elapsed = perf_counter_ns() - start
+                mean_per_step_ms = elapsed / (batch + 1) * 1e-6
+                to_str = lambda x : f"{int(x//3600)}h {int((x % 3600)//60)}m"
 
-            if type(self) == type(HardwareClassifier()):
+                print(f"{100 * (batch/n_traces):.2f}% - {mean_per_step_ms:.2f}ms/batch, ETA = {to_str((n_traces - batch) * mean_per_step_ms * 1e-3)}          ", end ="\r")
 
                 traces, _ = RandomTraces.__getitem__(batch, full_trace = True)
                 trace = traces[0]
@@ -52,24 +52,36 @@ class Classifier():
                         # but then again just skipping one window seems wrong also
                         break
 
-            else:
+        else:
 
-                for (traces, _, _) in RandomTraces:
+            for batch, (traces, _, _) in enumerate(RandomTraces):
 
-                    if np.any(self.__call__(traces)):
-                        n_total_triggered += 1              
+                elapsed = perf_counter_ns() - start
+                mean_per_step_ms = elapsed / (batch + 1) * 1e-6
+                to_str = lambda x : f"{int(x//3600)}h {int((x % 3600)//60)}m"
 
-        total_trace_duration = GLOBAL.single_bin_duration * GLOBAL.n_bins * n_traces
+                print(f"{100 * (batch/n_traces):.2f}% - {mean_per_step_ms:.2f}ms/batch, ETA = {to_str((n_traces - batch) * mean_per_step_ms * 1e-3)}          ", end ="\r")
+
+                if np.any(self.__call__(traces)):
+                    n_total_triggered += 1
+
+                    if n_total_triggered < 10:
+                        trigger_examples.append(traces)       
+
+        n_bins = GLOBAL.n_bins if not RandomTraces.downsampling else GLOBAL.n_bins // 3
+        t_single_bin = GLOBAL.single_bin_duration if not RandomTraces.downsampling else GLOBAL.single_bin_duration * 3
+        total_trace_duration = t_single_bin * n_bins * n_traces
         trigger_frequency = n_total_triggered / total_trace_duration
 
         print("\n\nProduction test results:")
         print("")
         print(f"random traces injected: {n_traces}")
+        print(f"summed traces duration: {total_trace_duration:.4}s")
         print(f"total T2 trigger found: {n_total_triggered}")
         print(f"*********************************")
         print(f"TRIGGER FREQUENCY = {trigger_frequency:.4f} Hz")
 
-        for trace in trigger_examples: trace.__plot__()
+        return trigger_examples
 
     # Performance visualizers #######################################################################
 
