@@ -84,212 +84,207 @@ class Classifier():
         return trigger_examples
 
     # Performance visualizers #######################################################################
+    if True:                                              # So this can be collapsed in the editor =)
+        # load a specific dataset (e.g. 'validation_data', 'real_background', etc.) and print performance
+        def load_and_print_performance(self, dataset : str, usecols : list = None) -> tuple : 
 
-    # load a specific dataset (e.g. 'validation_data', 'real_background', etc.) and print performance
-    def load_and_print_performance(self, dataset : str, usecols : list = None) -> tuple : 
+            try:
+                if header_was_called: pass
 
-        try:
-            if header_was_called: pass
+            except NameError:
+                self.__header__()
 
-        except NameError:
-            self.__header__()
+            print(f"Fetching predictions for: {self.name} -> {dataset}", end = "\r")
 
-        print(f"Fetching predictions for: {self.name} -> {dataset}", end = "\r")
+            try:
+                save_files = \
+                {
+                    "TP" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/true_positives.csv",
+                    "TN" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/true_negatives.csv",
+                    "FP" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/false_positives.csv",
+                    "FN" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/false_negatives.csv"
+                }
 
-        try:
-            save_files = \
-            {
-                "TP" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/true_positives.csv",
-                "TN" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/true_negatives.csv",
-                "FP" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/false_positives.csv",
-                "FN" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/false_negatives.csv"
-            }
+                TP = np.loadtxt(save_files['TP'])
+                FP = np.loadtxt(save_files['FP'])
+                TN = np.loadtxt(save_files['TN'])
+                FN = np.loadtxt(save_files['FN'])
 
-            TP = np.loadtxt(save_files['TP'])
-            FP = np.loadtxt(save_files['FP'])
-            TN = np.loadtxt(save_files['TN'])
-            FN = np.loadtxt(save_files['FN'])
+            except OSError:
+                save_files = \
+                {
+                    "TP" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/true_positives.csv",
+                    "TN" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/true_negatives.csv",
+                    "FP" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/false_positives.csv",
+                    "FN" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/false_negatives.csv"
+                }
 
-        except OSError:
-            save_files = \
-            {
-                "TP" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/true_positives.csv",
-                "TN" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/true_negatives.csv",
-                "FP" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/false_positives.csv",
-                "FN" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/false_negatives.csv"
-            }
+                TP = np.loadtxt(save_files['TP'], usecols = usecols[0])
+                FP = np.loadtxt(save_files['FP'], usecols = usecols[1])
+                TN = np.loadtxt(save_files['TN'], usecols = usecols[2])
+                FN = np.loadtxt(save_files['FN'], usecols = usecols[3])
 
-            TP = np.loadtxt(save_files['TP'], usecols = usecols[0])
-            FP = np.loadtxt(save_files['FP'], usecols = usecols[1])
-            TN = np.loadtxt(save_files['TN'], usecols = usecols[2])
-            FN = np.loadtxt(save_files['FN'], usecols = usecols[3])
+            tp, fp = len(TP), len(FP)
+            tn, fn = len(TN), len(FN)
 
-        tp, fp = len(TP), len(FP)
-        tn, fn = len(TN), len(FN)
+            all = ( tp + tn + fp + fn )
+            TPR = ( tp ) / ( tp + fp ) * 100
+            ACC = ( tp + tn ) / all * 100
 
-        all = ( tp + tn + fp + fn )
-        TPR = ( tp ) / ( tp + fp ) * 100
-        ACC = ( tp + tn ) / all * 100
+            name_wrapper = self.name[:40] + ("..." if len(self.name) > 40 else "")
+            print(f"{name_wrapper} {dataset}".ljust(70), f"{f'{tp}'.ljust(7)} {f'{fp}'.ljust(7)} {f'{tn}'.ljust(7)} {f'{fn}'.ljust(7)}{f'{all}'.ljust(7)} -> Acc = {ACC:.2f}%, TPR = {TPR:.4f}%")
 
-        print(f"{self.name} {dataset}".ljust(70), f"{f'{tp}'.ljust(7)} {f'{fp}'.ljust(7)} {f'{tn}'.ljust(7)} {f'{fn}'.ljust(7)}{f'{all}'.ljust(7)} -> Acc = {ACC:.2f}%, TPR = {TPR:.4f}%")
+            return TP, FP, TN, FN
 
-        return TP, FP, TN, FN
+        # plot the ROC curve for a specific dataset (e.g. 'validation_data', 'real_background', etc.) over signal strength (VEM_charge)
+        def ROC(self, dataset, **kwargs) -> None :
 
-    # plot the ROC curve for a specific dataset (e.g. 'validation_data', 'real_background', etc.) over signal strength (VEM_charge)
-    def ROC(self, dataset, **kwargs) -> None :
+            TP, FP, TN, FN = self.load_and_print_performance(dataset, usecols = [0, 0, 0, 0])
 
-        TP, FP, TN, FN = self.load_and_print_performance(dataset, usecols = [0, 0, 0, 0])
+            if kwargs.get("full_set", False):
+                y, x = np.array(list(TP) + list(TN)), np.array(list(FP) + list(FN))
+            else: y, x = TP, FP
 
-        if kwargs.get("full_set", False):
-            y, x = np.array(list(TP) + list(TN)), np.array(list(FP) + list(FN))
-        else: y, x = TP, FP
+            x = np.clip(x, a_min = 1e-6, a_max = None)
+            y = np.clip(y, a_min = 1e-6, a_max = None)
 
-        x = np.clip(x, a_min = 1e-6, a_max = None)
-        y = np.clip(y, a_min = 1e-6, a_max = None)
+            score_low, score_high = min([x.min(), y.min()]), max([x.max(), y.max()])
+            last, current_x, current_y = score_low, 0, 0
+            ROC_x, ROC_y = [],[]
 
-        score_low, score_high = min([x.min(), y.min()]), max([x.max(), y.max()])
-        last, current_x, current_y = score_low, 0, 0
-        ROC_x, ROC_y = [],[]
+            bins = np.geomspace(score_low, score_high, kwargs.get("n", 100))[::-1]
+            norm = len(x) + len(y)
 
-        bins = np.geomspace(score_low, score_high, kwargs.get("n", 100))[::-1]
-        norm = len(x) + len(y)
+            for score_bin in bins:
 
-        for score_bin in bins:
+                this_x = ((last >= x) & (x > score_bin)).sum()
+                this_y = ((last >= y) & (y > score_bin)).sum()
+                
+                current_x += this_x / norm
+                current_y += this_y / norm
+                
+                ROC_y.append(current_y), ROC_x.append(current_x)
 
-            this_x = ((last >= x) & (x > score_bin)).sum()
-            this_y = ((last >= y) & (y > score_bin)).sum()
+                last = score_bin
             
-            current_x += this_x / norm
-            current_y += this_y / norm
+            ROC_x.append(1), ROC_y.append(1)
+
+            plt.title(kwargs.get("title",""))
+            plt.xlim(-0.02,1.02)
+            plt.ylim(-0.02,1.02)
+            plt.rcParams.update({'font.size': 22})
+            plt.xlabel("False positive rate"), plt.ylabel("True positive rate")
+            plt.plot(ROC_x, ROC_y, label = kwargs.get("label", self.name + "/" + dataset), ls = kwargs.get("ls", "solid"), lw = 2)
             
-            ROC_y.append(current_y), ROC_x.append(current_x)
+            plt.plot([0,1],[0,1], ls = "--", c = "gray")
 
-            last = score_bin
-        
-        ROC_x.append(1), ROC_y.append(1)
+        # precision and recall curve over signal strength (VEM_charge)
+        def PRC(self, dataset : str, **kwargs) -> None :
 
-        plt.title(kwargs.get("title",""))
-        plt.xlim(-0.02,1.02)
-        plt.ylim(-0.02,1.02)
-        plt.rcParams.update({'font.size': 22})
-        plt.xlabel("False positive rate"), plt.ylabel("True positive rate")
-        plt.plot(ROC_x, ROC_y, label = kwargs.get("label", self.name + "/" + dataset), ls = kwargs.get("ls", "solid"), lw = 2)
-        
-        plt.plot([0,1],[0,1], ls = "--", c = "gray")
+            TP, FP, TN, FN = self.load_and_print_performance(dataset, usecols = [0, 0, 0, 0])
 
-    # precision and recall curve over signal strength (VEM_charge)
-    def PRC(self, dataset : str, **kwargs) -> None :
+            TP = np.clip(TP, a_min = 1e-6, a_max = None)
+            FP = np.clip(FP, a_min = 1e-6, a_max = None)
+            FN = np.clip(FN, a_min = 1e-6, a_max = None)
 
-        TP, FP, TN, FN = self.load_and_print_performance(dataset, usecols = [0, 0, 0, 0])
+            score_low = min([TP.min(), FP.min(), FN.min()])
+            score_high = max([TP.max(), FP.max(), FN.max()])
+            last = score_low
+            PRC_x, PRC_y = [],[]
 
-        TP = np.clip(TP, a_min = 1e-6, a_max = None)
-        FP = np.clip(FP, a_min = 1e-6, a_max = None)
-        FN = np.clip(FN, a_min = 1e-6, a_max = None)
+            for score_bin in np.geomspace(score_low, score_high, kwargs.get("n", 100))[::-1]:
 
-        score_low = min([TP.min(), FP.min(), FN.min()])
-        score_high = max([TP.max(), FP.max(), FN.max()])
-        last = score_low
-        PRC_x, PRC_y = [],[]
+                this_tp = ((last >= TP) & (TP > score_bin)).sum()
+                this_fp = ((last >= FP) & (FP > score_bin)).sum()
+                this_fn = ((last >= FN) & (FN > score_bin)).sum()
+                last = score_bin
 
-        for score_bin in np.geomspace(score_low, score_high, kwargs.get("n", 100))[::-1]:
+                if this_tp + this_fn != 0 and this_tp + this_fp != 0:
+                    this_x = this_tp / (this_tp + this_fn)                                  # recall
+                    this_y = this_tp / (this_tp + this_fp)                                  # precision
 
-            this_tp = ((last >= TP) & (TP > score_bin)).sum()
-            this_fp = ((last >= FP) & (FP > score_bin)).sum()
-            this_fn = ((last >= FN) & (FN > score_bin)).sum()
-            last = score_bin
+                else: continue
 
-            if this_tp + this_fn != 0 and this_tp + this_fp != 0:
-                this_x = this_tp / (this_tp + this_fn)                                  # recall
-                this_y = this_tp / (this_tp + this_fp)                                  # precision
+                # print(f"{last:.2e} -> {score_bin:.2e}: {this_x}, {this_y}")
+                
+                PRC_y.append(this_y), PRC_x.append(this_x)
 
-            else: continue
+            PRC_y.sort() # ???
+            PRC_x.sort() # ???
 
-            # print(f"{last:.2e} -> {score_bin:.2e}: {this_x}, {this_y}")
-            
-            PRC_y.append(this_y), PRC_x.append(this_x)
+            plt.xlim(-0.02,1.02)
+            plt.ylim(0.48,1.02)
+            plt.rcParams.update({'font.size': 22})
+            plt.xlabel("Efficiency"), plt.ylabel("Precision")
+            plt.plot(1 - np.array(PRC_x), PRC_y, c = kwargs.get("c", "steelblue"), label = self.name + "/" + dataset, ls = kwargs.get("ls", "solid"))
+            plt.plot([0,1],[0.5,0.5,], ls = "--", c = "gray")
 
-        PRC_y.sort() # ???
-        PRC_x.sort() # ???
+        # plot the classifiers efficiency at a given SPD and energy
+        # TODO: Incorporate LDF / probability that station gets signal!!
+        def spd_energy_efficiency(self, dataset : str, **kwargs) -> None : 
 
-        plt.xlim(-0.02,1.02)
-        plt.ylim(0.48,1.02)
-        plt.rcParams.update({'font.size': 22})
-        plt.xlabel("Efficiency"), plt.ylabel("Precision")
-        plt.plot(1 - np.array(PRC_x), PRC_y, c = kwargs.get("c", "steelblue"), label = self.name + "/" + dataset, ls = kwargs.get("ls", "solid"))
-        plt.plot([0,1],[0.5,0.5,], ls = "--", c = "gray")
+            TP, FP, TN, FN = self.load_and_print_performance(dataset, usecols = [(2, 3), 0, 0, (2, 3)])
+            colormap = cmap.get_cmap("jet")
 
-    # plot the classifiers efficiency at a given SPD and energy
-    # TODO: Incorporate LDF / probability that station gets signal!!
-    def spd_energy_efficiency(self, dataset : str, **kwargs) -> None : 
+            TP_E, TP_SPD = TP[:, 0], TP[:, 1]
+            FN_E, FN_SPD = FN[:, 0], FN[:, 1]
 
-        TP, FP, TN, FN = self.load_and_print_performance(dataset, usecols = [(2, 3), 0, 0, (2, 3)])
-        colormap = cmap.get_cmap("jet")
+            fig = plt.figure()
 
-        TP_E, TP_SPD = TP[:, 0], TP[:, 1]
-        FN_E, FN_SPD = FN[:, 0], FN[:, 1]
+            # Group predictions by energy first
+            for e, energy in enumerate(EventGenerator.libraries.keys()):
 
-        fig = plt.figure()
+                low, high = [float(x) for x in energy.split("_")]
+                c = colormap(e / len(EventGenerator.libraries.keys()))
+                x = np.where(np.logical_and( TP_E >= 10 ** low, TP_E < 10 ** high))
+                o = np.where(np.logical_and( FN_E >= 10 ** low, FN_E < 10 ** high))
 
-        # Group predictions by energy first
-        for e, energy in enumerate(EventGenerator.libraries.keys()):
+                x, o = TP_SPD[x], FN_SPD[o]
+                bins = np.linspace(min(min(x), min(o)), max(max(x), max(o)), kwargs.get("n", 18))
 
-            low, high = [float(x) for x in energy.split("_")]
-            c = colormap(e / len(EventGenerator.libraries.keys()))
-            x = np.where(np.logical_and( TP_E >= 10 ** low, TP_E < 10 ** high))
-            o = np.where(np.logical_and( FN_E >= 10 ** low, FN_E < 10 ** high))
+                x_hist, sig = np.histogram(x, bins = bins)
+                o_hist, sig = np.histogram(o, bins = bins)
 
-            x, o = TP_SPD[x], FN_SPD[o]
-            bins = np.linspace(min(min(x), min(o)), max(max(x), max(o)), kwargs.get("n", 18))
+                x_val, y_val = [], []
 
-            x_hist, sig = np.histogram(x, bins = bins)
-            o_hist, sig = np.histogram(o, bins = bins)
+                for i, (x, o) in enumerate(zip(x_hist, o_hist)):
 
-            x_val, y_val = [], []
+                    if x == 0 and o == 0:
+                        continue
+                    else:
+                        distance = sig[i]
+                        width = sig[i + 1] - sig[i]
+                        height = 1/(x+o)**2 * np.sqrt(x * o**2 + o * x**2 + 2 * x*o)
+                        elevation = (x / (x+o)) - height/2
 
-            for i, (x, o) in enumerate(zip(x_hist, o_hist)):
+                        x_val.append( 0.5 * (sig[1:] + sig[:-1])[i])
+                        y_val.append( elevation + height/2 )
 
-                if x == 0 and o == 0:
-                    continue
-                else:
-                    distance = sig[i]
-                    width = sig[i + 1] - sig[i]
-                    height = 1/(x+o)**2 * np.sqrt(x * o**2 + o * x**2 + 2 * x*o)
-                    elevation = (x / (x+o)) - height/2
+                        plt.gca().add_patch(Rectangle((distance, elevation), width, height, color = c, alpha = 0.6, lw = 0))
 
-                    x_val.append( 0.5 * (sig[1:] + sig[:-1])[i])
-                    y_val.append( elevation + height/2 )
+                plt.scatter(x_val,y_val, color = c, marker = "s")
 
-                    # print(distance, elevation, width, height)
+            plt.ylim(0, 1.05)
+            plt.xlabel("Shower plane distance / m")
+            plt.ylabel("Trigger efficiency | Signal")
 
-                    plt.gca().add_patch(Rectangle((distance, elevation), width, height, color = c, alpha = 0.6, lw = 0))
+            bounds = [float(e.split("_")[0]) for e in EventGenerator.libraries.keys()] + [19.5]
+            norm = BoundaryNorm(bounds, colormap.N)
 
-            plt.scatter(x_val,y_val, color = c, marker = "s")
-            # plt.plot(x_val, y_val, lw = 2) 
+            # create a second axes for the colorbar
+            ax2 = fig.add_axes([0.95, 0.1, 0.03, 0.8])
+            # cb = ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"log$_{10}(E)$")
+            ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"log$_{10}(E)$")
 
-        plt.ylim(0, 1.05)
-        plt.xlabel("Shower plane distance / m")
-        plt.ylabel("Trigger efficiency | Signal")
+        @staticmethod
+        def __header__() -> None : 
 
-        bounds = [float(e.split("_")[0]) for e in EventGenerator.libraries.keys()] + [19.5]
-        norm = BoundaryNorm(bounds, colormap.N)
+            global header_was_called
+            header_was_called = True
 
-
-        # create a second axes for the colorbar
-        ax2 = fig.add_axes([0.95, 0.1, 0.03, 0.8])
-        cb = ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"log$_{10}(E)$")
-
-        # norm = BoundaryNorm(energy_bounds, 8, extend='both')
-
-        # fig.colorbar(cmap.ScalarMappable(norm=norm, cmap=colormap), cax=plt.gca(), label = r"log$_{10}(10)$")
-
-    @staticmethod
-    def __header__() -> None : 
-
-        global header_was_called
-        header_was_called = True
-
-        print("\nDATASET".ljust(72) + "TP      FP      TN      FN     sum")
- 
+            print("\nDATASET".ljust(72) + "TP      FP      TN      FN     sum")
+    
+    # Performance visualizers #######################################################################
 
 from .Testing import *
 
@@ -520,7 +515,7 @@ class Ensemble(NNClassifier):
         self.models = []
 
         for i in range(1, n_models + 1):
-            ThisModel = NNClassifier("ENSEMBLES/" + name + f"/ensemble_{i}/", set_architecture, supress_print)
+            ThisModel = NNClassifier("ENSEMBLES/" + name + f"/ensemble_{str(i).zfill(2)}/", set_architecture, supress_print)
             self.models.append(ThisModel)
 
             supress_print = True

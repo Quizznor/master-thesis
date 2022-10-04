@@ -119,11 +119,15 @@ class Generator(tf.keras.utils.Sequence):
         self.ignore_low_VEM, self.prior = classifier_options[0], classifier_options[-1]
         self.window_length, self.window_step = classifier_options[1], classifier_options[2]
 
+        # trace_options = [q_peak, q_charge, n_bins, baseline_std, baseline_mean, n_injected, downsampling, real_background]
+        #                       0,        1,      2,            3,             4,          5,            6,               7
+        
         self.q_peak, self.q_charge = trace_options[0], trace_options[1]
         self.length, self.n_injected = trace_options[2], trace_options[5]
         self.sigma, self.mu = trace_options[3], trace_options[4]
-        self.downsampling, self.use_real_background = trace_options[6], trace_options[6]
+        self.downsampling, self.use_real_background = trace_options[6], trace_options[7]
         self.files = signal_files
+
 
         if self.use_real_background and self.n_injected is None: self.n_injected = 0
 

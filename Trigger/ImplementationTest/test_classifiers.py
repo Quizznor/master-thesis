@@ -10,5 +10,15 @@ HardwareTriggers.production_test(100000, apply_downsampling = True)
 
 #######################################################################
 
-Real_Background_NN = NNClassifier("minimal_conv2d_real_background")
-Real_Background_NN.production_test(100000, apply_downsampling = True)
+Hardware = HardwareClassifier()
+Test1 = Ensemble("minimal_conv2d_real_background_1.00VEM")
+Test2 = Ensemble("minimal_conv2d_real_background")
+
+Hardware.ROC("validation_data")
+print("")
+
+Test2.ROC("validation_data")
+
+print("")
+
+Test1.ROC("validation_data")

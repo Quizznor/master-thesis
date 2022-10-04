@@ -77,7 +77,8 @@ def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -
 
             print(f"Model {i}/{len(Classifier.models)}, {elapsed} elapsed, ETA = {eta}")
 
-            make_dataset(instance, Dataset)
+            make_dataset(instance, Dataset, save_dir)
+            Dataset.__reset__()
 
 '''
 # trigger efficiency over signal

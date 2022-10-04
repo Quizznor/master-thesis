@@ -283,9 +283,9 @@ class RandomTrace():
 
     def __init__(self, station : str = None, index : int = None) -> None : 
 
-        self.station = random.choice(["nuria", "peru", "jaco"]) if station is not None else station.lower()
+        self.station = random.choice(["nuria", "peru", "jaco"]) if station is None else station.lower()
 
-        all_files = np.asarray(os.listdir(RandomTrace.baseline_dir + station))      # container for all baseline files
+        all_files = np.asarray(os.listdir(RandomTrace.baseline_dir + self.station)) # container for all baseline files
         self.all_n_files = len(all_files)                                           # number of available baseline files
 
         self.__current_files = 0                                                    # number of traces already raised
@@ -295,7 +295,7 @@ class RandomTrace():
         else:
             self.random_file = all_files[index]
 
-        these_traces = np.loadtxt(RandomTrace.baseline_dir + station + "/" + self.random_file)
+        these_traces = np.loadtxt(RandomTrace.baseline_dir + self.station + "/" + self.random_file)
 
         # IF YOU WANT TO USE DAY AVERAGE FROM ONLINE ESTIMATE #########################################
         # values come from $TMPDATA/iRODS/MonitoringData/read_monitoring_data.ipynb -> monitoring files
