@@ -131,7 +131,7 @@ class Classifier():
             TPR = ( tp ) / ( tp + fp ) * 100
             ACC = ( tp + tn ) / all * 100
 
-            name_wrapper = self.name[:40] + ("..." if len(self.name) > 40 else "")
+            name_wrapper = self.name[10:50] + "..." if len(self.name) > 40 else self.name
             print(f"{name_wrapper} {dataset}".ljust(70), f"{f'{tp}'.ljust(7)} {f'{fp}'.ljust(7)} {f'{tn}'.ljust(7)} {f'{fn}'.ljust(7)}{f'{all}'.ljust(7)} -> Acc = {ACC:.2f}%, TPR = {TPR:.4f}%")
 
             return TP, FP, TN, FN
