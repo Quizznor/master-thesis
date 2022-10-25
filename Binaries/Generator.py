@@ -155,6 +155,11 @@ class Generator(tf.keras.utils.Sequence):
             self.q_peak, self.q_charge, baseline = self.RandomTraceBuffer.get()     # load INT baseline trace
             baseline += np.random.uniform(0, 1, size = (3, self.length))            # convert it to FLOAT now
 
+            # EXPERIMENTAL TODO
+            self.q_peak[0] -= 1
+            self.q_peak[1] -= 1
+            self.q_peak[2] -= 1
+
         # try to raise a valid trace (i.e. with signal)...
         try:
 

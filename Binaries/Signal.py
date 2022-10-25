@@ -120,22 +120,24 @@ class Trace(Signal):
     # convert from ADC counts to VEM 
     def convert_to_VEM(self, *args, mode : str) -> np.ndarray :
 
+        args = list(args)
         ADC_to_VEM = self.q_peak if mode == "peak" else self.q_charge
         simulated = [GLOBAL.q_peak for i in range(3)] if mode == "peak" else [GLOBAL.q_charge for i in range(3)]
-        factor = np.array(ADC_to_VEM) / np.array(simulated)
+        factor = np.array(simulated) / np.array(ADC_to_VEM)
 
-        baseline = args[0]
-        particles = np.zeros_like(baseline)
+        # Signal + Injections ALWAYS have simulated q_peak/q_area 
+        # Background has simulated q_peak/q_area if NOT random traces
+        baseline = args.pop(0)
+        signal = np.zeros_like(baseline)
 
-        if len(args) != 1:
+        # Add particles from simulation
+        for component in args:
+            for i, pmt in enumerate(component):
+                signal[i] += pmt
 
-            for channel in args[1:]:
-                particles += channel
-
-            for i, pmt in enumerate(particles):
-                particles[i] = pmt * factor[i]
-
-        signal = baseline + particles
+        # Add noise from random traces / background model
+        for i, background_pmt in enumerate(baseline):
+            signal[i] += background_pmt * factor[i]
 
         if self.downsample: 
             signal = self.apply_downsampling(signal)
@@ -283,7 +285,9 @@ class RandomTrace():
 
     def __init__(self, station : str = None, index : int = None) -> None : 
 
-        self.station = random.choice(["nuria", "peru", "jaco"]) if station is None else station.lower()
+        ## (HOPEFULLY) TEMPORARILY FIXED TO NURIA DUE TO BAD FLUCTUATIONS IN OTHER STATIONS
+        # self.station = random.choice(["nuria", "peru", "jaco"]) if station is None else station.lower()
+        self.station = "nuria"
 
         all_files = np.asarray(os.listdir(RandomTrace.baseline_dir + self.station)) # container for all baseline files
         self.all_n_files = len(all_files)                                           # number of available baseline files
