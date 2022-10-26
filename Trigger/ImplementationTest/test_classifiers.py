@@ -39,4 +39,4 @@ from Binaries import *
 # Test4.ROC("validation_data_no_cut")
 
 HardwareTriggers = HardwareClassifier()
-trigger_examples_1 = HardwareTriggers.production_test(60000, apply_downsampling = True)
+trigger_examples_1 = HardwareTriggers.production_test(100000, apply_downsampling = True)

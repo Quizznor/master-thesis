@@ -155,10 +155,8 @@ class Generator(tf.keras.utils.Sequence):
             self.q_peak, self.q_charge, baseline = self.RandomTraceBuffer.get()     # load INT baseline trace
             baseline += np.random.uniform(0, 1, size = (3, self.length))            # convert it to FLOAT now
 
-            # EXPERIMENTAL TODO
-            self.q_peak[0] -= 1
-            self.q_peak[1] -= 1
-            self.q_peak[2] -= 1
+            self.trace_options[0] = self.q_peak                                     # adjust q_peak for random traces
+            self.trace_options[1] = self.q_charge                                   # adjust q_charge for random traces
 
         # try to raise a valid trace (i.e. with signal)...
         try:
@@ -169,8 +167,7 @@ class Generator(tf.keras.utils.Sequence):
             for station in SignalBatch(event_file):
                 
                 # Add together baseline + signal and inject accidental muons
-                VEMTrace = Trace(self.trace_options, baseline, station)
-                
+                VEMTrace = Trace(self.trace_options, baseline, station)                
 
                 if full_trace:
                     traces.append(VEMTrace)

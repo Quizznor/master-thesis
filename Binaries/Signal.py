@@ -122,11 +122,12 @@ class Trace(Signal):
 
         args = list(args)
         ADC_to_VEM = self.q_peak if mode == "peak" else self.q_charge
-        simulated = [GLOBAL.q_peak for i in range(3)] if mode == "peak" else [GLOBAL.q_charge for i in range(3)]
-        factor = np.array(simulated) / np.array(ADC_to_VEM)
+        simulated = GLOBAL.q_peak if mode == "peak" else GLOBAL.q_charge
+        factor = simulated / np.array(ADC_to_VEM)
 
         # Signal + Injections ALWAYS have simulated q_peak/q_area 
         # Background has simulated q_peak/q_area if NOT random traces
+        # otherwise set to values defined in RandomTrace class (l281)
         baseline = args.pop(0)
         signal = np.zeros_like(baseline)
 
@@ -153,7 +154,7 @@ class Trace(Signal):
             self.length = GLOBAL.n_bins // 3
 
         for i, pmt in enumerate(signal):
-            signal[i] = np.floor(pmt) / ADC_to_VEM[i]
+            signal[i] = np.floor(pmt) / simulated
 
         return signal
 

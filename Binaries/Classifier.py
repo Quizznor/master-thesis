@@ -24,6 +24,9 @@ class Classifier():
         RandomTraces = EventGenerator(["19_19.5"], split = 1, force_inject = 0, real_background = True, prior = 0, **kwargs)
         RandomTraces.files = np.zeros(n_traces)
 
+        n_bins = GLOBAL.n_bins if not RandomTraces.downsampling else GLOBAL.n_bins // 3
+        t_single_bin = GLOBAL.single_bin_duration if not RandomTraces.downsampling else GLOBAL.single_bin_duration * 3
+
         if type(self) == type(HardwareClassifier()):
 
             for batch in range(RandomTraces.__len__()):
@@ -32,7 +35,7 @@ class Classifier():
                 mean_per_step_ms = elapsed / (batch + 1) * 1e-6
                 to_str = lambda x : f"{int(x//3600)}h {int((x % 3600)//60)}m"
 
-                print(f"{100 * (batch/n_traces):.2f}% - {mean_per_step_ms:.2f}ms/batch, ETA = {to_str((n_traces - batch) * mean_per_step_ms * 1e-3)}          ", end ="\r")
+                print(f"{100 * (batch/n_traces):.2f}% - {mean_per_step_ms:.2f}ms/batch, ETA = {to_str((n_traces - batch) * mean_per_step_ms * 1e-3)} -> {n_total_triggered} trace(s) triggered         ", end ="\r")
 
                 traces, _ = RandomTraces.__getitem__(batch, full_trace = True)
                 trace = traces[0]
@@ -50,6 +53,7 @@ class Classifier():
 
                         # perhaps skipping the entire trace isn't exactly accurate
                         # but then again just skipping one window seems wrong also
+                        # -> David thinks this should be fine
                         break
 
         else:
@@ -60,7 +64,7 @@ class Classifier():
                 mean_per_step_ms = elapsed / (batch + 1) * 1e-6
                 to_str = lambda x : f"{int(x//3600)}h {int((x % 3600)//60)}m"
 
-                print(f"{100 * (batch/n_traces):.2f}% - {mean_per_step_ms:.2f}ms/batch, ETA = {to_str((n_traces - batch) * mean_per_step_ms * 1e-3)}          ", end ="\r")
+                print(f"{100 * (batch/n_traces):.2f}% - {mean_per_step_ms:.2f}ms/batch, ETA = {to_str((n_traces - batch) * mean_per_step_ms * 1e-3)} -> {n_total_triggered} trace(s) triggered          ", end ="\r")
 
                 if np.any(self.__call__(traces)):
                     n_total_triggered += 1
@@ -68,8 +72,6 @@ class Classifier():
                     if n_total_triggered < 10:
                         trigger_examples.append(traces)       
 
-        n_bins = GLOBAL.n_bins if not RandomTraces.downsampling else GLOBAL.n_bins // 3
-        t_single_bin = GLOBAL.single_bin_duration if not RandomTraces.downsampling else GLOBAL.single_bin_duration * 3
         total_trace_duration = t_single_bin * n_bins * n_traces
         trigger_frequency = n_total_triggered / total_trace_duration
 
