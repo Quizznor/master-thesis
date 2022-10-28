@@ -10,6 +10,7 @@ class EmptyFileError(Exception): pass
 class SlidingWindowError(Exception): pass
 class EarlyStoppingError(Exception): pass
 class SignalError(Exception): pass
+class RandomTraceError(Exception): pass
 
 @dataclass
 class GLOBAL():
@@ -24,7 +25,8 @@ class GLOBAL():
     n_bins                      = 2048                                          # 1 Bin = 8.3 ns, 2048 Bins = ~17. µs
     baseline_std                = 2                                             # two ADC counts, NOT converted here!
     baseline_mean               = 0                                             # gaussian mean of the actual baseline
-    real_background             = False                                         # use random traces instead of gaussian baseline 
+    real_background             = False                                         # use random traces instead of gaussian baseline
+    random_index                = None                                          # this file is used first when creating randoms
     force_inject                = None                                          # whether or not to force injection of muons
 
     # trace_opts                  = [q_peak, q_charge, n_bins, baseline_std, baseline_mean, force_inject, real_background]

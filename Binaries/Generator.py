@@ -42,6 +42,7 @@ class EventGenerator():
 
         * *apply_downsampling* (``bool``) -- make UUB traces resembel UB traces
         * *real_background* (``bool``) -- use real background from random traces
+        * *random_index* (``int``) -- which file to use first in random traces
         * *q_peak* (``float``) -- ADC to VEM conversion factor, for UB <-> UUB
         * *q_charge* (``float``) -- Conversion factor for the integral trace
         * *n_bins* (``int``) -- generate a baseline with <trace_length> bins
@@ -67,6 +68,7 @@ class EventGenerator():
         baseline_std = kwargs.get("sigma", GLOBAL.baseline_std)
         baseline_mean = kwargs.get("mu", GLOBAL.baseline_mean)
         real_background = kwargs.get("real_background", GLOBAL.real_background)
+        random_index = kwargs.get("random_index", GLOBAL.random_index)
         n_injected = kwargs.get("force_inject", GLOBAL.force_inject )
         downsampling = kwargs.get("apply_downsampling", GLOBAL.downsampling)
 
@@ -74,7 +76,7 @@ class EventGenerator():
         sliding_window_length = kwargs.get("window", GLOBAL.window)
         sliding_window_step = kwargs.get("step", GLOBAL.step)
 
-        trace_options = [q_peak, q_charge, n_bins, baseline_std, baseline_mean, n_injected, downsampling, real_background]
+        trace_options = [q_peak, q_charge, n_bins, baseline_std, baseline_mean, n_injected, downsampling, real_background, random_index]
         classifier_options = [ignore_low_VEM, sliding_window_length, sliding_window_step, prior]
         
         # set RNG seed if desired
@@ -119,15 +121,14 @@ class Generator(tf.keras.utils.Sequence):
         self.ignore_low_VEM, self.prior = classifier_options[0], classifier_options[-1]
         self.window_length, self.window_step = classifier_options[1], classifier_options[2]
 
-        # trace_options = [q_peak, q_charge, n_bins, baseline_std, baseline_mean, n_injected, downsampling, real_background]
-        #                       0,        1,      2,            3,             4,          5,            6,               7
+        # trace_options = [q_peak, q_charge, n_bins, baseline_std, baseline_mean, n_injected, downsampling, real_background, random_index]
+        #                       0,        1,      2,            3,             4,          5,            6,               7             8
         
         self.q_peak, self.q_charge = trace_options[0], trace_options[1]
         self.length, self.n_injected = trace_options[2], trace_options[5]
-        self.sigma, self.mu = trace_options[3], trace_options[4]
-        self.downsampling, self.use_real_background = trace_options[6], trace_options[7]
+        self.sigma, self.mu, self.downsampling = trace_options[3], trace_options[4], trace_options[6]
+        self.use_real_background, self.random_index = trace_options[7], trace_options[8]
         self.files = signal_files
-
 
         if self.use_real_background and self.n_injected is None: self.n_injected = 0
 
@@ -136,7 +137,7 @@ class Generator(tf.keras.utils.Sequence):
         self.__iteration_index = 0
 
         if self.use_real_background:
-            self.RandomTraceBuffer = RandomTrace()
+            self.RandomTraceBuffer = RandomTrace(index = self.random_index)
 
     # number of batches in generator
     def __len__(self) -> int : 

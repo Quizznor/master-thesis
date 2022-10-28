@@ -1,19 +1,18 @@
 from Binaries import *
 
-AllEvents = EventGenerator("all", real_background = True, prior = 1e-5, ignore_low_vem = 0.7)
-AllEventsNoCut = EventGenerator("all", real_background = True, prior = 1e-5)
+AllEvents = EventGenerator("all", real_background = True, force_inject = 1) # prior = 1e-5)  # ignore_low_vem = 1.0)
+AllEventsNoCut = EventGenerator("all", real_background = True) #, prior = 1e-5) #
 # AllEvents[-1].unit_test()
 
-# _ = input("\nPress ENTER to continue")
+# # _ = input("\nPress ENTER to continue")
 
-TestEnsemble = NNClassifier("minimal_conv2d_real_background_cut+prior", "one_layer_conv2d")
-
+TestEnsemble = Ensemble("minimal_conv2d_real_background_injections", "one_layer_conv2d")
 TestEnsemble.train(AllEvents, 5)
-make_dataset(TestEnsemble, AllEventsNoCut, "validation_data_no_cut")
+
+make_dataset(TestEnsemble, AllEventsNoCut[-1], "validation_data_no_injections")
 
 Hardware = HardwareClassifier()
 
 Hardware.ROC("validation_data")
-
-print("")
-TestEnsemble.ROC("validation_data_no_cut")
+TestEnsemble.ROC("validation_data")
+TestEnsemble.ROC("validation_data_no_injections")

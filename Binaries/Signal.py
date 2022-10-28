@@ -289,16 +289,22 @@ class RandomTrace():
         ## (HOPEFULLY) TEMPORARILY FIXED TO NURIA DUE TO BAD FLUCTUATIONS IN OTHER STATIONS
         # self.station = random.choice(["nuria", "peru", "jaco"]) if station is None else station.lower()
         self.station = "nuria"
+        self.index = index
 
         all_files = np.asarray(os.listdir(RandomTrace.baseline_dir + self.station)) # container for all baseline files
         self.all_n_files = len(all_files)                                           # number of available baseline files
 
-        self.__current_files = 0                                                    # number of traces already raised
+        self.__current_traces = 0                                                   # number of traces already raised
 
         if index is None:
             self.random_file = all_files[np.random.randint(self.all_n_files)]
         else:
-            self.random_file = all_files[index]
+            try:
+                self.random_file = all_files[index]
+            except IndexError:
+                raise RandomTraceError
+
+        print(f"[INFO] -- LOADING RANDOMS: {self.random_file}" + 10 * " ")
 
         these_traces = np.loadtxt(RandomTrace.baseline_dir + self.station + "/" + self.random_file)
 
@@ -328,13 +334,17 @@ class RandomTrace():
     def get(self) -> np.ndarray : 
         
         try:                                                                        # update pointer after loading
-            self.__current_files += 1
+            self.__current_traces += 1
 
-            return self.q_peak, self.q_charge, self._these_traces[self.__current_files]
+            return self.q_peak, self.q_charge, self._these_traces[self.__current_traces]
         
         except IndexError:                                                          # reload buffer on overflow
 
-            self.__init__(station = self.station)
+            try:
+                self.__init__(station = self.station, index = self.index + 1)
+            except TypeError:
+                self.__init__(station = self.station)
+
             return self.get()
 
 # container for injected muons
