@@ -176,7 +176,6 @@ class Trace(Signal):
         n_bins_ub       = int(n_bins_uub / 3)               # downsampled trace length
         sampled_trace   = np.zeros((3, n_bins_ub))          # downsampled trace container
 
-
         temp = np.zeros(n_bins_uub + len(kFirCoefficients))
 
         for i_pmt, pmt in enumerate(trace):

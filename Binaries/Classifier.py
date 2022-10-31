@@ -1,5 +1,6 @@
 from time import strftime, gmtime
 from abc import abstractmethod
+from datetime import datetime
 
 from .__config__ import *
 from .Signal import *
@@ -15,11 +16,10 @@ class Classifier():
     def __call__(self) -> int : raise NotImplementedError
 
     # test the trigger rate of the classifier on random traces
-    def production_test(self, n_traces : int = GLOBAL.n_production_traces, **kwargs) -> list :
+    def production_test(self, n_traces : int = GLOBAL.n_production_traces, **kwargs) -> None :
 
         start = perf_counter_ns()
         n_total_triggered = 0
-        trigger_examples = []
 
         RandomTraces = EventGenerator(["19_19.5"], split = 1, force_inject = 0, real_background = True, prior = 0, **kwargs)
         RandomTraces.files = np.zeros(n_traces)
@@ -48,8 +48,7 @@ class Classifier():
 
                         n_total_triggered += 1
 
-                        if n_total_triggered < 10:
-                            trigger_examples.append(trace)
+                        if n_total_triggered < 100: self.plot_trace_window(window, n_total_triggered)
 
                         # perhaps skipping the entire trace isn't exactly accurate
                         # but then again just skipping one window seems wrong also
@@ -63,14 +62,14 @@ class Classifier():
                 elapsed = perf_counter_ns() - start
                 mean_per_step_ms = elapsed / (batch + 1) * 1e-6
                 to_str = lambda x : f"{int(x//3600)}h {int((x % 3600)//60)}m"
+                predictions = self.__call__(traces)
 
                 print(f"{100 * (batch/n_traces):.2f}% - {mean_per_step_ms:.2f}ms/batch, ETA = {to_str((n_traces - batch) * mean_per_step_ms * 1e-3)} -> {n_total_triggered} trace(s) triggered          ", end ="\r")
 
-                if np.any(self.__call__(traces)):
+                if np.any(predictions):
                     n_total_triggered += 1
 
-                    if n_total_triggered < 10:
-                        trigger_examples.append(traces)       
+                    if n_total_triggered < 100: self.plot_trace_window(traces[np.argmax(predictions)], n_total_triggered)               # plots the FIRST trigger in batch!    
 
         total_trace_duration = t_single_bin * n_bins * n_traces
         trigger_frequency = n_total_triggered / total_trace_duration
@@ -83,7 +82,30 @@ class Classifier():
         print(f"*********************************")
         print(f"TRIGGER FREQUENCY = {trigger_frequency:.4f} Hz")
 
-        return trigger_examples
+    def plot_trace_window(self, trace : np.ndarray, index : int) -> None : 
+
+        try:
+            pmt1, pmt2, pmt3, x = trace, len(trace[0])
+            assert len(pmt1) == len(pmt2) == len(pmt3), "TRACE LENGTHS DO NOT MATCH"
+
+            plt.plot(range(x), pmt1, label = "PMT #1")
+            plt.plot(range(x), pmt2, label = "PMT #2")
+            plt.plot(range(x), pmt3, label = "PMT #3")
+
+            plt.ylabel(r"Signal / VEM$_\mathrm{Peak}$")
+            plt.xlabel("Bin / 8.33 ns")
+            plt.xlim(0, x)
+            plt.legend()
+
+            plt.savefig(f"/cr/users/filip/production_tests/{self.name.replace('/','-')}/{datetime.now}/trigger_{index}.png")
+
+        except ValueError:
+
+            for i, t in enumerate(trace):
+                self.plot_trace_window(t, i)
+        
+
+
 
     # Performance visualizers #######################################################################
     if True:                                              # So this can be collapsed in the editor =)
@@ -587,7 +609,10 @@ class HardwareClassifier(Classifier):
         # Threshold of 3.2 immediately gets promoted to T2
         # Threshold of 1.75 if a T3 has already been issued
 
-        return self.Th(3.2, trace) or self.ToT(trace) or self.ToTd(trace) or self.MoPS(trace)
+        try:
+            return self.Th(3.2, trace) or self.ToT(trace) or self.ToTd(trace) or self.MoPS(trace)
+        except ValueError:
+            return np.array([self.__call__(t) for t in trace])
 
     # method to check for (coincident) absolute signal threshold
     def Th(self, threshold : float, signal : np.ndarray) -> bool : 

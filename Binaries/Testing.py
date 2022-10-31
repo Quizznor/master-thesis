@@ -10,7 +10,9 @@ def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -
     if not isinstance(Classifier, Ensemble):
 
         TPs, FPs = 0, 0
-        save_path = "/cr/data01/filip/models/" + Classifier.name + f"/model_{Classifier.epochs}/ROC_curve/" + save_dir
+
+        if Classifier.name == "HardwareClassifier": save_path = "/cr/data01/filip/models/HardwareClassifier/ROC_curve/" + save_dir
+        else: save_path = "/cr/data01/filip/models/" + Classifier.name + f"/model_{Classifier.epochs}/ROC_curve/" + save_dir
 
         if not os.path.isdir(save_path): os.system(f"mkdir -p {save_path}")
 
