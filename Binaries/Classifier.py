@@ -18,8 +18,11 @@ class Classifier():
     # test the trigger rate of the classifier on random traces
     def production_test(self, n_traces : int = GLOBAL.n_production_traces, **kwargs) -> None :
 
+        self.start_time = str(datetime.now()).replace(" ", "-")[:-10]
         start = perf_counter_ns()
         n_total_triggered = 0
+
+        os.system(f"mkdir -p /cr/users/filip/plots/production_tests/{self.name.replace('/','-')}/{self.start_time}/")
 
         RandomTraces = EventGenerator(["19_19.5"], split = 1, force_inject = 0, real_background = True, prior = 0, **kwargs)
         RandomTraces.files = np.zeros(n_traces)
@@ -49,6 +52,7 @@ class Classifier():
                         n_total_triggered += 1
 
                         if n_total_triggered < 100: self.plot_trace_window(window, n_total_triggered)
+
 
                         # perhaps skipping the entire trace isn't exactly accurate
                         # but then again just skipping one window seems wrong also
@@ -84,27 +88,20 @@ class Classifier():
 
     def plot_trace_window(self, trace : np.ndarray, index : int) -> None : 
 
-        try:
-            pmt1, pmt2, pmt3, x = trace, len(trace[0])
-            assert len(pmt1) == len(pmt2) == len(pmt3), "TRACE LENGTHS DO NOT MATCH"
+        (pmt1, pmt2, pmt3), x = trace, len(trace[0])
+        assert len(pmt1) == len(pmt2) == len(pmt3), "TRACE LENGTHS DO NOT MATCH"
 
-            plt.plot(range(x), pmt1, label = "PMT #1")
-            plt.plot(range(x), pmt2, label = "PMT #2")
-            plt.plot(range(x), pmt3, label = "PMT #3")
+        plt.plot(range(x), pmt1, label = "PMT #1")
+        plt.plot(range(x), pmt2, label = "PMT #2")
+        plt.plot(range(x), pmt3, label = "PMT #3")
 
-            plt.ylabel(r"Signal / VEM$_\mathrm{Peak}$")
-            plt.xlabel("Bin / 8.33 ns")
-            plt.xlim(0, x)
-            plt.legend()
+        plt.ylabel(r"Signal / VEM$_\mathrm{Peak}$")
+        plt.xlabel("Bin / 8.33 ns")
+        plt.xlim(0, x)
+        plt.legend()
 
-            plt.savefig(f"/cr/users/filip/production_tests/{self.name.replace('/','-')}/{datetime.now}/trigger_{index}.png")
-
-        except ValueError:
-
-            for i, t in enumerate(trace):
-                self.plot_trace_window(t, i)
-        
-
+        plt.savefig(f"/cr/users/filip/plots/production_tests/{self.name.replace('/','-')}/{self.start_time}/trigger_{index}")
+        plt.cla()
 
 
     # Performance visualizers #######################################################################

@@ -86,6 +86,18 @@ class Trace(Signal):
             self.pmt_1, self.pmt_2, self.pmt_3 = self.convert_to_VEM( self.Baseline, mode = "peak" )
             self.int_1, self.int_2, self.int_3 = self.convert_to_VEM( self.Baseline, mode = "charge" )
 
+        if self.downsample:
+            
+            if self.has_signal:
+                self.signal_start = self.signal_start // 3
+                self.signal_end = self.signal_end // 3
+
+            if self.has_accidentals:
+                self.injections_start = [start // 3 for start in self.injections_start ]
+                self.injections_end = [end // 3 for end in self.injections_end ]
+
+            self.length = GLOBAL.n_bins // 3
+
     # poissonian for background injection
     def poisson(self) -> int :
 
@@ -142,16 +154,6 @@ class Trace(Signal):
 
         if self.downsample: 
             signal = self.apply_downsampling(signal)
-
-            if self.has_signal:
-                self.signal_start = self.signal_start // 3
-                self.signal_end = self.signal_end // 3
-
-            if self.has_accidentals:
-                self.injections_start = [start // 3 for start in self.injections_start ]
-                self.injections_end = [end // 3 for end in self.injections_end ]
-
-            self.length = GLOBAL.n_bins // 3
 
         for i, pmt in enumerate(signal):
             signal[i] = np.floor(pmt) / simulated
@@ -227,7 +229,7 @@ class Trace(Signal):
 
             metadata = f" {self.Energy:.4e} eV @ {self.SPDistance} m from core   "
 
-        else: metadata = " Background trace                     "
+        else: metadata = " Background trace                "
         
         return "||" + "".join(trace) + "||" + metadata
 
@@ -303,7 +305,7 @@ class RandomTrace():
             except IndexError:
                 raise RandomTraceError
 
-        print(f"[INFO] -- LOADING RANDOMS: {self.random_file}" + 10 * " ")
+        print(f"[INFO] -- LOADING RANDOMS: {self.random_file}" + 20 * " ")
 
         these_traces = np.loadtxt(RandomTrace.baseline_dir + self.station + "/" + self.random_file)
 
