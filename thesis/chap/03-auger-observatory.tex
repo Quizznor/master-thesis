@@ -10,11 +10,11 @@ rays of the highest energies. With an effective area of \SI{3000}{\kilo\meter\sq
 Altough first proposed in 1992, it took 18 years until the idea of a large scale experiment to detect cosmic rays matured and construction of the 
 first prototype started near Mendoza \cite{AugerTimeline}. Some further 20 years later, the Pierre Auger collaboration has co-authored over \TODO
 publications and continues to advance research in astroparticle physics.
-It does this via a hybrid approach, combining measurements of a surface detector (SD) as well as a flouresence detector (FD). Additional machinery, 
-such as the e\textbf{X}treme (XLF) and \textbf{C}entral \textbf{L}aser \textbf{F}acility (CLF), is installed and monitors atmospheric variables. This
-improves the overall systematic accuracy of predictions made by the experiment. An overview of the site can be seen in \autoref{fig:auger-array}. Data 
-measured by the FD, SD and the atmospheric monitors is sent to a \textbf{C}entral \textbf{D}ata \textbf{A}cquisition \textbf{S}ystem (CDAS) located in 
-the nearby town of Malargüe.
+It does this via a hybrid approach, combining measurements of a \textbf{S}urface \textbf{D}etector (SD) as well as a \textbf{F}louresence \textbf{D}etector (FD). 
+Additional machinery, such as the e\textbf{X}treme (XLF) and \textbf{C}entral \textbf{L}aser \textbf{F}acility (CLF), is installed to monitor atmospheric 
+variables. This improves the overall systematic accuracy of predictions made by the experiment. An overview of the site can be seen in \autoref{fig:auger-array}. 
+Data measured by the FD, SD and the atmospheric monitors is sent to a \textbf{C}entral \textbf{D}ata \textbf{A}cquisition \textbf{S}ystem (CDAS) located in the 
+nearby town of Malargüe.
 
 This chapter offers a brief look into the measurement principle and setup of the observatory. Information regarding the fluoresence detector can be 
 found in \autoref{sec:fluoresence-detector}. The SD is described in \autoref{sec:surface-detector}. A more in depth read on detector specifications 
@@ -27,7 +27,7 @@ and \cite{FDReconstruction}.
 	\includegraphics[width=0.9\textwidth]{imgs/auger_array.png}
 	\caption{Overview of the Pierre Auger observatory. The four different FD sites (respective FOV shown with blue lines) sit at the edge of
 	the detector area and monitor the night sky above the SD array consisting of 1600 water tanks (black dots). A denser spacing of stations 
-	near Coihueco is equipped with additional electronics such as e.g. radio antennas (AERA) and muon detectors (AMIGA).}
+	near Coihueco is equipped with additional electronics such as e.g. radio antennas (AERA) and muon detectors (AMIGA). Image taken from \cite{AugerArray}}.
 	\label{fig:auger-array}
 \end{figure}
 
@@ -49,12 +49,18 @@ a shower instead of just its' footprint (as seen by the SD).
 \section{Surface Detector (SD)}
 \label{sec:surface-detector}
 
+\TODO PICTURE!
+
 The SD consists of 1600 individually operating stations, spaced apart on a hexagonal grid with a standard \SI{1.5}{\kilo\meter} spacing. Each 
 station is made up of a main tank filled with \SI{12000}{\litre} of purified water and reflective inner walls, a solar panel and batteries for power management, 
 as well as an antenna for communication. Within each tank three PMTs detect Cherenkov light originating from shower particles, these are together with the tank 
 referred to as \textbf{W}ater \textbf{C}herenkov \textbf{D}etectors (WCDs). With the (at the time of this work) ongoing AugerPrime upgrade, each station is 
-additionally equipped with a \textbf{S}urface \textbf{S}cintillator \textbf{D}etector (SSD), and radio antenna atop the tank. This allows for finer separation 
-of electromagnetic and muonic shower component and detection of highly inclined air showers respectively \cite{AugerPrime, horandel2020precision}. 
+additionally equipped with a \textbf{s}mall \textbf{PMT} (sPMT), \textbf{S}urface \textbf{S}cintillator \textbf{D}etector (SSD), and radio antenna atop the tank.
+This allows for the recording of stronger signals, finer separation of electromagnetic and muonic shower component and detection of highly inclined air showers 
+respectively \cite{AugerPrime, horandel2020precision}. 
+
+\subsection{Data acquisition (DAQ)}
+\label{ssec:sd-daq}
 
 Onboard electronics, the \textbf{U}pgraded \textbf{U}nified \textbf{B}oard (UUB), or more precisely six 10-bit \textbf{F}lash 
 \textbf{A}nalog-to-\textbf{D}igital-\textbf{C}onverters (FADCs) read out measurement data from the PMTs at a sampling rate of \SI{120}{\mega\hertz} 
@@ -63,37 +69,95 @@ Onboard electronics, the \textbf{U}pgraded \textbf{U}nified \textbf{B}oard (UUB)
 HG output exceeds a value of $2^{10}$ ADC counts and becomes saturated. This effectively enables the measurement of both large ($\geq\mathcal{O}(10^3)$ particles
 hitting the tank) as well as small shower signals ($\mathcal{O}(1)$ particle hitting the tank) with sufficient accuracy. Once an FADC bin has been recorded and 
 checked for possible triggers (c.f. \autoref{ssec:sd-triggers}) it is written to a ring buffer. If a trigger is issued, the corresponding chunk in the ring 
-buffer (600(? \TODO) bins before and 23409857 bins after the latch bin, where the trigger was raised) can be analyzed in order to calibrate a station in the 
-array (\autoref{ssec:sd-calibration}) or processed by a higher-level CPU for event reconstruction purposes (\autoref{sec:event-reconstruction}).
+buffer ($\approx\SI{4.992}{\micro\second}$ (599 bins) before and $\SI{12.07}{\micro\second}$ (1448 bins) after a trigger, $2047 + 1$ bins total), the measured trace, 
+can be analyzed in order to calibrate a station in the array (\autoref{ssec:sd-calibration}) or processed by a higher-level CPU for event reconstruction purposes 
+(see \autoref{sec:event-reconstruction}).
 
 \subsection{Calibration}
 \label{ssec:sd-calibration}
 
 While each station is equipped with the same electronics and runs the same analysis software, variables like the position in the field, station age or slight 
 changes in the manufacturing/installation process cause different stations to age differently. Over the lifetime of the array such differences can sum into 
-potentially drastic discrepancies in gathered data. Put simply, an extensive air shower will look different to a station compared to the same shower one year 
-later. To account for this, measurements are standardized for all stations. ADC counts are related to a \textbf{V}ertical \textbf{E}quivalent of through-going
-\textbf{M}uons (VEM) that would result in the same signal strength. In this fashion, the maximum response that is generated by a PMT from a vertically 
-through-going muon is defined as \SI{1}{\Peak}. The total deposited charge (equivalent to the integral over response) is defined as \SI{1}{\Charge}. The 
-conversion factor between ADC counts and VEM$_\text{Peak}$ and VEM$_\text{Ch.}$ is estimated from data and continuously updated via the algorithms detailed 
-below. Note that the used methods differ for calibration in the field (Online algorithm) and event reconstruction (Oflline algorithm). Both approaches are listed
-here and discussed in more detail in \cite{tobiasBaseline}, \cite{bertou2006calibration}, .
+potentially drastic discrepancies in gathered data. Put simply, an extensive air shower will look different both to different WCDs at the same time as well as 
+the same WCD at different times. To account for this, measurements are standardized across all stations. ADC counts are related to a \textbf{V}ertical 
+\textbf{E}quivalent of through-going \textbf{M}uons (VEM) that would result in the same signal strength. In this fashion, the maximum response that is generated 
+by a PMT from one vertically through-going muon is defined as \SI{1}{\Peak}. The total deposited charge (equivalent to the integral of the response) is defined 
+as \SI{1}{\Charge}. The conversion factor between ADC counts and VEM$_\text{Peak}$ and VEM$_\text{Ch.}$ is estimated from data and continuously updated separately
+for each station. Note that due to the limited computational resources of the WCD, a simplified, rate-based approach is chosen for calibration in the field (Online
+algorithm), this stands in contrast to the more physics-driven methods used during event reconstruction (Oflline algorithm). In any case, both algorithms are 
+listed here and discussed in more detail in \cite{tobiasBaseline}, \cite{bertou2006calibration}, \TODO.
 
-\TODO
-
-
-\subsubsection{Baseline estimation}
-\label{sssec:baseline-estimation}
-
-First and foremost, the average noise level of each PMT needs to be determined
-
-\subsubsection{Rate based estimation of peak and charge}
+\subsubsection{Online algorithm}
 \label{sssec:online-calibration}
 
+\TODO Baseline
 
-\subsubsection{Histogram based estimation of peak and charge}
+Once the baseline 
+
+
+\subsubsection{Offline algorithm}
 \label{sssec:offline-calibration}
 
+For event reconstruction, a first baseline estimate of a WCD PMT is predicted from the beginning and end of a 2048 bin ($\SI{17.06}{\micro\second}$) long trace. The 
+mode $m$ as well as standard deviation $\sigma$ of the first (last) 300 bins is calculated. All bins larger or smaller than $m\pm2\sigma$ are truncated and removed 
+from the trace window. The value of $m$, $\sigma$ is consequently updated and the procedure repeated until a convergence is reached and no further cut is necessary. 
+The best estimate $B_\text{front}$ ($B_\text{end}$) for the front (end) of the trace at this point is given by the mean value of all remaining bins. It's statistic 
+uncertainty $\sigma_{B_\text{front}}$ ($\sigma_{B_\text{end}}$) is given by the standard deviation of the remaining bins. The baseline between the flat front and end 
+estimate is then interpolated based on the difference $\Delta B = B_\text{end} - B_\text{front}$.
+
+\begin{itemize}
+	\item \textbf{Rejection of anomalous upward fluctuations} $\mathbf{\frac{\Delta B}{\sigma_{\Delta B}} \geq +5}$:
+
+	$B_\text{end}$ being higher than $B\text{front}$ often indicates errors in the electronic readout or defect components in the measurement chain. There exists
+	no physical reason why the end baseline should be (significantly) higher than the front. Consequently, traces where this is the case are ignored during 
+	event reconstruction.
+
+	\item \textbf{Constant approximation for small upward fluctuations} $\mathbf{+5 > \frac{\Delta B}{\sigma_{\Delta B}} \geq 0}$:
+
+	Small fluctuations of the baseline are expected and the norm. If these fluctuations are positive ($B_\text{end} > B_\text{front}$) the method of calculating 
+	the mode, truncating outliers and repeating both steps is applied to the entire length of the signal, resulting in a constant baseline estimate $B$ across 
+	the trace.
+
+	\item \textbf{Step-function approximation for small downward fluctuations} $\mathbf{0 > \frac{\Delta B}{\sigma_{\Delta B}} \geq -1}$:
+
+	Unlike positive fluctuations, negative fluctuations ($B_\text{end} < B_\text{front}$) can have a physical significance. Due to the undershoof of PMTs after
+	detecting a signal in the WCD (compare \cite{glietta2008recovery}), the baseline estimate decreasing towards the end of the trace often indicates the presence
+	of shower particles within the tank. For this reason, downward fluctuations are handled differently from upward ones. If the fluctuations are sufficiently 
+	small, the baseline across the trace is estimated as a simple step-function; The trace is separated into two parts along its' maximum ADC value. The front part 
+	(i.e. before the max. value) has the baseline $B_\text{front}$, while the rear part is estimated by $B_\text{end}$. An example of this is shown in 
+	\autoref{fig:baseline-step-function}.
+
+	\item \textbf{Charge-linear approximation for large undershoots} $\mathbf{-1 \geq \frac{\Delta B}{\sigma_{\Delta B}}}$:
+
+	For larger undershoots, the baseline is estimated bin by bin based on the deposited charge in the detector. Starting with a value of $B_\text{front}$ for the bins 
+	1-300, the remaining baseline is first linearly interpolated according to \autoref{eq:baseline-linear-interpolation},
+
+	\begin{equation}
+	\label{eq:baseline-linear-interpolation}
+		b_i = B_\text{front} - () \frac{\Delta B}{}  
+	\end{equation}
+	
+	--
+
+	This is visualized in \autoref{fig:baseline-charge-linear}.
+
+\end{itemize}
+
+\begin{figure}
+	\centering
+	\begin{subfigure}[h]{0.45\linewidth}
+	\includegraphics[height=4.1cm]{./plots/baseline_step_function.png}
+	\caption{\textbf{Step-function approximation}\label{fig:baseline-step-function}}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[h]{0.45\linewidth}
+	\includegraphics[height=4.1cm]{./plots/baseline_charge_interpolation.png}
+	\caption{\textbf{Charge-linear interpolation}\label{fig:baseline-charge-linear}}
+	\end{subfigure}
+	\caption*{Note that the signal undershoot is greatly exaggerated for visualization purposes in both examples. \textbf{a)} A simple step function is sufficient 
+	to accurately model a PMTs' noise level at small downward fluctuations. \textbf{b)} For larger discrepancies, the more involved charge-linear interpolation is 
+	used. \label{fig:baseline-estimation}}
+\end{figure}
 
 \subsection{Trigger procedure}
 \label{ssec:sd-triggers}
