@@ -65,6 +65,7 @@ def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -
 
                     prediction.write(save_string + "\n")
         
+        Dataset.__reset__()
         return TPs / (TPs + FPs)
 
     else:

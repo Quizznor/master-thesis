@@ -10,34 +10,18 @@ from Binaries import *
 
 # #######################################################################
 
-Hardware = HardwareClassifier()
-Test1 = Ensemble("minimal_conv2d_real_background")
-# # Test2 = Ensemble("minimal_conv2d_real_background_1.00VEM")
-# # # Test3 = Ensemble("minimal_conv2d_real_background_injections")
-# # Test3 = Ensemble("minimal_conv2d_real_background_low_prior")
-# Test4 = NNClassifier("minimal_conv2d_real_background_cut+prior")
+# Hardware = HardwareClassifier()
+# Test1 = Ensemble("minimal_conv2d_real_background")
+# Test2 = Ensemble("minimal_conv2d_real_background_1.00VEM")
+Test5 = NNClassifier("minimal_conv2d_real_background_cut+prior")
+Test3 = Ensemble("minimal_conv2d_real_background_injections")
+Test4 = Ensemble("minimal_conv2d_real_background_low_prior")
 
-# _, EventsNoCut= EventGenerator("all", prior = 0.2)
+_, Events= EventGenerator("all", real_background = True, apply_downsampling = True)
 
-# make_dataset(Test4, EventsNoCut, "validation_data_no_cut")
-
-Hardware.ROC("random_traces_downsampled")
-
-# # print("")
-# # Test3.ROC("validation_data")
-
-# # print("")
-Test1.ROC("validation_data_no_cut")
-
-# # print("")
-# # Test2.ROC("validation_data_no_cut")
-
-# # print("")
-# # Test3.ROC("validation_data")
-
-# print("")
-# Test4.ROC("validation_data_no_cut")
-
-# HardwareTriggers = HardwareClassifier()
-# # NeuralNetwork = NNClassifier("ENSEMBLES/minimal_conv2d_real_background/ensemble_09/")
-# HardwareTriggers.production_test(100000, apply_downsampling = True)
+# make_dataset(Hardware, Events, "random_traces_downsampled")
+make_dataset(Test5, Events, "random_traces_downsampled")
+# make_dataset(Test1, Events, "random_traces_downsampled")
+# make_dataset(Test2, Events, "random_traces_downsampled")
+make_dataset(Test3, Events, "random_traces_downsampled")
+make_dataset(Test4, Events, "random_traces_downsampled")
