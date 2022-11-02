@@ -198,6 +198,15 @@ class Classifier():
             
             plt.plot([0,1],[0,1], ls = "--", c = "gray")
 
+            tp, fp = len(TP), len(FP)
+            tn, fn = len(TN), len(FN)
+
+            all = ( tp + tn + fp + fn )
+            TPR = ( tp ) / ( tp + fp ) * 100
+            ACC = ( tp + tn ) / all * 100
+
+            return ACC, TPR
+
         # precision and recall curve over signal strength (VEM_charge)
         def PRC(self, dataset : str, **kwargs) -> None :
 
