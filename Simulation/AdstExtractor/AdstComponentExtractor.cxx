@@ -136,6 +136,7 @@ struct VectorWrapper
 void ExtractDataFromAdstFiles(fs::path pathToAdst)
 {
   const auto csvTraceFile = pathToAdst.parent_path().parent_path() / pathToAdst.filename().replace_extension("csv");
+  // const auto csvTraceFile = pathToAdst.parent_path()/ pathToAdst.filename().replace_extension("csv"); // for testing
 
   // (2) start main loop
   RecEventFile     recEventFile(pathToAdst.string());
@@ -152,7 +153,6 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
     // allocate memory for data
     const SDEvent& sdEvent = recEvent->GetSDEvent();                              // contains the traces
     const GenShower& genShower = recEvent->GetGenShower();                        // contains the shower
-  
     DetectorGeometry detectorGeometry = DetectorGeometry();                       // contains SPDistance
     recEventFile.ReadDetectorGeometry(detectorGeometry);
 
@@ -171,13 +171,32 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
       const auto stationID = recStation.GetId();
       const auto showerPlaneDistance = detectorGeometry.GetStationAxisDistance(stationID, showerAxis, showerCore);
 
+      UInt_t nElectrons = 0;
+      UInt_t nMuons = 0;
+      UInt_t nPhotons = 0;
+
+      // get no. of particles for each station
+      for (const auto& genStation : sdEvent.GetSimStationVector())
+      {
+        if (genStation.GetId() == stationID)
+        {
+          nElectrons = genStation.GetNumberOfElectrons();
+          nMuons = genStation.GetNumberOfMuons();
+          nPhotons = genStation.GetNumberOfPhotons();
+
+          std::cout << stationID << " ===> (" << nMuons << ", " << nElectrons << ", " << nPhotons << ") particles" << std::endl;
+
+          break;
+        }
+      }
+
       // loop over all PMTs
       for (unsigned int PMT = 1; PMT < 4; PMT++)
       {
         // total trace container
         VectorWrapper TotalTrace(2048,0);
 
-        // loop over all components
+        // loop over all components (photon, electron, muons) -> NO HADRONIC COMPONENT
         for (int component = ePhotonTrace; component <= eMuonTrace; component++)
         {
           const auto component_trace = recStation.GetPMTTraces((ETraceType)component, PMT);
@@ -198,7 +217,7 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
         // const auto showerPlaneDistance = recStation.GetSPDistance();            // in m
 
         // write all information to trace file
-        traceFile << stationID << " " << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " ";
+        traceFile << stationID << " " << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " " << nMuons << " " << nElectrons << " " << nPhotons;
 
         // "digitize" component trace...
         // this used to be converted to VEM
@@ -209,7 +228,7 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
         // ... and write to disk
         for (const auto& bin : trace_vector)
         {
-          traceFile << bin << " ";
+          traceFile << " " << bin;
         }
 
         traceFile << "\n";
@@ -222,6 +241,7 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
 
 int main(int argc, char** argv) 
 {
+  std::cout << std::endl;
   ExtractDataFromAdstFiles(argv[1]);
   return 0;
 }

@@ -29,7 +29,7 @@ class GLOBAL():
     random_index                = None                                          # this file is used first when creating randoms
     force_inject                = None                                          # whether or not to force injection of muons
 
-    # trace_opts                  = [q_peak, q_charge, n_bins, baseline_std, baseline_mean, force_inject, real_background]
+    # trace_opts                  = [q_peak, q_charge, length, sigma, mu, n_injected, downsampling]
 
     # Generator details, can be overwritten in __new__ of EventGenerator
     split                       = 0.8                                           # Ratio of the training / validation events
@@ -42,9 +42,9 @@ class GLOBAL():
     ignore_low_VEM              = 0                                             # label signals under threshold as background
     window                      = 120                                           # Length (in bins) of the sliding window
     step                        = 10                                            # Sliding window analysis step size (in bins)
-    early_stopping_patience     = 7500                                          # number of batches for early stopping patience
+    early_stopping_patience     = 10000                                         # number of batches for early stopping patience
     n_production_traces         = int(1e6)                                      # how many random traces to look at for predictions
     n_ensembles                 = 10                                            # how many networks of same architecture to train
 
 plt.rcParams.update({'font.size': 22})
-plt.rcParams['figure.figsize'] = [20, 10]
+# plt.rcParams['figure.figsize'] = [20, 10]

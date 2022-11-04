@@ -43,7 +43,7 @@ for j in range(ALREADY_PRESENT, ALREADY_PRESENT + NUM_RETHROWS):
             raise IndexError
 
         bash_arguments = file_list[int(sys.argv[1])], SRC_DIR, DESTINATION_DIR, NAME, E_RANGE, SEED, E_DICT[E_RANGE][1], E_DICT[E_RANGE][2]
-        subprocess.call([f"/cr/users/filip/scripts/BuildSimulation/RunSimulation/run_simulation.sh", *bash_arguments])
+        subprocess.call([f"/cr/users/filip/Simulation/RunSimulation/run_simulation.sh", *bash_arguments])
 
     except IndexError:
         pass

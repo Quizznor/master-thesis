@@ -16,7 +16,10 @@ class Signal():
         sp_distances = set(pmt_data[:,1])
         energies = set(pmt_data[:,2])
         zeniths = set(pmt_data[:,3])
-        pmt_data = pmt_data[:,4:]
+        n_muons = set(pmt_data[:,4])
+        n_electrons = set(pmt_data[:,5])
+        n_photons = set(pmt_data[:,6])
+        pmt_data = pmt_data[:,7:]
 
         assert trace_length > len(pmt_data[0]), "signal size exceeds trace length"
 
@@ -28,6 +31,9 @@ class Signal():
         self.SPDistance = int(next(iter(sp_distances)))                             # the distance from the shower core
         self.Energy = next(iter(energies))                                          # energy of the shower of this signal
         self.Zenith = next(iter(zeniths))                                           # zenith of the shower of this signal
+        self.n_muons = int(next(iter(n_muons)))                                     # number of muons injected in trace
+        self.n_electrons = int(next(iter(n_electrons)))                             # number of electrons injected in trace
+        self.n_photons = int(next(iter(n_photons)))                                 # number of photons injected in trace
 
         self.Signal = np.zeros((3, trace_length))
         self.signal_start = np.random.randint(0, trace_length - len(pmt_data[0]))
@@ -268,7 +274,8 @@ class SignalBatch():
         with open(trace_file, "r") as file:
                 signal = [np.array([float(x) for x in line.split()]) for line in file.readlines()]
 
-        for station in range(0, len(signal) // 3, 3):
+        for station in range(0, len(signal), 3):
+            print("Yield station")
             yield np.array([signal[station], signal[station + 1], signal[station + 2]]) 
 
 # container for gaussian baseline
@@ -305,7 +312,7 @@ class RandomTrace():
             except IndexError:
                 raise RandomTraceError
 
-        print(f"[INFO] -- LOADING RANDOMS: {self.random_file}" + 20 * " ")
+        print(f"\r[INFO] -- LOADING RANDOMS: {self.random_file}" + 20 * " ")
 
         these_traces = np.loadtxt(RandomTrace.baseline_dir + self.station + "/" + self.random_file)
 

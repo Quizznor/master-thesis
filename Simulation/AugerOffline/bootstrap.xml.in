@@ -20,32 +20,32 @@
     <configLink
       id         = "ModuleSequence"
       type       = "XML"
-      xlink:href = "/cr/users/filip/scripts/BuildSimulation/ModuleSequence_trigger_all.xml"/>
+      xlink:href = "/cr/users/filip/Simulation/AugerOffline/ModuleSequence_trigger_all.xml"/>
 
     <configLink
       id         = "EventFileReader"
       type       = "XML"
-      xlink:href = "/cr/users/filip/scripts/BuildSimulation/EventFileReader.xml"/>
+      xlink:href = "/cr/users/filip/Simulation/AugerOffline/EventFileReader.xml"/>
 
     <configLink
       id         = "EventFileExporter"
       type       = "XML"
-      xlink:href = "/cr/users/filip/scripts/BuildSimulation/EventFileExporter.xml"/>
+      xlink:href = "/cr/users/filip/Simulation/AugerOffline/EventFileExporter.xml"/>
 
     <configLink
       id         = "EventGenerator"
       type       = "XML"
-      xlink:href = "/cr/users/filip/scripts/BuildSimulation/EventGenerator.xml"/>
+      xlink:href = "/cr/users/filip/Simulation/AugerOffline/EventGenerator.xml"/>
 
    <configLink
        id         = "SStationListXMLManager"
        type       = "XML"
-       xlink:href = "/cr/users/filip/scripts/BuildSimulation/CustomStationList.xml"/>
+       xlink:href = "/cr/users/filip/Simulation/AugerOffline/CustomStationList.xml"/>
 
    <configLink
        id         = "SDenseStationListXMLManager"
        type       = "XML"
-       xlink:href = '/cr/users/filip/scripts/BuildSimulation/SDenseStations_purged.xml'/>
+       xlink:href = '/cr/users/filip/Simulation/AugerOffline/SDenseStations_purged.xml'/>
 
   </centralConfig>
 

@@ -131,6 +131,7 @@ class Classifier():
                 FN = np.loadtxt(save_files['FN'])
 
             except OSError:
+
                 save_files = \
                 {
                     "TP" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/true_positives.csv",
@@ -138,11 +139,11 @@ class Classifier():
                     "FP" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/false_positives.csv",
                     "FN" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/false_negatives.csv"
                 }
-
-                TP = np.loadtxt(save_files['TP'], usecols = usecols[0])
-                FP = np.loadtxt(save_files['FP'], usecols = usecols[1])
-                TN = np.loadtxt(save_files['TN'], usecols = usecols[2])
-                FN = np.loadtxt(save_files['FN'], usecols = usecols[3])
+                
+                TP = np.loadtxt(save_files['TP'])
+                FP = np.loadtxt(save_files['FP'])
+                TN = np.loadtxt(save_files['TN'])
+                FN = np.loadtxt(save_files['FN'])
 
             tp, fp = len(TP), len(FP)
             tn, fn = len(TN), len(FN)
@@ -172,8 +173,8 @@ class Classifier():
             last, current_x, current_y = score_low, 0, 0
             ROC_x, ROC_y = [],[]
 
-            bins = np.geomspace(score_low, score_high, kwargs.get("n", 100))[::-1]
-            norm = len(x) + len(y)
+            bins = np.geomspace(score_low, score_high, kwargs.get("n", 50))[::-1]
+            norm = ( len(x) + len(y) ) * 5                  # why x5 ???
 
             for score_bin in bins:
 
@@ -473,7 +474,6 @@ class NNClassifier(Classifier):
         self.callbacks = [EarlyStopping,]
         not supress_print and print(self)
 
-
     def train(self, Datasets : tuple, epochs : int) -> None :
         
         TrainingSet, ValidationSet = Datasets
@@ -498,7 +498,6 @@ class NNClassifier(Classifier):
                 metadata.write(f"{key} {value[0]}\n")
 
             metadata.write(f"val_tpr {true_positive_rate}")
-
 
     def save(self) -> None : 
         self.model.save(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}")
@@ -574,21 +573,87 @@ class Ensemble(NNClassifier):
 
         return [model(trace) for model in self.models]
 
-    def load_and_print_performance(self, dataset : str) -> tuple : 
+    def load_and_print_performance(self, dataset : str) -> list : 
 
-        for model in self.models: model.load_and_print_performance(dataset)
+        # TP, FP, TN, FN 
+        predictions = []
 
-    def ROC(self, dataset : str) -> None :
-
-        try:
-            if header_was_called: pass
-
-        except NameError:
-            self.__header__()
-
+        # keep the iterable index in case of early breaking during debugging
         for i, model in enumerate(self.models):
+            prediction = model.load_and_print_performance(dataset)
+            predictions.append(prediction)
 
-            model.ROC(dataset, title = f"{self.name}", label = f"model instance {i}")
+        return predictions
+
+    def ROC(self, dataset : str, **kwargs : dict) -> None :
+
+        warning_orange = '\033[93m'
+        end_color_code = '\033[0m'
+
+        predictions = self.load_and_print_performance(dataset)
+        best_prediction, worst_prediction = None, None
+        best_score, worst_score = -np.inf, np.inf
+        all_predictions = [[] for i in range(2)]
+
+        for i, prediction in enumerate(predictions): 
+
+            TP, FP = prediction[0], prediction[1]
+
+            # compare TPR across models
+            current_score = ( len(TP) ) / ( len(TP) + len(FP) )
+
+            if current_score > best_score:
+                best_prediction = predictions[i]
+                best_score = current_score
+            if current_score < worst_score:
+                worst_prediction = predictions[i]
+                worst_score = current_score
+
+            all_predictions[0] += list(TP)
+            all_predictions[1] += list(FP)
+
+        all_score = ( len(all_predictions[0]) ) / ( len(all_predictions[0]) + len(all_predictions[1]) )
+
+        print(warning_orange + f"Overall performance (TPR): WORST = {worst_score * 100:.4f}%, BEST = {best_score * 100:.4f}%, ALL = {all_score * 100:.4f}%" + end_color_code)
+
+        # draw the ROC curve for each of the (best, worst, avg.) predictions
+        for i, prediction in enumerate([worst_prediction, best_prediction, all_predictions]):
+
+            TP, FP = prediction[0], prediction[1]
+
+            x = np.clip(FP, a_min = 1e-6, a_max = None)
+            y = np.clip(TP, a_min = 1e-6, a_max = None)
+
+            score_low, score_high = min([x.min(), y.min()]), max([x.max(), y.max()])
+            last, current_x, current_y = score_low, 0, 0
+            ROC_x, ROC_y = [],[]
+
+            bins = np.geomspace(score_low, score_high, kwargs.get("n", 50))[::-1]
+            norm = ( len(x) + len(y) ) * 5              # why x5 ???
+
+            for score_bin in bins:
+
+                this_x = ((last >= x) & (x > score_bin)).sum()
+                this_y = ((last >= y) & (y > score_bin)).sum()
+                
+                current_x += this_x / norm
+                current_y += this_y / norm
+                
+                ROC_y.append(current_y), ROC_x.append(current_x)
+
+                last = score_bin
+            
+            ROC_x.append(1), ROC_y.append(1)
+
+            plt.plot(ROC_x, ROC_y, lw = 2, alpha = 1 if i == 1 else 0.4, ls = "solid" if i == 1 else ":", c = kwargs.get("c", "steelblue"))
+
+        plt.plot([],[], label = kwargs.get("label", f"{self.name} - {dataset}"), c = kwargs.get("c", "steelblue"))
+
+        plt.xlim(-0.02,1.02)
+        plt.ylim(-0.02,1.02)
+        plt.plot([0,1],[0,1], ls = "--", c = "gray")
+        plt.xlabel("False positive rate")
+        plt.ylabel("True positive rate")
 
     def PRC(self, dataset : str) -> None :
 

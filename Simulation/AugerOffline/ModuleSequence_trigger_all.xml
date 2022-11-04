@@ -27,16 +27,18 @@
 
         &SdSimulation;
 
-<!--        <module> ClearParticleLists              </module> -->
+        <!-- <module> ClearParticleLists              </module> -->
 
         <!-- <module> CentralTriggerSimulatorXb       </module> -->
-        <module> DummyCentralTriggerDenseKG       </module>
+
+        <module> DummyCentralTriggerDenseKG      </module>
         <module> CentralTriggerEventBuilderOG    </module>
         <module> EventBuilderOG                  </module>
 
-        <module> EventCheckerOG                  </module>
+        <!-- <module> EventCheckerOG                  </module> -->
         <module> SdCalibratorOG                  </module>
         <module> SdSignalRecoveryKLT             </module>
+
 <!--
         <module> SdMonteCarloEventSelectorOG     </module>
         <module> SdEventSelectorOG               </module>
