@@ -10,6 +10,7 @@ rays of the highest energies. With an effective area of \SI{3000}{\kilo\meter\sq
 Altough first proposed in 1992, it took 18 years until the idea of a large scale experiment to detect cosmic rays matured and construction of the 
 first prototype started near Mendoza \cite{AugerTimeline}. Some further 20 years later, the Pierre Auger collaboration has co-authored over \TODO
 publications and continues to advance research in astroparticle physics.
+
 It does this via a hybrid approach, combining measurements of a \textbf{S}urface \textbf{D}etector (SD) as well as a \textbf{F}louresence \textbf{D}etector (FD). 
 Additional machinery, such as the e\textbf{X}treme (XLF) and \textbf{C}entral \textbf{L}aser \textbf{F}acility (CLF), is installed to monitor atmospheric 
 variables. This improves the overall systematic accuracy of predictions made by the experiment. An overview of the site can be seen in \autoref{fig:auger-array}. 
@@ -85,79 +86,113 @@ by a PMT from one vertically through-going muon is defined as \SI{1}{\Peak}. The
 as \SI{1}{\Charge}. The conversion factor between ADC counts and VEM$_\text{Peak}$ and VEM$_\text{Ch.}$ is estimated from data and continuously updated separately
 for each station. Note that due to the limited computational resources of the WCD, a simplified, rate-based approach is chosen for calibration in the field (Online
 algorithm), this stands in contrast to the more physics-driven methods used during event reconstruction (Oflline algorithm). In any case, both algorithms are 
-listed here and discussed in more detail in \cite{tobiasBaseline}, \cite{bertou2006calibration}, \TODO.
+listed in the following subsections and discussed in more detail in the referenced literature.
 
-\subsubsection{Online algorithm}
-\label{sssec:online-calibration}
+\subsection{Online algorithm}
+\label{ssec:online-calibration}
 
 \TODO Baseline
 
 Once the baseline 
 
 
-\subsubsection{Offline algorithm}
-\label{sssec:offline-calibration}
+\subsection{Offline algorithm}
+\label{ssec:offline-calibration}
 
-For event reconstruction, a first baseline estimate of a WCD PMT is predicted from the beginning and end of a 2048 bin ($\SI{17.06}{\micro\second}$) long trace. The 
-mode $m$ as well as standard deviation $\sigma$ of the first (last) 300 bins is calculated. All bins larger or smaller than $m\pm2\sigma$ are truncated and removed 
-from the trace window. The value of $m$, $\sigma$ is consequently updated and the procedure repeated until a convergence is reached and no further cut is necessary. 
-The best estimate $B_\text{front}$ ($B_\text{end}$) for the front (end) of the trace at this point is given by the mean value of all remaining bins. It's statistic 
-uncertainty $\sigma_{B_\text{front}}$ ($\sigma_{B_\text{end}}$) is given by the standard deviation of the remaining bins. The baseline between the flat front and end 
-estimate is then interpolated based on the difference $\Delta B = B_\text{end} - B_\text{front}$.
+\subsubsection{Baseline estimation}
+\label{sssec:offline-baseline-estimation}
+
+For event reconstruction, a first baseline estimate of a WCD PMT is predicted by examining the beginning and end of a 2048 bin ($\SI{17.06}{\micro\second}$) long 
+trace. The mode $m$ as well as standard deviation $\sigma$ of the first (last) 300 bins is calculated. All bins larger or smaller than $m\pm2\sigma$ are truncated 
+and removed from the trace window. The value of $m$, $\sigma$ is consequently updated and the procedure repeated until a convergence is reached and no further cut 
+is necessary. The best estimate $B_\text{front}$ ($B_\text{end}$) for the front (end) of the trace at this point is given by the mean value of all remaining bins. 
+It's statistic uncertainty $\sigma_{B_\text{front}}$ ($\sigma_{B_\text{end}}$) is given by the standard deviation of the remaining bins \cite{tobiasBaseline}. The 
+baseline between the flat front and end estimate is then interpolated based on the difference $\Delta B = B_\text{end} - B_\text{front}$.
 
 \begin{itemize}
-	\item \textbf{Rejection of anomalous upward fluctuations} $\mathbf{\frac{\Delta B}{\sigma_{\Delta B}} \geq +5}$:
+	\item \textbf{Rejection of anomalous upward fluctuations} $\mathbf{\frac{\Delta B}{\sigma_{\Delta B}} \geq +10}$:
 
-	$B_\text{end}$ being higher than $B\text{front}$ often indicates errors in the electronic readout or defect components in the measurement chain. There exists
-	no physical reason why the end baseline should be (significantly) higher than the front. Consequently, traces where this is the case are ignored during 
-	event reconstruction.
+	$B_\text{end}$ being higher than $B_\text{front}$ often indicates errors in the electronic readout or defect components in the measurement chain. There 
+	exists no physical reason why the end baseline should be (significantly) higher than the front. Consequently, traces where this is the case are ignored 
+	during event reconstruction.
 
 	\item \textbf{Constant approximation for small upward fluctuations} $\mathbf{+5 > \frac{\Delta B}{\sigma_{\Delta B}} \geq 0}$:
 
-	Small fluctuations of the baseline are expected and the norm. If these fluctuations are positive ($B_\text{end} > B_\text{front}$) the method of calculating 
-	the mode, truncating outliers and repeating both steps is applied to the entire length of the signal, resulting in a constant baseline estimate $B$ across 
-	the trace.
+	Small fluctuations of the baseline are expected and the norm. If these fluctuations are positive ($B_\text{end} > B_\text{front}$) the method of 
+	calculating the mode, truncating outliers and repeating both steps is applied to the entire length of the signal, resulting in a constant baseline estimate
+	$B$ across the trace.
 
 	\item \textbf{Step-function approximation for small downward fluctuations} $\mathbf{0 > \frac{\Delta B}{\sigma_{\Delta B}} \geq -1}$:
 
 	Unlike positive fluctuations, negative fluctuations ($B_\text{end} < B_\text{front}$) can have a physical significance. Due to the undershoof of PMTs after
-	detecting a signal in the WCD (compare \cite{glietta2008recovery}), the baseline estimate decreasing towards the end of the trace often indicates the presence
-	of shower particles within the tank. For this reason, downward fluctuations are handled differently from upward ones. If the fluctuations are sufficiently 
-	small, the baseline across the trace is estimated as a simple step-function; The trace is separated into two parts along its' maximum ADC value. The front part 
-	(i.e. before the max. value) has the baseline $B_\text{front}$, while the rear part is estimated by $B_\text{end}$. An example of this is shown in 
-	\autoref{fig:baseline-step-function}.
+	detecting a signal in the WCD (compare \cite{glietta2008recovery}), the baseline estimate decreasing towards the end of the trace often indicates the 
+	presence of shower particles within the tank. For this reason, downward fluctuations are handled differently from upward ones. If the fluctuations are 
+	sufficiently small, the baseline across the trace is estimated as a simple step-function; The trace is separated into two parts along its' maximum ADC 
+	value. The front part (i.e. before the max. value) has the baseline $B_\text{front}$, while the rear part is estimated by $B_\text{end}$. An example of 
+	this is shown in \autoref{fig:baseline-step-function-approximation}.
 
 	\item \textbf{Charge-linear approximation for large undershoots} $\mathbf{-1 \geq \frac{\Delta B}{\sigma_{\Delta B}}}$:
 
-	For larger undershoots, the baseline is estimated bin by bin based on the deposited charge in the detector. Starting with a value of $B_\text{front}$ for the bins 
-	1-300, the remaining baseline is first linearly interpolated according to \autoref{eq:baseline-linear-interpolation},
+	For larger undershoots, the baseline is estimated bin by bin based on the deposited charge in the detector. Starting with a value of $B_\text{front}$ for 
+	the bins 1-300, the remaining baseline is first linearly interpolated according to \autoref{eq:baseline-charge-linear-interpolation},
 
 	\begin{equation}
-	\label{eq:baseline-linear-interpolation}
-		b_i = B_\text{front} - () \frac{\Delta B}{}  
+	\label{eq:baseline-charge-linear-interpolation}
+		b_i = B_\text{front} - \Delta B \cdot \frac{i - 300}{1448}, \qquad 300 \geq i \geq 2048,
+	\end{equation}	
+
+	where the magic numbers 300 and 1448 refer to the last bin of the front baseline estimate and the length of the interpolated baseline respectively. From 
+	this, the deposited charge $q_i$ up to bin $i$ can be calculated as per \autoref{eq:deposited-charge}.
+
+	\begin{equation}
+	\label{eq:deposited-charge}
+		q_i = \sum_{k = 0}^{i} \left( T_k - b_k \right)\exp\left(-\frac{\SI{8.33}{\nano\second}}{\tau}\cdot(i-k)\right)
 	\end{equation}
 	
-	--
+	In \autoref{eq:deposited-charge}, $T_k$ refers to the numerical value of bin $k$. Note that an exponential falloff term has to be added to account for the
+	decay in signal undershoot with a decay time of $\tau = \SI{45}{\micro\seconds}$. The value of $\tau$ is determined in \cite{tobiasBaselineUUB}. Assuming 
+	the magnitude of the signal undershoot is directly proportional to the deposited charge $q$, a correction of the baseline thus becomes
 
-	This is visualized in \autoref{fig:baseline-charge-linear}.
+	\begin{equation}
+	\label{eq:baseline-correction}
+		b_i = B_\text{front} + \frac{q_i}{q_{1898}} \cdot \Delta B.
+	\end{equation}
+	
+	The parametrization in \autoref{eq:baseline-correction} is chosen such that the charge-interpolated baseline at bin $1898$ (the center position in the last
+	$300$ bins) is exactly equal to the rear baseline estimate $B_\text{end}$. The prediction can be made more accurate by repeating the above steps, each time
+	recalculating $q_i$ and readjusting the baseline $b_i$ in the process. \autoref{fig:baseline-charge-linear-interpolation} shows an example baseline 
+	estimate after three such iterations. In general, it converges to a robust estimate within five repetitions \cite{tobiasBaselineUUB}.
 
 \end{itemize}
 
 \begin{figure}
-	\centering
-	\begin{subfigure}[h]{0.45\linewidth}
-	\includegraphics[height=4.1cm]{./plots/baseline_step_function.png}
-	\caption{\textbf{Step-function approximation}\label{fig:baseline-step-function}}
+	\begin{subfigure}[b]{0.5\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{./plots/baseline_step_function.png}
+		\caption{\textbf{Step-function approximation}}
+		\label{fig:baseline-step-function-approximation}
 	\end{subfigure}
 	\hfill
-	\begin{subfigure}[h]{0.45\linewidth}
-	\includegraphics[height=4.1cm]{./plots/baseline_charge_interpolation.png}
-	\caption{\textbf{Charge-linear interpolation}\label{fig:baseline-charge-linear}}
+	\begin{subfigure}[b]{0.5\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{./plots/baseline_charge_interpolation.png}
+		\caption{\textbf{Charge-linear interpolation}}
+		\label{fig:baseline-charge-linear-interpolation}
 	\end{subfigure}
-	\caption*{Note that the signal undershoot is greatly exaggerated for visualization purposes in both examples. \textbf{a)} A simple step function is sufficient 
-	to accurately model a PMTs' noise level at small downward fluctuations. \textbf{b)} For larger discrepancies, the more involved charge-linear interpolation is 
-	used. \label{fig:baseline-estimation}}
+	\caption{\textbf{(a)} A simple step function is	sufficient to accurately model a PMTs' noise level at small downward fluctuations. \textbf{(b)} For larger 
+	discrepancies the more involved charge-linear interpolation is used. Note that the signal undershoot is exaggerated for visualization purposes in both 
+	examples.}
 \end{figure}
+
+\subsubsection{Estimation of VEM$_\text{Peak}$ and VEM$_\text{Ch.}$}
+	\label{sssec:offline-vem-calibration}
+
+The conversion factor between ADC counts and VEM$_\text{Peak}$, VEM$_\text{Ch.}$} are built from distributions of traces that satisfy the muon trigger, which scans
+incoming ADC bins for a value exceeding the muon threshold $t_\upmu = b + \SI{30}{\ADC}$, \SI{30}{\ADC} above baseline, for any of the three WCD PMTs. If this 
+requirement is met, 69 bins (19 before, trigger bin, 49 after) are written to the muon buffer, a FIFO (first-in-first-out) type memory storage, that is
+subsequently filled with low-energy events, which (in general) didn't satisfy any other trigger but still contain useful information.
+
+By histogramming the maximum value (sum) in each trace, a 
 
 \subsection{Trigger procedure}
 \label{ssec:sd-triggers}
