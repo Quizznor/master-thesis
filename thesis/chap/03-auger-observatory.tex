@@ -3,13 +3,12 @@
 \chapter{The Pierre Auger Observatory}
 \label{chap:auger-observatory}
 
-Located on the argentinian high-plains of Pampa Amarilla, the Pierre Auger observatory is a hybrid detector designed to detect and study cosmic 
-rays of the highest energies. With an effective area of \SI{3000}{\kilo\meter\squared} it is by far the largest experiment of its kind 
-\cite{DesignReport}.
+Located on the argentinian high-plains of Pampa Amarilla, the Pierre Auger observatory is a hybrid detector designed to detect and study cosmic rays of the highest
+energies. With an effective area of \SI{3000}{\kilo\meter\squared} it is by far the largest experiment of its kind \cite{DesignReport}.
 
-Altough first proposed in 1992, it took 18 years until the idea of a large scale experiment to detect cosmic rays matured and construction of the 
-first prototype started near Mendoza \cite{AugerTimeline}. Some further 20 years later, the Pierre Auger collaboration has co-authored over \TODO
-publications and continues to advance research in astroparticle physics.
+Altough first proposed in 1992, it took 18 years until the idea of a large scale experiment to detect cosmic rays matured and construction of the first prototype 
+started near Mendoza \cite{AugerTimeline}. Some further 20 years later, the Pierre Auger collaboration has co-authored over \TODO publications and continues to 
+advance research in astroparticle physics.
 
 It does this via a hybrid approach, combining measurements of a \textbf{S}urface \textbf{D}etector (SD) as well as a \textbf{F}louresence \textbf{D}etector (FD). 
 Additional machinery, such as the e\textbf{X}treme (XLF) and \textbf{C}entral \textbf{L}aser \textbf{F}acility (CLF), is installed to monitor atmospheric 
@@ -17,40 +16,56 @@ variables. This improves the overall systematic accuracy of predictions made by 
 Data measured by the FD, SD and the atmospheric monitors is sent to a \textbf{C}entral \textbf{D}ata \textbf{A}cquisition \textbf{S}ystem (CDAS) located in the 
 nearby town of Malargüe.
 
-This chapter offers a brief look into the measurement principle and setup of the observatory. Information regarding the fluoresence detector can be 
-found in \autoref{sec:fluoresence-detector}. The SD is described in \autoref{sec:surface-detector}. A more in depth read on detector specifications 
-and design choices is represented by the Pierre Auger observatory design report \cite{DesignReport}, where a lot of information stated in this chapter
-is conglomerated from. Notes on the event reconstruction are listed in \autoref{sec:event-reconstruction} and summarized from \cite{SDReconstruction} 
-and \cite{FDReconstruction}.
+This chapter offers a brief look into the measurement principle and setup of the observatory. Information regarding the fluoresence detector can be found in 
+\autoref{sec:fluoresence-detector}. The SD is described in \autoref{sec:surface-detector}. A more in depth read on detector specifications and design choices is 
+represented by the Pierre Auger observatory design report \cite{DesignReport}, where a lot of information stated in this chapter is conglomerated from. Notes on 
+the event reconstruction are listed in \autoref{sec:event-reconstruction} and summarized from \cite{SDReconstruction} and \cite{FDReconstruction}.
 
 \begin{figure}
 	\centering
 	\includegraphics[width=0.9\textwidth]{imgs/auger_array.png}
-	\caption{Overview of the Pierre Auger observatory. The four different FD sites (respective FOV shown with blue lines) sit at the edge of
-	the detector area and monitor the night sky above the SD array consisting of 1600 water tanks (black dots). A denser spacing of stations 
-	near Coihueco is equipped with additional electronics such as e.g. radio antennas (AERA) and muon detectors (AMIGA). Image taken from \cite{AugerArray}}.
-	\label{fig:auger-array}
+	\caption{Overview of the Pierre Auger observatory. The four different FD sites (respective FOV shown with blue lines) sit at the edge of the detector area and 
+	monitor the night sky above the SD array consisting of 1600 water tanks (black dots). A denser spacing of stations near Coihueco is equipped with additional 
+	electronics such as e.g. radio antennas (AERA) and muon detectors (AMIGA). Image taken from \cite{AugerArray}}. \label{fig:auger-array}
 \end{figure}
+
+\begin{figure}
+	\begin{subfigure}[b]{0.5\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{./imgs/auger_fd.png}
+		\caption{\textbf{FD eye setup}}
+		\label{fig:fd-eye}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.5\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{./imgs/auger_sd.png}
+		\caption{\textbf{SD station setup}}
+		\label{fig:sd-station}
+	\end{subfigure}
+	\caption{\textbf{(a)} Schematic view of an FD eye with housing (1), main mirror (2) and camera (3). Image taken from \cite{FDReconstruction} \textbf{(b)} Setup
+	of an SD WCD with radio antenna (1), SSD (2), communication and GPS antenna (3), electronics box (4), solar panesl (5) and the WCD (6). Image adopted with 
+	changes from \cite{UUBstation} and \cite{waterTank}}
+\end{figure}
+
 
 \section{Fluoresence Detector (FD)}
 \label{sec:fluoresence-detector}
 
-The FD consists of a total of 27 fluoresence telescopes (eyes) at 4 different sites. Each eye monitors a \SI{30}{\degree} x \SI{30}{\degree} window 
-of the sky at a resolution of $\approx \, 0.5 \, \frac{ \text{px} }{ \text{deg}^2 }$. This results in an effective FOV of roughly \SI{180}{\degree} x 
-\SI{30}{\degree} per FD station, with an exception of Coihueco, where three additional telescopes - HEAT (\textbf{H}igh \textbf{E}levation 
-\textbf{A}uger \textbf{T}elescope) - are installed to enable monitoring of higher zenith angles ($\SI{30}{\degree}\leq\theta\leq\SI{60}{\degree}$) and
-increase sensitivity for showers of lower energies (compare \autoref{chap:physical-background}).
+The FD consists of a total of 27 fluoresence telescopes (eyes) at 4 different sites. Each eye monitors a \SI{30}{\degree} x \SI{30}{\degree} window of the sky at a
+resolution of $\approx \, 0.5 \, \frac{ \text{px} }{ \text{deg}^2 }$. This results in an effective FOV of roughly \SI{180}{\degree} x \SI{30}{\degree} per FD 
+station, with an exception of Coihueco, where three additional telescopes - HEAT (\textbf{H}igh \textbf{E}levation \textbf{A}uger \textbf{T}elescope) - are 
+installed to enable monitoring of higher zenith angles ($\SI{30}{\degree}\leq\theta\leq\SI{60}{\degree}$) and increase sensitivity for showers of lower energies 
+(compare \autoref{chap:physical-background}). A schematic of the setup of each eye is given in \autoref{fig:fd-eye}.
 
-The individual telescopes consist of \SI{3.6}{\meter} by \SI{3.6}{\meter}, convex mirrors. They reflect incoming light onto a set of 440 
-photomultipliers (PMTs), each corresponding to one pixel in the resulting image seen by an eye. Since the setup needs to be extremely sensitive to 
-UV light in order to detect flouresence caused by extensive air showers, its operation is limited to the relatively noise free moonless astronomical 
-nights (Sun $\measuredangle$ Horizon $\lesssim-18^{\circ}$). When the FD is operational, this allows the observation of the longitudinal propagation of 
-a shower instead of just its' footprint (as seen by the SD). 
+The individual telescopes consist of \SI{3.6}{\meter} by \SI{3.6}{\meter}, convex mirrors. They reflect incoming light onto a set of 440 photomultipliers (PMTs), 
+each corresponding to one pixel in the resulting image seen by an eye. Since the setup needs to be extremely sensitive to UV light in order to detect flouresence 
+caused by extensive air showers, its operation is limited to the relatively noise free moonless astronomical nights (Sun $\measuredangle$ Horizon 
+$\lesssim-18^{\circ}$). When the FD is operational, this allows the observation of the longitudinal propagation of a shower instead of just its' footprint (as seen 
+by the SD). 
 
 \section{Surface Detector (SD)}
 \label{sec:surface-detector}
-
-\TODO PICTURE!
 
 The SD consists of 1600 individually operating stations, spaced apart on a hexagonal grid with a standard \SI{1.5}{\kilo\meter} spacing. Each 
 station is made up of a main tank filled with \SI{12000}{\litre} of purified water and reflective inner walls, a solar panel and batteries for power management, 
@@ -58,7 +73,7 @@ as well as an antenna for communication. Within each tank three PMTs detect Cher
 referred to as \textbf{W}ater \textbf{C}herenkov \textbf{D}etectors (WCDs). With the (at the time of this work) ongoing AugerPrime upgrade, each station is 
 additionally equipped with a \textbf{s}mall \textbf{PMT} (sPMT), \textbf{S}urface \textbf{S}cintillator \textbf{D}etector (SSD), and radio antenna atop the tank.
 This allows for the recording of stronger signals, finer separation of electromagnetic and muonic shower component and detection of highly inclined air showers 
-respectively \cite{AugerPrime, horandel2020precision}. 
+respectively \cite{AugerPrime, horandel2020precision}. \autoref{fig:sd-station} shows a schematic blueprint of each SD station.
 
 \subsection{Data acquisition (DAQ)}
 \label{ssec:sd-daq}
@@ -70,12 +85,9 @@ Onboard electronics, the \textbf{U}pgraded \textbf{U}nified \textbf{B}oard (UUB)
 HG output exceeds a value of $2^{10}$ ADC counts and becomes saturated. This effectively enables the measurement of both large ($\geq\mathcal{O}(10^3)$ particles
 hitting the tank) as well as small shower signals ($\mathcal{O}(1)$ particle hitting the tank) with sufficient accuracy. Once an FADC bin has been recorded and 
 checked for possible triggers (c.f. \autoref{ssec:sd-triggers}) it is written to a ring buffer. If a trigger is issued, the corresponding chunk in the ring 
-buffer ($\approx\SI{4.992}{\micro\second}$ (599 bins) before and $\SI{12.07}{\micro\second}$ (1448 bins) after a trigger, $2047 + 1$ bins total), the measured trace, 
-can be analyzed in order to calibrate a station in the array (\autoref{ssec:sd-calibration}) or processed by a higher-level CPU for event reconstruction purposes 
-(see \autoref{sec:event-reconstruction}).
-
-\subsection{Calibration}
-\label{ssec:sd-calibration}
+buffer ($\approx\SI{4.992}{\micro\second}$ (599 bins) before and $\SI{12.07}{\micro\second}$ (1448 bins) after a trigger, $2047 + 1$ bins total), the measured 
+trace, can be analyzed in order to calibrate a station in the array (\autoref{ssec:sd-calibration}) or processed by a higher-level CPU for event reconstruction 
+purposes (see \autoref{sec:event-reconstruction}).
 
 While each station is equipped with the same electronics and runs the same analysis software, variables like the position in the field, station age or slight 
 changes in the manufacturing/installation process cause different stations to age differently. Over the lifetime of the array such differences can sum into 
@@ -83,20 +95,22 @@ potentially drastic discrepancies in gathered data. Put simply, an extensive air
 the same WCD at different times. To account for this, measurements are standardized across all stations. ADC counts are related to a \textbf{V}ertical 
 \textbf{E}quivalent of through-going \textbf{M}uons (VEM) that would result in the same signal strength. In this fashion, the maximum response that is generated 
 by a PMT from one vertically through-going muon is defined as \SI{1}{\Peak}. The total deposited charge (equivalent to the integral of the response) is defined 
-as \SI{1}{\Charge}. The conversion factor between ADC counts and VEM$_\text{Peak}$ and VEM$_\text{Ch.}$ is estimated from data and continuously updated separately
-for each station. Note that due to the limited computational resources of the WCD, a simplified, rate-based approach is chosen for calibration in the field (Online
-algorithm), this stands in contrast to the more physics-driven methods used during event reconstruction (Oflline algorithm). In any case, both algorithms are 
-listed in the following subsections and discussed in more detail in the referenced literature.
+as \SI{1}{\Charge}. The conversion factor between ADC counts and VEM$_\text{Peak}$ and VEM$_\text{Ch.}$ (referred to as \Ipeak and \Qpeak respectively) is 
+estimated from data and continuously updated separately for each station. Note that due to the limited computational resources of the WCD, a simplified, rate-based
+approach is chosen for calibration in the field (Online calibration), this stands in contrast to the more physics-driven histogram method used during event 
+reconstruction (Oflline calibration). In any case, both algorithms are listed in the following subsections and discussed in more detail in the referenced 
+literature.
 
-\subsection{Online algorithm}
+\subsection{Online calibration}
 \label{ssec:online-calibration}
 
-\TODO Baseline
+\subsubsection{Baseline estimation}
+\label{sssec:online-baseline-estimation}
 
-Once the baseline 
+\subsubsection{Estimation of \Ipeak and \Qpeak}
+\label{sssec:offline-vem-calibration}
 
-
-\subsection{Offline algorithm}
+\subsection{Offline calibration}
 \label{ssec:offline-calibration}
 
 \subsubsection{Baseline estimation}
@@ -107,7 +121,11 @@ trace. The mode $m$ as well as standard deviation $\sigma$ of the first (last) 3
 and removed from the trace window. The value of $m$, $\sigma$ is consequently updated and the procedure repeated until a convergence is reached and no further cut 
 is necessary. The best estimate $B_\text{front}$ ($B_\text{end}$) for the front (end) of the trace at this point is given by the mean value of all remaining bins. 
 It's statistic uncertainty $\sigma_{B_\text{front}}$ ($\sigma_{B_\text{end}}$) is given by the standard deviation of the remaining bins \cite{tobiasBaseline}. The 
-baseline between the flat front and end estimate is then interpolated based on the difference $\Delta B = B_\text{end} - B_\text{front}$.
+baseline between the flat front and end estimate is then interpolated based on the difference 
+
+\begin{equation}
+	\Delta B = B_\text{end} - B_\text{front}.
+\end{equation}
 
 \begin{itemize}
 	\item \textbf{Rejection of anomalous upward fluctuations} $\mathbf{\frac{\Delta B}{\sigma_{\Delta B}} \geq +10}$:
@@ -184,23 +202,53 @@ baseline between the flat front and end estimate is then interpolated based on t
 	examples.}
 \end{figure}
 
-\subsubsection{Estimation of VEM$_\text{Peak}$ and VEM$_\text{Ch.}$}
-	\label{sssec:offline-vem-calibration}
+\subsubsection{Estimation of \Ipeak and \Qpeak}
+\label{sssec:offline-vem-calibration}
 
-The conversion factor between ADC counts and VEM$_\text{Peak}$, VEM$_\text{Ch.}$} are built from distributions of traces that satisfy the muon trigger, which scans
+The conversion factor between ADC counts and VEM$_\text{Peak}$, VEM$_\text{Ch.}$ are built from distributions of traces that satisfy the muon trigger, which scans
 incoming ADC bins for a value exceeding the muon threshold $t_\upmu = b + \SI{30}{\ADC}$, \SI{30}{\ADC} above baseline, for any of the three WCD PMTs. If this 
 requirement is met, 69 bins (19 before, trigger bin, 49 after) are written to the muon buffer, a FIFO (first-in-first-out) type memory storage, that is
-subsequently filled with low-energy events, which (in general) didn't satisfy any other trigger but still contain useful information.
+subsequently filled with low-energy events, which (in general) didn't satisfy any other trigger but still contain useful information \cite{localStationCalib}.
 
-By histogramming the maximum value (sum) in each trace, a 
+By histogramming the maximum value (sum) of each trace, the plot shown in \autoref{fig:offline-vem-peak} (\autoref{fig:offline-vem-charge}) can be obtained. It 
+becomes apparent that the number of events per bin largely follows a power law with negative spectral index. This is expected considering the discussion in 
+\autoref{chap:physical-background}. Noteable are characteristic deviations from this powerlaw, as these contain information about \Ipeak  (\Qpeak):
 
-\subsection{Trigger procedure}
-\label{ssec:sd-triggers}
+\begin{itemize}
+	\item Low energy events from e.g. $e^-$, $e^+$ that deposit their entire energy in the tank give rise to a surplus of events at lower ADC values.
+	\item A characteristic (muon) hump appears in the bins $20 - 70$. This surplus is caused by omni-directional muons impinging onto the detector. Since the 
+	energy deposited by such muons is roughly constant, the center of the muon hump serves as an estimate of \Ipeak (\Qpeak).
+	\item (Not depicted in \autoref{fig:offline-calibration}) In similar plots from related works (c.f. \cite{localStationCalib streich2018performance}) a
+	drastic increase in bin occupations towards the tail end of the histograms can be observed. This is attributed to an increased bin size from \SI{1500}{\ADC} 
+	counts onwards, which reduces the amount of data per station sent to CDAS. In the example plots referenced here, a constant binning is chosen instead. 
+	This difference is mentioned here to avoid possible confusion. 
+\end{itemize}
 
+In this fashion, the average response of the WCD to a through-going muon can be estimated by e.g. fitting a gaussian distribution to the muon hump. However, 
+there exists a systematic difference between the response to a \textit{vertical} or an \textit{omni-directional} muon. Consequently, correctional factors need
+to be applied to the analysis results. These have been determined in previous experiments \cite{allison2002surface}. Finally, one arrives at an estimate for 
+the conversion factor between ADC counts and VEM$_\text{Peak}$, VEM$_\text{Ch.}$.
 
-
+\begin{figure}
+	\begin{subfigure}[b]{0.5\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{./plots/offline_vem_peak.png}
+		\caption{\textbf{VEM}$_\textbf{Peak}$ \textbf{Histogram}}
+		\label{fig:offline-vem-peak}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.5\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{./plots/offline_vem_charge.png}
+		\caption{\textbf{VEM}$_\textbf{Ch.}$ \textbf{Histogram}}
+		\label{fig:offline-vem-charge}
+	\end{subfigure}
+	\caption{\textbf{(a)} The maximum value of each muon trace is histogrammed in order to gain information about the current value of \Ipeak of a station. 
+	\textbf{(b)} The conversion factor from recorded ADC values to \Qpeak is given from the histogrammed sum of each muon trace.}
+	\label{fig:offline-calibration}
+\end{figure}
 
 \section{Event Reconstruction}
 \label{sec:event-reconstruction}
 
-
+If an extensive air shower hits the array, 

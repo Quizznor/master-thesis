@@ -6,17 +6,18 @@ GLIEDERUNG THESIS
 		2.2 ???
 		2.3 Profit
 	3. Auger
-		3.1 History
-		3.2 Measurement principle
-		- Flouresence detector (FD)
-		- Surface detector (SD)
-		  * Calibration
-		  * Trigger procedure
-		- Event reconstruction
-	4. Various triggers
-		4.1 Th, ToT, ToTd, MoPS
-		4.2 Trigger mechanisms
-		4.2 trigger efficiency
-		4.3 Motivation for improvement
+		3.1 Flouresence detector (FD)
+		3.2 Surface detector (SD)
+		  - Specifications / DAQ
+		  - Online calibration
+		  - Offline calibration
+		3.3 Event reconstruction
+	4. Current SD Hardware triggers
+		4.1 Implementation
+		  - Threshold
+		  - Time-over-Threshold
+		  - ToTd
+		  - MoPS
+		4.2 Performance
 	5. Neural network triggers
 	6. Results / Discussion
