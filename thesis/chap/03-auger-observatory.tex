@@ -73,7 +73,7 @@ as well as an antenna for communication. Within each tank three PMTs detect Cher
 referred to as \textbf{W}ater \textbf{C}herenkov \textbf{D}etectors (WCDs). With the (at the time of this work) ongoing AugerPrime upgrade, each station is 
 additionally equipped with a \textbf{s}mall \textbf{PMT} (sPMT), \textbf{S}urface \textbf{S}cintillator \textbf{D}etector (SSD), and radio antenna atop the tank.
 This allows for the recording of stronger signals, finer separation of electromagnetic and muonic shower component and detection of highly inclined air showers 
-respectively \cite{AugerPrime, horandel2020precision}. \autoref{fig:sd-station} shows a schematic blueprint of each SD station.
+respectively \cite{AugerPrime, horandel2019precision}. \autoref{fig:sd-station} shows a schematic blueprint of each SD station.
 
 \subsection{Data acquisition (DAQ)}
 \label{ssec:sd-daq}
@@ -81,7 +81,7 @@ respectively \cite{AugerPrime, horandel2020precision}. \autoref{fig:sd-station} 
 Onboard electronics, the \textbf{U}pgraded \textbf{U}nified \textbf{B}oard (UUB), or more precisely six 10-bit \textbf{F}lash 
 \textbf{A}nalog-to-\textbf{D}igital-\textbf{C}onverters (FADCs) read out measurement data from the PMTs at a sampling rate of \SI{120}{\mega\hertz} 
 ($\approx\SI{8.33}{\nano\second}$ binning) \cite{verzi2013energy}. This is done in a two-fold way. Three FADCs digitize the PMTs dynode voltage, resulting in the
-\textbf{H}igh\textbf{G}ain (HG) output. Three FADCs monitor the anode voltage to form the \textbf{L}ow \textbf{G}ain (LG) output, which can be analyzed if the 
+\textbf{H}igh \textbf{G}ain (HG) output. Three FADCs monitor the anode voltage to form the \textbf{L}ow \textbf{G}ain (LG) output, which can be analyzed if the 
 HG output exceeds a value of $2^{10}$ ADC counts and becomes saturated. This effectively enables the measurement of both large ($\geq\mathcal{O}(10^3)$ particles
 hitting the tank) as well as small shower signals ($\mathcal{O}(1)$ particle hitting the tank) with sufficient accuracy. Once an FADC bin has been recorded and 
 checked for possible triggers (c.f. \autoref{ssec:sd-triggers}) it is written to a ring buffer. If a trigger is issued, the corresponding chunk in the ring 
@@ -168,7 +168,7 @@ baseline between the flat front and end estimate is then interpolated based on t
 	\end{equation}
 	
 	In \autoref{eq:deposited-charge}, $T_k$ refers to the numerical value of bin $k$. Note that an exponential falloff term has to be added to account for the
-	decay in signal undershoot with a decay time of $\tau = \SI{45}{\micro\seconds}$. The value of $\tau$ is determined in \cite{tobiasBaselineUUB}. Assuming 
+	decay in signal undershoot with a decay time of $\tau = \SI{45}{\micro\second}$. The value of $\tau$ is determined in \cite{tobiasBaselineUUB}. Assuming 
 	the magnitude of the signal undershoot is directly proportional to the deposited charge $q$, a correction of the baseline thus becomes
 
 	\begin{equation}
@@ -212,13 +212,13 @@ subsequently filled with low-energy events, which (in general) didn't satisfy an
 
 By histogramming the maximum value (sum) of each trace, the plot shown in \autoref{fig:offline-vem-peak} (\autoref{fig:offline-vem-charge}) can be obtained. It 
 becomes apparent that the number of events per bin largely follows a power law with negative spectral index. This is expected considering the discussion in 
-\autoref{chap:physical-background}. Noteable are characteristic deviations from this powerlaw, as these contain information about \Ipeak  (\Qpeak):
+\autoref{chap:physical-background}. Noteable are characteristic deviations from this powerlaw, as these contain information about \Ipeak and \Qpeak:
 
 \begin{itemize}
 	\item Low energy events from e.g. $e^-$, $e^+$ that deposit their entire energy in the tank give rise to a surplus of events at lower ADC values.
 	\item A characteristic (muon) hump appears in the bins $20 - 70$. This surplus is caused by omni-directional muons impinging onto the detector. Since the 
 	energy deposited by such muons is roughly constant, the center of the muon hump serves as an estimate of \Ipeak (\Qpeak).
-	\item (Not depicted in \autoref{fig:offline-calibration}) In similar plots from related works (c.f. \cite{localStationCalib streich2018performance}) a
+	\item (Not depicted in \autoref{fig:offline-calibration}) In similar plots from related works (c.f. \cite{localStationCalib, streich2018performance}) a
 	drastic increase in bin occupations towards the tail end of the histograms can be observed. This is attributed to an increased bin size from \SI{1500}{\ADC} 
 	counts onwards, which reduces the amount of data per station sent to CDAS. In the example plots referenced here, a constant binning is chosen instead. 
 	This difference is mentioned here to avoid possible confusion. 
