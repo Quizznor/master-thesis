@@ -312,7 +312,7 @@ class RandomTrace():
             except IndexError:
                 raise RandomTraceError
 
-        print(f"\r[INFO] -- LOADING RANDOMS: {self.random_file}" + 20 * " ")
+        print(f"[INFO] -- LOADING RANDOMS: {self.random_file}" + 20 * " ")
 
         these_traces = np.loadtxt(RandomTrace.baseline_dir + self.station + "/" + self.random_file)
 

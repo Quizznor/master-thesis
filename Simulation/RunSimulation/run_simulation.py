@@ -32,8 +32,8 @@ EVENT_NAME = FILE_NAME.replace(".part", "")
 #   12496 18_18.5
 #   10000 17_17.5
 #    9998 17.5_18
-#    8646 19_19.5
 #    7232 18.5_19
+#    8646 19_19.5
 
 for j in range(ALREADY_PRESENT, ALREADY_PRESENT + NUM_RETHROWS):
     NAME = f"{EVENT_NAME}_{str(j).zfill(2)}"

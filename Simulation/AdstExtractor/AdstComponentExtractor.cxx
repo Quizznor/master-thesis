@@ -1,3 +1,6 @@
+// Pauls stuff
+#include <algorithm>
+
 // stl
 #include <iostream>
 #include <vector>
@@ -40,20 +43,6 @@
 using namespace std;
 using namespace utl;
 namespace fs = boost::filesystem;
-
-/**
-  // PYTHON CODE SNIPPET 
-  for iPMT in range(3):
-        pmt_traces = station.GetPMTTraces(component,iPMT+1)
-        calibrated_trace = np.array(pmt_traces.GetVEMComponent())
-        vem_peak = pmt_traces.GetPeak()
-        uncalibrated_trace = calibrated_trace*vem_peak
-        if station.IsHighGainSaturated():
-            dynode_anode_ratio = station.GetDynodeAnodeRatio(iPMT+1)
-            uncalibrated_trace = uncalibrated_trace / dynode_anode_ratio
-        traces.append(uncalibrated_trace)
-    return traces
-**/
 
 struct VectorWrapper
 {
@@ -133,10 +122,27 @@ struct VectorWrapper
 
 };
 
+// all stations that can theoretically be triggered
+std::vector<int> consideredStations{
+
+              // 4 rings with 5398 in center
+              4049, 4050, 4051, 4052, 4053,
+            4006, 4007, 4008, 4009, 4010, 4011,
+        5480, 5481, 5482, 5483, 5484, 5485, 5486,
+      5437, 5438, 5439, 5440, 5441, 5442, 5443, 5444,
+  5394, 5395, 5396, 5397, 5398, 5399, 5400, 5401, 5402,
+      5352, 5353, 5354, 5355, 5356, 5357, 5358, 5349,
+        5311, 5312, 5313, 5314, 5315, 5316, 5317,
+            5270, 5271, 5272, 5273, 5274, 5275,
+              5230, 5231, 5232, 5233, 5234
+};
+
 void ExtractDataFromAdstFiles(fs::path pathToAdst)
 {
-  const auto csvTraceFile = pathToAdst.parent_path().parent_path() / pathToAdst.filename().replace_extension("csv");
   // const auto csvTraceFile = pathToAdst.parent_path()/ pathToAdst.filename().replace_extension("csv"); // for testing
+  const auto csvTraceFile = pathToAdst.parent_path().parent_path() / pathToAdst.filename().replace_extension("csv");
+  const std::string csvLdfFileMisses = "/cr/tempdata01/filip/QGSJET-II/lateral_density_function/misses.csv";
+  const std::string csvLdfFileHits = "/cr/tempdata01/filip/QGSJET-II/lateral_density_function/hits.csv";
 
   // (2) start main loop
   RecEventFile     recEventFile(pathToAdst.string());
@@ -156,86 +162,125 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
     DetectorGeometry detectorGeometry = DetectorGeometry();                       // contains SPDistance
     recEventFile.ReadDetectorGeometry(detectorGeometry);
 
-    // binaries to calculate shower plane distance
-    const auto showerAxis = genShower.GetAxisSiteCS();
-    const auto showerCore = genShower.GetCoreSiteCS();
-    
-    // create csv file stream
+    // create csv file streams
     ofstream traceFile(csvTraceFile.string(), std::ios_base::app);
+    ofstream ldfFileMisses(csvLdfFileMisses, std::ios_base::app);
+    ofstream ldfFileHits(csvLdfFileHits, std::ios_base::app);
 
-    // loop over all stations
-    for (const auto& recStation : sdEvent.GetStationVector()) 
+    // binaries of the generated shower
+    // const auto SPD = detectorGeometry.GetStationAxisDistance(Id, Axis, Core);  // in m
+    const auto showerZenith = genShower.GetZenith() * (180 / 3.141593);           // in °
+    const auto showerEnergy = genShower.GetEnergy();                              // in eV
+    const auto showerAxis = genShower.GetAxisSiteCS();
+    const auto showerCore = genShower.GetCoreSiteCS();  
+
+    // get id of all stations that participated in trigger
+    // get no. of particles that received any particles
+    std::vector<int> recreatedStationIds;
+    std::vector<int> simulatedStationIds;
+
+    for (const auto& recStation : sdEvent.GetStationVector()){recreatedStationIds.push_back(recStation.GetId());}
+    for (const auto& genStation : sdEvent.GetSimStationVector()){simulatedStationIds.push_back(genStation.GetId());}
+
+    // const auto stationId = genStation.GetId();
+    // const auto nMuons = genStation.GetNumberOfMuons();
+    // const auto nElectrons = genStation.GetNumberOfElectrons();
+    // const auto nPhotons = genStation.GetNumberOfPhotons();
+    // std::vector<int> save{nMuons, nElectrons, nPhotons};
+    // stationParticles.push_back(save);
+
+
+    // loop over all considered Stations
+    for (const auto& consideredStationId : consideredStations)
     {
 
-      // calculate shower plane distance from generated shower parameters
-      const auto stationID = recStation.GetId();
-      const auto showerPlaneDistance = detectorGeometry.GetStationAxisDistance(stationID, showerAxis, showerCore);
+      // calculate shower plane distance for considered station
+      // WHY DOES THIS THROW AN std::out_of_range ??? vafanculo =(
+      // const auto showerPlaneDistance = detectorGeometry.GetStationAxisDistance(consideredStationId, showerAxis, showerCore);
+      
+      // TODO: FIX CALCULATION OF SHOWER PLANE DISTANCE
 
-      UInt_t nElectrons = 0;
-      UInt_t nMuons = 0;
-      UInt_t nPhotons = 0;
+      const int showerPlaneDistance = -1;
 
-      // get no. of particles for each station
-      for (const auto& genStation : sdEvent.GetSimStationVector())
+      // check if considered station has received particles
+      if (std::find(simulatedStationIds.begin(), simulatedStationIds.end(), consideredStationId) != simulatedStationIds.end())
       {
-        if (genStation.GetId() == stationID)
+        // simulated station is hit by the shower
+        //      -> write spd and theta to hits.csv
+        //      -> check if it actually triggered
+
+        const auto recIndex = std::find(recreatedStationIds.begin(), recreatedStationIds.end(), consideredStationId);
+        ldfFileHits << showerPlaneDistance << " " << showerZenith << std::endl;
+
+        if (recIndex != recreatedStationIds.end())
         {
-          nElectrons = genStation.GetNumberOfElectrons();
-          nMuons = genStation.GetNumberOfMuons();
-          nPhotons = genStation.GetNumberOfPhotons();
+          // station participated in the trigger
+          //    -> get injected particles from GenStation
+          //    -> do the rest of the SD reconstruction
 
-          std::cout << stationID << " ===> (" << nMuons << ", " << nElectrons << ", " << nPhotons << ") particles" << std::endl;
+          // fetch data from desired station
+          const auto stationId = recreatedStationIds[recIndex - recreatedStationIds.begin()];
+          const auto genStation = sdEvent.GetSimStationById(stationId);
+          const auto recStation = sdEvent.GetStationById(stationId);
+          
+          const auto nMuons = genStation->GetNumberOfMuons();
+          const auto nElectrons = genStation->GetNumberOfElectrons();
+          const auto nPhotons = genStation->GetNumberOfPhotons();
 
-          break;
-        }
-      }
+          std::cout << "Station " << stationId << " at SPD = " << showerPlaneDistance << "m received (" << nMuons << ", " << nElectrons << ", " << nPhotons << ") particles" << std::endl;
 
-      // loop over all PMTs
-      for (unsigned int PMT = 1; PMT < 4; PMT++)
-      {
-        // total trace container
-        VectorWrapper TotalTrace(2048,0);
-
-        // loop over all components (photon, electron, muons) -> NO HADRONIC COMPONENT
-        for (int component = ePhotonTrace; component <= eMuonTrace; component++)
-        {
-          const auto component_trace = recStation.GetPMTTraces((ETraceType)component, PMT);
-          auto CalibratedTrace = VectorWrapper( component_trace.GetVEMComponent() );
-
-          // make sure there exists a component of this type
-          if (CalibratedTrace.values.size() != 0)
+          // loop over all PMTs
+          for (unsigned int PMT = 1; PMT < 4; PMT++)
           {
-            const auto vem_peak = component_trace.GetPeak();
-            VectorWrapper UncalibratedTrace = CalibratedTrace * vem_peak;
-            TotalTrace = TotalTrace + UncalibratedTrace;
+            // total trace container
+            VectorWrapper TotalTrace(2048,0);
+
+            // loop over all components (photon, electron, muons) -> NO HADRONIC COMPONENT
+            for (int component = ePhotonTrace; component <= eMuonTrace; component++)
+            {
+              const auto component_trace = recStation->GetPMTTraces((ETraceType)component, PMT);
+              auto CalibratedTrace = VectorWrapper( component_trace.GetVEMComponent() );
+
+              // make sure there exists a component of this type
+              if (CalibratedTrace.values.size() != 0)
+              {
+                const auto vem_peak = component_trace.GetPeak();
+                VectorWrapper UncalibratedTrace = CalibratedTrace * vem_peak;
+                TotalTrace = TotalTrace + UncalibratedTrace;
+              }
+            }
+
+            // write all information to trace file
+            traceFile << stationId << " " << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " " << nMuons << " " << nElectrons << " " << nPhotons;
+
+            // "digitize" component trace...
+            // this used to be converted to VEM
+            const auto signal_start = recStation->GetSignalStartSlot();
+            const auto signal_end = recStation->GetSignalEndSlot();
+            const auto trace_vector = TotalTrace.get_trace(signal_start, signal_end);
+
+            // ... and write to disk
+            for (const auto& bin : trace_vector)
+            {
+              traceFile << " " << bin;
+            }
+
+            traceFile << "\n";
           }
         }
+      }
+      else
+      {
+        // simulated station is not hit by the shower
+        //   -> write spd and theta to misses.csv
 
-        // get true shower parameters (energy / zenith / spdistance)
-        const auto showerEnergy = genShower.GetEnergy();                        // in eV
-        const auto showerZenith = genShower.GetZenith() * (180 / 3.141593);     // in °
-        // const auto showerPlaneDistance = recStation.GetSPDistance();            // in m
-
-        // write all information to trace file
-        traceFile << stationID << " " << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " " << nMuons << " " << nElectrons << " " << nPhotons;
-
-        // "digitize" component trace...
-        // this used to be converted to VEM
-        const auto signal_start = recStation.GetSignalStartSlot();
-        const auto signal_end = recStation.GetSignalEndSlot();
-        const auto trace_vector = TotalTrace.get_trace(signal_start, signal_end);
-
-        // ... and write to disk
-        for (const auto& bin : trace_vector)
-        {
-          traceFile << " " << bin;
-        }
-
-        traceFile << "\n";
+        ldfFileMisses << showerPlaneDistance << " " << showerZenith << std::endl;
       }
     }
 
     traceFile.close();
+    ldfFileHits.close();
+    ldfFileMisses.close();
   }
 }
 
