@@ -83,11 +83,11 @@ Onboard electronics, the \textbf{U}pgraded \textbf{U}nified \textbf{B}oard (UUB)
 ($\approx\SI{8.33}{\nano\second}$ binning) \cite{verzi2013energy}. This is done in a two-fold way. Three FADCs digitize the PMTs dynode voltage, resulting in the
 \textbf{H}igh \textbf{G}ain (HG) output. Three FADCs monitor the anode voltage to form the \textbf{L}ow \textbf{G}ain (LG) output, which can be analyzed if the 
 HG output exceeds a value of $2^{10}$ ADC counts and becomes saturated. This effectively enables the measurement of both large ($\geq\mathcal{O}(10^3)$ particles
-hitting the tank) as well as small shower signals ($\mathcal{O}(1)$ particle hitting the tank) with sufficient accuracy. Once an FADC bin has been recorded and 
-checked for possible triggers (c.f. \autoref{ssec:sd-triggers}) it is written to a ring buffer. If a trigger is issued, the corresponding chunk in the ring 
-buffer ($\approx\SI{4.992}{\micro\second}$ (599 bins) before and $\SI{12.07}{\micro\second}$ (1448 bins) after a trigger, $2047 + 1$ bins total), the measured 
-trace, can be analyzed in order to calibrate a station in the array (\autoref{ssec:sd-calibration}) or processed by a higher-level CPU for event reconstruction 
-purposes (see \autoref{sec:event-reconstruction}).
+hitting the tank) as well as small shower signals ($\mathcal{O}(1)$ particle hitting the tank) with sufficient accuracy \cite{SDReconstruction}. Once an FADC bin 
+has been recorded and checked for possible triggers (c.f. \autoref{ssec:sd-triggers}) it is written to a ring buffer. If a trigger is issued, the corresponding 
+chunk in the ring buffer ($\approx\SI{4.992}{\micro\second}$ (599 bins) before and $\SI{12.07}{\micro\second}$ (1448 bins) after a trigger, $2047 + 1$ bins total),
+the measured trace, can be analyzed in order to calibrate a station in the array (\autoref{ssec:online-calibration}, \autoref{ssec:offline-calibration}) or 
+processed by a higher-level CPU for event reconstruction purposes (see \autoref{sec:event-reconstruction}).
 
 While each station is equipped with the same electronics and runs the same analysis software, variables like the position in the field, station age or slight 
 changes in the manufacturing/installation process cause different stations to age differently. Over the lifetime of the array such differences can sum into 
@@ -101,20 +101,14 @@ approach is chosen for calibration in the field (Online calibration), this stand
 reconstruction (Oflline calibration). In any case, both algorithms are listed in the following subsections and discussed in more detail in the referenced 
 literature.
 
-\subsection{Online calibration}
-\label{ssec:online-calibration}
-
-\subsubsection{Baseline estimation}
-\label{sssec:online-baseline-estimation}
-
-\subsubsection{Estimation of \Ipeak and \Qpeak}
-\label{sssec:offline-vem-calibration}
-
 \subsection{Offline calibration}
 \label{ssec:offline-calibration}
 
 \subsubsection{Baseline estimation}
 \label{sssec:offline-baseline-estimation}
+
+In order to estimate \Ipeak and \Qpeak of a WCD tank first the baseline - the average response in the absence of any signals - of each PMT needs to be determined. 
+All further analysis will then be based on the baseline-subtracted PMT data.
 
 For event reconstruction, a first baseline estimate of a WCD PMT is predicted by examining the beginning and end of a 2048 bin ($\SI{17.06}{\micro\second}$) long 
 trace. The mode $m$ as well as standard deviation $\sigma$ of the first (last) 300 bins is calculated. All bins larger or smaller than $m\pm2\sigma$ are truncated 
@@ -225,9 +219,9 @@ becomes apparent that the number of events per bin largely follows a power law w
 \end{itemize}
 
 In this fashion, the average response of the WCD to a through-going muon can be estimated by e.g. fitting a gaussian distribution to the muon hump. However, 
-there exists a systematic difference between the response to a \textit{vertical} or an \textit{omni-directional} muon. Consequently, correctional factors need
-to be applied to the analysis results. These have been determined in previous experiments \cite{allison2002surface}. Finally, one arrives at an estimate for 
-the conversion factor between ADC counts and VEM$_\text{Peak}$, VEM$_\text{Ch.}$.
+there exists a systematic difference between the response to a vertical or an omni-directional muon. Consequently, correctional factors need to be applied to the 
+analysis results. These have been determined in previous experiments \cite{allison2002surface}. Finally, one arrives at an estimate for the conversion factor 
+between ADC counts and VEM$_\text{Peak}$, VEM$_\text{Ch.}$.
 
 \begin{figure}
 	\begin{subfigure}[b]{0.5\textwidth}
@@ -247,6 +241,62 @@ the conversion factor between ADC counts and VEM$_\text{Peak}$, VEM$_\text{Ch.}$
 	\textbf{(b)} The conversion factor from recorded ADC values to \Qpeak is given from the histogrammed sum of each muon trace.}
 	\label{fig:offline-calibration}
 \end{figure}
+
+\subsection{Online calibration}
+\label{ssec:online-calibration}
+
+\subsubsection{Baseline estimation}
+\label{sssec:online-baseline-estimation}
+
+Each SD station has an autonomous estimate of its' three WCD PMT baselines. They are defined simply as the mean of all first bins for each trace contained in the 
+respective muon buffers (see \autoref{sssec:offline-vem-calibration}). This baseline estimate is used to set the thresholds of the hardware triggers discussed in 
+\autoref{chap:hardware-triggers}.
+
+\subsubsection{Estimation of \Ipeak and \Qpeak}
+\label{sssec:offline-vem-calibration}
+
+Due to the limited computational resources in each station, the determination of \Ipeak and \Qpeak at station-level is fairly naive. Nevertheless, the 
+$\sigma$-$\delta$-method shown here has proven to be incredibly robust over the lifetime of the SD array \cite{DesignReport}. 
+
+In the beginning, the to-be-estimated value $I_\text{Peak}^\text{est.}$ ($Q_\text{Peak}^\text{est.}$) is set to the same, predefined value for all PMTs. A simple
+single-bin calibration trigger requiring all available WCD PMTs to be above a threshold of $t_{70} = 1.75\,I_\text{Peak}^\text{est.}$ above baseline plus a given 
+PMT exceeding a $2.5\,I_\text{Peak}^\text{est.}$ is used to determine a calibration trigger rate. If for some reason not all three WCD PMTs are functional, the 
+thresholds are altered according to \autoref{tab:calib-trigger-thresholds}. What follows is an iterative procedure to approximate \Ipeak (\Qpeak) for each PMT 
+separately:
+
+\begin{enumerate}
+	\item Calculate the trigger rate of the calibration trigger over a time $t_\text{cal.} = \SI{5}{\second}$.
+	\item If the trigger rate is not within a rage of $\SI{70\pm2}{\hertz}$ alter $I_\text{Peak}^\text{est.}$ ($Q_\text{Peak}^\text{est.}$) by $\mp\SI{1}{\ADC}$.
+	\TODO
+\end{enumerate}
+
+\begin{table}
+	\begin{center}
+	\caption{Calibration trigger thresholds for every station}
+	\begin{tabular*}{0.4\textwidth}{@{\extracolsep{\fill}} cc}
+		\toprule
+		$n_\text{PMT}$ & $t_{70}$ \\
+		\midrule
+		1 & 2.85 \\
+		2 & 2.00 \\
+		3 & 1.75 \\
+		\bottomrule
+	\label{tab:calib-trigger-thresholds}
+	\end{tabular*}
+	\end{center}
+\end{table}
+
+
+What follows is an iterative procedure to approximate 
+\Ipeak (\Qpeak):Next, the 
+rate of events satisfying a calibration trigger is calculated across a calibration time $t_\text{cal}$.
+
+\begin{itemize}
+	\item 
+\end{itemize}
+
+\section{Trigger procedure}
+\label{sec:trigger-procedure}
 
 \section{Event Reconstruction}
 \label{sec:event-reconstruction}
