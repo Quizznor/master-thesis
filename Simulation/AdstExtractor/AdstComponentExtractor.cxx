@@ -122,7 +122,8 @@ struct VectorWrapper
 
 };
 
-// all stations that can theoretically be triggered
+// all stations that can theoretically be triggered during simulation. Since were throwing the simulated shower anywhere near Station 5398, this 
+// should ensure complete containment in most cases. Might not be true for highly inclined showers. Should in any case be a fair first estimate
 std::vector<int> consideredStations{
 
               // 4 rings with 5398 in center
@@ -182,13 +183,7 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
     for (const auto& recStation : sdEvent.GetStationVector()){recreatedStationIds.push_back(recStation.GetId());}
     for (const auto& genStation : sdEvent.GetSimStationVector()){simulatedStationIds.push_back(genStation.GetId());}
 
-    // const auto stationId = genStation.GetId();
-    // const auto nMuons = genStation.GetNumberOfMuons();
-    // const auto nElectrons = genStation.GetNumberOfElectrons();
-    // const auto nPhotons = genStation.GetNumberOfPhotons();
-    // std::vector<int> save{nMuons, nElectrons, nPhotons};
-    // stationParticles.push_back(save);
-
+    Detector detector = Detector();
 
     // loop over all considered Stations
     for (const auto& consideredStationId : consideredStations)
@@ -197,8 +192,6 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
       // calculate shower plane distance for considered station
       // WHY DOES THIS THROW AN std::out_of_range ??? vafanculo =(
       // const auto showerPlaneDistance = detectorGeometry.GetStationAxisDistance(consideredStationId, showerAxis, showerCore);
-      
-      // TODO: FIX CALCULATION OF SHOWER PLANE DISTANCE
 
       const int showerPlaneDistance = -1;
 
@@ -210,7 +203,7 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
         //      -> check if it actually triggered
 
         const auto recIndex = std::find(recreatedStationIds.begin(), recreatedStationIds.end(), consideredStationId);
-        ldfFileHits << showerPlaneDistance << " " << showerZenith << std::endl;
+        ldfFileHits << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << std::endl;
 
         if (recIndex != recreatedStationIds.end())
         {
@@ -274,7 +267,7 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
         // simulated station is not hit by the shower
         //   -> write spd and theta to misses.csv
 
-        ldfFileMisses << showerPlaneDistance << " " << showerZenith << std::endl;
+        ldfFileMisses << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << std::endl;
       }
     }
 
