@@ -261,19 +261,17 @@ $\sigma$-$\delta$-method shown here has proven to be incredibly robust over the 
 In the beginning, the to-be-estimated value $I_\text{Peak}^\text{est.}$ ($Q_\text{Peak}^\text{est.}$) is set to the same, predefined value for all PMTs. A simple
 single-bin calibration trigger requiring all available WCD PMTs to be above a threshold of $t_{70} = 1.75\,I_\text{Peak}^\text{est.}$ above baseline plus a given 
 PMT exceeding a $2.5\,I_\text{Peak}^\text{est.}$ is used to determine a calibration trigger rate. If for some reason not all three WCD PMTs are functional, the 
-thresholds are altered according to \autoref{tab:calib-trigger-thresholds}. What follows is an iterative procedure to approximate \Ipeak (\Qpeak) for each PMT 
-separately:
+thresholds are altered according to \autoref{tab:calib-trigger-thresholds}. What follows is an iterative procedure to approximate \Ipeak (\Qpeak):
 
 \begin{enumerate}
-	\item Calculate the trigger rate of the calibration trigger over a time $t_\text{cal.} = \SI{5}{\second}$.
-	\item If the trigger rate is not within a rage of $\SI{70\pm2}{\hertz}$ alter $I_\text{Peak}^\text{est.}$ ($Q_\text{Peak}^\text{est.}$) by $\mp\SI{1}{\ADC}$.
-	\TODO
+	\item Calculate the trigger rate $r_\text{cal.}$ of the calibration trigger over a time $t_\text{cal.} = \SI{5}{\second}$.
+	\item Adjust $I_\text{Peak}^\text{est.}$ ($Q_\text{Peak}^\text{est.}$) by $\SI{1}{\ADC}$ if $r_\text{cal.}$.
 \end{enumerate}
 
-\begin{table}
+\begin{table}[h]
 	\begin{center}
-	\caption{Calibration trigger thresholds for every station}
-	\begin{tabular*}{0.4\textwidth}{@{\extracolsep{\fill}} cc}
+	\caption{}
+	\begin{tabular*}{0.2\textwidth}{@{\extracolsep{\fill}} cc}
 		\toprule
 		$n_\text{PMT}$ & $t_{70}$ \\
 		\midrule
@@ -285,15 +283,6 @@ separately:
 	\end{tabular*}
 	\end{center}
 \end{table}
-
-
-What follows is an iterative procedure to approximate 
-\Ipeak (\Qpeak):Next, the 
-rate of events satisfying a calibration trigger is calculated across a calibration time $t_\text{cal}$.
-
-\begin{itemize}
-	\item 
-\end{itemize}
 
 \section{Trigger procedure}
 \label{sec:trigger-procedure}
