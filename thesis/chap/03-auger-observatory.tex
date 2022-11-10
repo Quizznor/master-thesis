@@ -96,8 +96,9 @@ the same WCD at different times. To account for this, measurements are standardi
 \textbf{E}quivalent of through-going \textbf{M}uons (VEM) that would result in the same signal strength. In this fashion, the maximum response that is generated 
 by a PMT from one vertically through-going muon is defined as \SI{1}{\Peak}. The total deposited charge (equivalent to the integral of the response) is defined 
 as \SI{1}{\Charge}. The conversion factor between ADC counts and VEM$_\text{Peak}$ and VEM$_\text{Ch.}$ (referred to as \Ipeak and \Qpeak respectively) is 
-estimated from data and continuously updated separately for each station. Note that due to the limited computational resources of the WCD, a simplified, rate-based
-approach is chosen for calibration in the field (Online calibration), this stands in contrast to the more physics-driven histogram method used during event 
+estimated from data and continuously updated separately for each station. Note that due to the limited computational resources of the WCD, as well as constraints
+on the amount of data that can be transmitted per station in the SD array (\SI{1200}{\bit\per\second}, \cite{localStationCalib}), a simplified, rate-based approach 
+is implemented for autonomous calibration in the field (Online calibration), this stands in contrast to the more physics-driven histogram method used during event 
 reconstruction (Oflline calibration). In any case, both algorithms are listed in the following subsections and discussed in more detail in the referenced 
 literature.
 
@@ -260,12 +261,15 @@ $\sigma$-$\delta$-method shown here has proven to be incredibly robust over the 
 
 In the beginning, the to-be-estimated value $I_\text{Peak}^\text{est.}$ ($Q_\text{Peak}^\text{est.}$) is set to the same, predefined value for all PMTs. A simple
 single-bin calibration trigger requiring all available WCD PMTs to be above a threshold of $t_{70} = 1.75\,I_\text{Peak}^\text{est.}$ above baseline plus a given 
-PMT exceeding a $2.5\,I_\text{Peak}^\text{est.}$ is used to determine a calibration trigger rate. If for some reason not all three WCD PMTs are functional, the 
+PMT exceeding $2.5\,I_\text{Peak}^\text{est.}$ is used to determine a calibration trigger rate. If for some reason not all three WCD PMTs are functional, the 
 thresholds are altered according to \autoref{tab:calib-trigger-thresholds}. What follows is an iterative procedure to approximate \Ipeak (\Qpeak):
 
 \begin{enumerate}
 	\item Calculate the trigger rate $r_\text{cal.}$ of the calibration trigger over a time $t_\text{cal.} = \SI{5}{\second}$.
-	\item Adjust $I_\text{Peak}^\text{est.}$ ($Q_\text{Peak}^\text{est.}$) by $\SI{1}{\ADC}$ if $r_\text{cal.}$.
+	\item Adjust $I_\text{Peak}^\text{est.}$ ($Q_\text{Peak}^\text{est.}$) by $\pm\delta$ if $\pm(r_\text{cal.}-\SI{70}{\hertz})\geq\SI{2}{\hertz}$, with
+	$\delta = \SI{1}{\ADC}$ initially.
+	\item If $t_\text{cal.} < \SI{60}{\second}$ increase $t_\text{cal.}$ by \SI{5}{\second}. If $\delta > \SI{0.1}{\ADC}$ decrease $\delta$ by \SI{0.1}{\ADC}.
+	\item While $t_\text{cal.} < \SI{60}{\second}$ jump to step 1, else return $I_\text{Peak}^\text{est.}$ ($Q_\text{Peak}^\text{est.}$).  
 \end{enumerate}
 
 \begin{table}[h]
@@ -284,10 +288,60 @@ thresholds are altered according to \autoref{tab:calib-trigger-thresholds}. What
 	\end{center}
 \end{table}
 
-\section{Trigger procedure}
-\label{sec:trigger-procedure}
-
 \section{Event Reconstruction}
 \label{sec:event-reconstruction}
 
-If an extensive air shower hits the array, 
+If an event has been detected (\autoref{ssec:trigger-procedure}) it is reconstructed at CDAS level, where information from all relevant detectors is conglomerated.
+From the reconstructed shower footprint in the SD array as well as the (if available) longitudinal profile measured by the FD stations follows an estimate on 
+arrival direction (\autoref{ssec:arrival-direction}), energy (\autoref{ssec:energy-estimation}) and primary particle (\autoref{ssec:primary-particle})
+
+\subsection{Trigger procedure}
+\label{ssec:trigger-procedure}
+
+The flux of cosmic rays espically at the highest energies is barely of the order of \SI[per-mode=reciprocal]{1}{\per\kilo\meter\squared\per\year} 
+\cite{hillas1984origin}. Consequently, most signals observed by the Auger observatory stem from low-energy cosmic muons and not extensive air showers. This is 
+reflected in the hierarchical structure of the triggers, which effectively reject such events. The overall event detection is split up into three tiers, T1, T2 and
+T3, where T3 implies the detection of an extensive air shower by either the FD or the SD (or both).
+
+\subsubsection{T1 trigger}
+\label{sssec:t1-trigger}
+
+T1 level triggers are implemented at the lowest possible level. This means each FD eye or each SD station raises T1 triggers autonomously. They serve as a first 
+indicator on whether or not a signal of any kind is present. For the most part, this is realised by checking for elevated signal strengths, i.e. for hot pixels 
+in a FD telescopes image or PMT outputs of an SD station that are significantly above baseline. The respective trigger thresholds are calibrated such that the 
+nominal trigger rate during operation is roughly \SI{100}{\hertz} \cite{FDReconstruction, SDReconstruction}. 
+
+\subsubsection{T2 trigger}
+\label{sssec:t2-trigger}
+
+T2 level triggers occur at the same location as T1-type triggers. They are different in their more stringent conditions on the signal size or shape. This for 
+example entails track shape identification for the FD telescopes, where straight tracks (see \autoref{fig:fd-straight-tracks}) of hot pixels are identified. 
+If the resulting pixel track passes an additional quality cut that rejects e.g. lightning signals, the T2 is directly promoted to a T3 trigger ($=\text{Event}$). 
+For the SD, an exact discussion of T2 triggers is given in \autoref{sec:hardware-triggers-implementation}. A single tank on average records T2-type events at a 
+rate of \SI{20}{\hertz} and forwards this information to the CDAS along with a timestamp. There, incoming information of all tanks is scanned for spatial and 
+temporal correlations, which indicate the presence of an extensive air shower. 
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.8\textwidth]{./imgs/FD_straight_tracks.png}
+	\caption{Fundamental shape of tracks that are considered straight. Image from \cite{FDReconstruction}.}
+	\label{fig:fd-straight-tracks}
+\end{figure}
+
+\subsubsection{T3 trigger}
+\label{sssec:t3-trigger}
+
+T3 type triggers, or event type triggers are (with the exception of FD events, which have already been discussed) built from distributions of at least three SD 
+stations next to each other that recorded a T2 trigger in close succession. Upon the detection of such a pattern a readout command is issued to nearby stations. If
+they observed a T1/T2 
+
+\subsection{Arrival direction}
+\label{ssec:arrival-direction}
+
+\subsection{Energy estimation}
+\label{ssec:energy-estimation}
+
+\subsection{Primary particle}
+\label{ssec:primary-particle}
+
+
