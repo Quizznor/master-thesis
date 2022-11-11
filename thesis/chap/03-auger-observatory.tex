@@ -332,16 +332,22 @@ temporal correlations, which indicate the presence of an extensive air shower.
 \label{sssec:t3-trigger}
 
 T3 type triggers, or event type triggers are (with the exception of FD events, which have already been discussed) built from distributions of at least three SD 
-stations next to each other that recorded a T2 trigger in close succession. Upon the detection of such a pattern a readout command is issued to nearby stations. If
-they observed a T1/T2 
+stations next to each other that recorded a T2 trigger in close temporal succession. Upon the detection of such a pattern a readout command is issued to all nearby 
+stations. Their recorded FADC traces as well as calibration information are forwared to CDAS if the station observed a T1/T2 event within an appropriate timespan 
+of order $\mathcal{O}(\SI{}{\micro\second})$ before or after the T3 pattern occurence. This enables an accurate reconstruction of the shower footprint by 
+including stations that did not participate in the initial T3 trigger. This extends to FD issued T3 triggers, where potential information from SD stations in the 
+vicinity of the FD-reconstructed shower core position is requested.
 
 \subsection{Arrival direction}
 \label{ssec:arrival-direction}
 
+
+
 \subsection{Energy estimation}
 \label{ssec:energy-estimation}
 
+
+
 \subsection{Primary particle}
 \label{ssec:primary-particle}
-
 

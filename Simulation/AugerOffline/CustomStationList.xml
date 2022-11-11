@@ -108,6 +108,7 @@
     <axes> 105 109 </axes>
     &UTMData;
   </station>
+-->
 
   <station id="4006">
     <northing unit="meter"> 6107426 </northing>
@@ -205,6 +206,7 @@
     &UTMData;
   </station>
 
+<!--
   <station id="4012">
     <northing unit="meter"> 6107428 </northing>
     <easting  unit="meter"> 480626 </easting>
@@ -796,6 +798,7 @@
     <axes> 106 110 </axes>
     &UTMData;
   </station>
+-->
 
   <station id="4049">
     <northing unit="meter"> 6108726 </northing>
@@ -877,6 +880,7 @@
     &UTMData;
   </station>
 
+<!--
   <station id="4054">
     <northing unit="meter"> 6108727 </northing>
     <easting  unit="meter"> 479878 </easting>
@@ -19692,6 +19696,7 @@
     <axes> 102 102 </axes>
     &UTMData;
   </station>
+-->
 
   <station id="5230">
     <northing unit="meter"> 6098333 </northing>
@@ -19773,6 +19778,7 @@
     &UTMData;
   </station>
 
+<!--
   <station id="5235">
     <northing unit="meter"> 6098333 </northing>
     <easting  unit="meter"> 479878 </easting>
@@ -20332,6 +20338,7 @@
     <axes> 102 103 </axes>
     &UTMData;
   </station>
+-->
 
   <station id="5270">
     <northing unit="meter"> 6099632 </northing>
@@ -20429,6 +20436,7 @@
     &UTMData;
   </station>
 
+<!--
   <station id="5276">
     <northing unit="meter"> 6099634 </northing>
     <easting  unit="meter"> 480628 </easting>
@@ -20988,6 +20996,7 @@
     <axes> 102 104 </axes>
     &UTMData;
   </station>
+-->
 
   <station id="5311">
     <northing unit="meter"> 6100933 </northing>
@@ -21020,7 +21029,7 @@
     <axes> 104 104 </axes>
     &UTMData;
   </station>
--->
+
   <station id="5313">
     <northing unit="meter"> 6100933 </northing>
     <easting  unit="meter"> 473878 </easting>
@@ -21068,7 +21077,7 @@
     <axes> 107 104 </axes>
     &UTMData;
   </station>
-<!--
+
   <station id="5316">
     <northing unit="meter"> 6100933 </northing>
     <easting  unit="meter"> 478376 </easting>
@@ -21101,6 +21110,7 @@
     &UTMData;
   </station>
 
+<!--
   <station id="5318">
     <northing unit="meter"> 6100933 </northing>
     <easting  unit="meter"> 481376 </easting>
@@ -21644,6 +21654,7 @@
     <axes> 102 105 </axes>
     &UTMData;
   </station>
+-->
 
   <station id="5352">
     <northing unit="meter"> 6102230 </northing>
@@ -21676,7 +21687,7 @@
     <axes> 104 105 </axes>
     &UTMData;
   </station>
--->
+
   <station id="5354">
     <northing unit="meter"> 6102232 </northing>
     <easting  unit="meter"> 473128 </easting>
@@ -21740,7 +21751,7 @@
     <axes> 108 105 </axes>
     &UTMData;
   </station>
-<!--
+
   <station id="5358">
     <northing unit="meter"> 6102232 </northing>
     <easting  unit="meter"> 479128 </easting>
@@ -21773,6 +21784,7 @@
     &UTMData;
   </station>
 
+<!--
   <station id="5360">
     <northing unit="meter"> 6102232 </northing>
     <easting  unit="meter"> 482126 </easting>
@@ -22316,6 +22328,7 @@
     <axes> 102 106 </axes>
     &UTMData;
   </station>
+-->
 
   <station id="5394">
     <northing unit="meter"> 6103531 </northing>
@@ -22348,7 +22361,7 @@
     <axes> 104 106 </axes>
     &UTMData;
   </station>
--->
+
   <station id="5396">
     <northing unit="meter"> 6103529 </northing>
     <easting  unit="meter"> 472378 </easting>
@@ -22428,7 +22441,7 @@
     <axes> 109 106 </axes>
     &UTMData;
   </station>
-<!--
+
   <station id="5401">
     <northing unit="meter"> 6103529 </northing>
     <easting  unit="meter"> 479878 </easting>
@@ -22460,6 +22473,7 @@
     <axes> 111 106 </axes>
     &UTMData;
   </station>
+<!--
 
   <station id="5403">
     <northing unit="meter"> 6103531 </northing>
@@ -23004,6 +23018,7 @@
     <axes> 103 107 </axes>
     &UTMData;
   </station>
+-->
 
   <station id="5437">
     <northing unit="meter"> 6104830 </northing>
@@ -23036,7 +23051,7 @@
     <axes> 105 107 </axes>
     &UTMData;
   </station>
--->
+ 
   <station id="5439">
     <northing unit="meter"> 6104829 </northing>
     <easting  unit="meter"> 473126 </easting>
@@ -23100,7 +23115,7 @@
     <axes> 109 107 </axes>
     &UTMData;
   </station>
-<!--
+ 
   <station id="5443">
     <northing unit="meter"> 6104828 </northing>
     <easting  unit="meter"> 479126 </easting>
@@ -23132,6 +23147,7 @@
     <axes> 111 107 </axes>
     &UTMData;
   </station>
+<!--
 
   <station id="5445">
     <northing unit="meter"> 6104829 </northing>
@@ -23692,6 +23708,7 @@
     <axes> 104 108 </axes>
     &UTMData;
   </station>
+-->
 
   <station id="5480">
     <northing unit="meter"> 6106127 </northing>
@@ -23724,7 +23741,7 @@
     <axes> 106 108 </axes>
     &UTMData;
   </station>
--->
+
   <station id="5482">
     <northing unit="meter"> 6106129 </northing>
     <easting  unit="meter"> 473876 </easting>
@@ -23772,7 +23789,7 @@
     <axes> 109 108 </axes>
     &UTMData;
   </station>
-<!--
+  
   <station id="5485">
     <northing unit="meter"> 6106127 </northing>
     <easting  unit="meter"> 478378 </easting>
@@ -23804,6 +23821,7 @@
     <axes> 111 108 </axes>
     &UTMData;
   </station>
+<!--
 
   <station id="5487">
     <northing unit="meter"> 6106127 </northing>

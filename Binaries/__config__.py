@@ -28,6 +28,7 @@ class GLOBAL():
     real_background             = False                                         # use random traces instead of gaussian baseline
     random_index                = None                                          # this file is used first when creating randoms
     force_inject                = None                                          # whether or not to force injection of muons
+    station                     = None                                          # what station to use for random traces
 
     # trace_opts                  = [q_peak, q_charge, length, sigma, mu, n_injected, downsampling]
 

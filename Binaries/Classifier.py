@@ -18,6 +18,7 @@ class Classifier():
     # test the trigger rate of the classifier on random traces
     def production_test(self, n_traces : int = GLOBAL.n_production_traces, **kwargs) -> None :
 
+        total_trace_duration = GLOBAL.n_bins * GLOBAL.single_bin_duration * n_traces
         self.start_time = str(datetime.now()).replace(" ", "-")[:-10]
         start = perf_counter_ns()
         n_total_triggered = 0
@@ -38,7 +39,8 @@ class Classifier():
                 mean_per_step_ms = elapsed / (batch + 1) * 1e-6
                 to_str = lambda x : f"{int(x//3600)}h {int((x % 3600)//60)}m"
 
-                print(f"{100 * (batch/n_traces):.2f}% - {mean_per_step_ms:.2f}ms/batch, ETA = {to_str((n_traces - batch) * mean_per_step_ms * 1e-3)} -> {n_total_triggered} trace(s) triggered         ", end ="\r")
+                rate = n_total_triggered / ((batch + 1)/n_traces * total_trace_duration)
+                print(f"{100 * (batch/n_traces):.2f}% - {mean_per_step_ms:.2f}ms/batch, ETA = {to_str((n_traces - batch) * mean_per_step_ms * 1e-3)} -> {n_total_triggered} trace(s) triggered, {rate:.2f} Hz      ", end ="\r")
 
                 traces, _ = RandomTraces.__getitem__(batch, full_trace = True)
                 trace = traces[0]
@@ -98,7 +100,8 @@ class Classifier():
         plt.xlabel("Bin / 8.33 ns")
         plt.xlim(0, x)
         plt.legend()
-
+        plt.tight_layout()
+        
         plt.savefig(f"/cr/users/filip/plots/production_tests/{self.name.replace('/','-')}/{self.start_time}/trigger_{index}")
         plt.cla()
 
@@ -524,7 +527,6 @@ class NNClassifier(Classifier):
         print(self.layers[layer], layer, kwargs)
         self.layers[layer](**kwargs)
 
-
 # Class for streamlined handling of multiple NNs with the same architecture
 class Ensemble(NNClassifier):
 
@@ -671,8 +673,8 @@ class Ensemble(NNClassifier):
 # Information on magic numbers comes from Davids Mail on 03.03.22 @ 12:30pm
 class HardwareClassifier(Classifier):
 
-    def __init__(self) : 
-        super().__init__("HardwareClassifier")
+    def __init__(self, name : str = False) : 
+        super().__init__(name or "HardwareClassifier")
 
     def __call__(self, trace : np.ndarray) -> bool : 
         

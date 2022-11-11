@@ -1,4 +1,4 @@
-JobBatchName    = trigger_studies-create_training_data   
+JobBatchName    = create_training_data_18.5-19
 Executable      = /cr/users/filip/Simulation/RunSimulation/run_simulation.py 
 
 # error           = /cr/users/filip/Simulation/condor/errors-$(Process).err

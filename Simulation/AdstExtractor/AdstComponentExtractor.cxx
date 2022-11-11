@@ -132,7 +132,7 @@ std::vector<int> consideredStations{
         5480, 5481, 5482, 5483, 5484, 5485, 5486,
       5437, 5438, 5439, 5440, 5441, 5442, 5443, 5444,
   5394, 5395, 5396, 5397, 5398, 5399, 5400, 5401, 5402,
-      5352, 5353, 5354, 5355, 5356, 5357, 5358, 5349,
+      5352, 5353, 5354, 5355, 5356, 5357, 5358, 5359,
         5311, 5312, 5313, 5314, 5315, 5316, 5317,
             5270, 5271, 5272, 5273, 5274, 5275,
               5230, 5231, 5232, 5233, 5234
@@ -189,36 +189,36 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
     for (const auto& consideredStationId : consideredStations)
     {
 
-      // calculate shower plane distance for considered station
-      // WHY DOES THIS THROW AN std::out_of_range ??? vafanculo =(
-      // const auto showerPlaneDistance = detectorGeometry.GetStationAxisDistance(consideredStationId, showerAxis, showerCore);
+      const auto genIndex = std::find(simulatedStationIds.begin(), simulatedStationIds.end(), consideredStationId);
 
-      const int showerPlaneDistance = -1;
+      // calculate shower plane distance for considered station
+      const auto showerPlaneDistance = detectorGeometry.GetStationAxisDistance(consideredStationId, showerAxis, showerCore);
 
       // check if considered station has received particles
-      if (std::find(simulatedStationIds.begin(), simulatedStationIds.end(), consideredStationId) != simulatedStationIds.end())
+      if (genIndex != simulatedStationIds.end())
       {
         // simulated station is hit by the shower
         //      -> write spd and theta to hits.csv
         //      -> check if it actually triggered
 
-        const auto recIndex = std::find(recreatedStationIds.begin(), recreatedStationIds.end(), consideredStationId);
-        ldfFileHits << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << std::endl;
+        const auto genIndex = std::find(simulatedStationIds.begin(), simulatedStationIds.end(), consideredStationId);
+        const auto stationId = simulatedStationIds[genIndex - simulatedStationIds.begin()];
+        const auto genStation = sdEvent.GetSimStationById(stationId);
 
-        if (recIndex != recreatedStationIds.end())
+        const auto nMuons = genStation->GetNumberOfMuons();
+        const auto nElectrons = genStation->GetNumberOfElectrons();
+        const auto nPhotons = genStation->GetNumberOfPhotons();
+
+        ldfFileHits << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " " << nMuons << ", " << nElectrons << ", " << nPhotons << std::endl;
+
+        if (std::find(recreatedStationIds.begin(), recreatedStationIds.end(), consideredStationId) != recreatedStationIds.end())
         {
           // station participated in the trigger
           //    -> get injected particles from GenStation
           //    -> do the rest of the SD reconstruction
 
           // fetch data from desired station
-          const auto stationId = recreatedStationIds[recIndex - recreatedStationIds.begin()];
-          const auto genStation = sdEvent.GetSimStationById(stationId);
           const auto recStation = sdEvent.GetStationById(stationId);
-          
-          const auto nMuons = genStation->GetNumberOfMuons();
-          const auto nElectrons = genStation->GetNumberOfElectrons();
-          const auto nPhotons = genStation->GetNumberOfPhotons();
 
           std::cout << "Station " << stationId << " at SPD = " << showerPlaneDistance << "m received (" << nMuons << ", " << nElectrons << ", " << nPhotons << ") particles" << std::endl;
 
@@ -267,7 +267,7 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
         // simulated station is not hit by the shower
         //   -> write spd and theta to misses.csv
 
-        ldfFileMisses << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << std::endl;
+        ldfFileMisses << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " 0 0 0" << std::endl;
       }
     }
 
