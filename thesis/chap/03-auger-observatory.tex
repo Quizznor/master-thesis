@@ -343,12 +343,32 @@ stations in the vicinity of the FD-reconstructed shower core position is request
 
 The shower footprint measured by the SD (example given in \autoref{fig:shower-footprint}) corresponds to the projection of the shower plane onto the detector 
 plane, i.e. the ground. It can be assumed that the shower plane has a fixed (hyperbolic \cite{bonifazi2005angular}) shape and propagates at the speed of light 
-along the primary particles trajectory. With this knowledge, estimating the arrival direction becomes a task of minimizing the difference between measured to an
-expected arrival time obtained from an example shower axis anchored at the reconstructed shower core for each station. The axis for which the summed differences is 
-minimal is determined to be the reconstructed shower axis, and the arrival direction of the primary particle.
+along the primary particles trajectory. With this knowledge, estimating the arrival direction becomes a task of minimizing the difference between measured and
+expected arrival times given by an example shower axis anchored at the reconstructed shower core. The axis for which the summed differences is minimal is 
+determined to be the reconstructed shower axis, and the arrival direction of the primary particle.
 
 Naturally, the expected variance on the reconstructed $\phi$ and $\theta$ diminishes the more stations participate in the combined fit. The angular resolution thus
 decreases for larger energies of the primary particle. This can be seen in \autoref{fig:angular-resolution}.
+
+\begin{figure}
+	\begin{subfigure}[b]{0.5\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{./plots/shower_footprint.png}
+		\caption{\textbf{SD shower footprint}}
+		\label{fig:shower-footprint}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.5\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{./plots/angular_resolution.png}
+		\caption{\textbf{Angular resolution}}
+		\label{fig:angular-resolution}
+	\end{subfigure}
+	\caption{
+	\textbf{(a)} . 
+	\textbf{(b)} .}
+	\label{fig:offline-calibration}
+\end{figure}
 
 \subsection{Energy estimation}
 \label{ssec:energy-estimation}

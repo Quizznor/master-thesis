@@ -275,7 +275,6 @@ class SignalBatch():
                 signal = [np.array([float(x) for x in line.split()]) for line in file.readlines()]
 
         for station in range(0, len(signal), 3):
-            print("Yield station")
             yield np.array([signal[station], signal[station + 1], signal[station + 2]]) 
 
 # container for gaussian baseline
@@ -285,7 +284,6 @@ class Baseline():
         return np.random.normal(mu, sigma, (3, length))
 
 # container for random traces
-# TODO pair with q_peak and q_charge values
 class RandomTrace():
 
     baseline_dir : str = "/cr/tempdata01/filip/iRODS/"                              # storage path of the station folders
