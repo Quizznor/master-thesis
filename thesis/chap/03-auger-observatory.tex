@@ -334,14 +334,21 @@ temporal correlations, which indicate the presence of an extensive air shower.
 T3 type triggers, or event type triggers are (with the exception of FD events, which have already been discussed) built from distributions of at least three SD 
 stations next to each other that recorded a T2 trigger in close temporal succession. Upon the detection of such a pattern a readout command is issued to all nearby 
 stations. Their recorded FADC traces as well as calibration information are forwared to CDAS if the station observed a T1/T2 event within an appropriate timespan 
-of order $\mathcal{O}(\SI{}{\micro\second})$ before or after the T3 pattern occurence. This enables an accurate reconstruction of the shower footprint by 
-including stations that did not participate in the initial T3 trigger. This extends to FD issued T3 triggers, where potential information from SD stations in the 
-vicinity of the FD-reconstructed shower core position is requested.
+of order $\mathcal{O}(\SI{}{\micro\second})$ before or after the T3 pattern occurence. Such a modus operandi enables an accurate reconstruction of the shower 
+footprint by including stations that did not participate in the initial T3 trigger. This extends to FD issued T3 triggers, where potential information from SD 
+stations in the vicinity of the FD-reconstructed shower core position is requested.
 
-\subsection{Arrival direction}
+\subsection{Core position \& Arrival direction}
 \label{ssec:arrival-direction}
 
+The shower footprint measured by the SD (example given in \autoref{fig:shower-footprint}) corresponds to the projection of the shower plane onto the detector 
+plane, i.e. the ground. It can be assumed that the shower plane has a fixed (hyperbolic \cite{bonifazi2005angular}) shape and propagates at the speed of light 
+along the primary particles trajectory. With this knowledge, estimating the arrival direction becomes a task of minimizing the difference between measured to an
+expected arrival time obtained from an example shower axis anchored at the reconstructed shower core for each station. The axis for which the summed differences is 
+minimal is determined to be the reconstructed shower axis, and the arrival direction of the primary particle.
 
+Naturally, the expected variance on the reconstructed $\phi$ and $\theta$ diminishes the more stations participate in the combined fit. The angular resolution thus
+decreases for larger energies of the primary particle. This can be seen in \autoref{fig:angular-resolution}.
 
 \subsection{Energy estimation}
 \label{ssec:energy-estimation}
