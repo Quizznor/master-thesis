@@ -292,8 +292,10 @@ thresholds are altered according to \autoref{tab:calib-trigger-thresholds}. What
 \label{sec:event-reconstruction}
 
 If an event has been detected (\autoref{ssec:trigger-procedure}) it is reconstructed at CDAS level, where information from all relevant detectors is conglomerated.
-From the reconstructed shower footprint in the SD array as well as the (if available) longitudinal profile measured by the FD stations follows an estimate on 
-arrival direction (\autoref{ssec:arrival-direction}), energy (\autoref{ssec:energy-estimation}) and primary particle (\autoref{ssec:primary-particle})
+From the observed shower footprint in the SD array as well as the (if available) longitudinal profile measured by the FD stations follows an estimate on arrival 
+direction (\autoref{ssec:arrival-direction}), energy (\autoref{ssec:energy-estimation}) and primary particle (\autoref{ssec:primary-particle}). As the work 
+presented in this thesis solely deals with the surface detector of the Auger observatory, this section focuses heavily on the SD reconstruction. Addendums towards
+FD reconstruction are given where needed.
 
 \subsection{Trigger procedure}
 \label{ssec:trigger-procedure}
@@ -331,24 +333,39 @@ temporal correlations, which indicate the presence of an extensive air shower.
 \subsubsection{T3 trigger}
 \label{sssec:t3-trigger}
 
-T3 type triggers, or event type triggers are (with the exception of FD events, which have already been discussed) built from distributions of at least three SD 
+T3 type triggers, or event type triggers are (with the exception of FD events, which have been discussed above) built from distributions of at least three SD 
 stations next to each other that recorded a T2 trigger in close temporal succession. Upon the detection of such a pattern a readout command is issued to all nearby 
 stations. Their recorded FADC traces as well as calibration information are forwared to CDAS if the station observed a T1/T2 event within an appropriate timespan 
 of order $\mathcal{O}(\SI{}{\micro\second})$ before or after the T3 pattern occurence. Such a modus operandi enables an accurate reconstruction of the shower 
 footprint by including stations that did not participate in the initial T3 trigger. This extends to FD issued T3 triggers, where potential information from SD 
 stations in the vicinity of the FD-reconstructed shower core position is requested.
 
-\subsection{Core position \& Arrival direction}
+\subsection{Core position}
+\label{ssec:core-position}
+
+All reconstruction algorithms presented in the following subsections rely in one form or the other on an accurate determination of where the shower was recorded 
+above the observatory. Hence the center of the shower footprint, the shower core, must be estimated at the beginning of the analysis chain. 
+
+Without any prior knowledge, a first guess as to where the shower core is located can be made by calculating the barycenter of all participating stations. In this 
+fashion, a weighted mean of all station locations is constructed weights equal to the square root of the corresponding signal strength \cite{SDReconstruction}.
+
+The presented approach fails if only parts of the shower are contained within the SD event. This occurs espically at the edges of the SD array, or in the vicinity
+of faulty WCDs. A fiducial trigger, $N$T5 is employed to mitigate this problem. $N$T5 requires at least $N$ active stations around the SD detector that recorded 
+the largest signal \cite{abraham2010trigger}.
+
+\subsection{Arrival direction}
 \label{ssec:arrival-direction}
 
 The shower footprint measured by the SD (example given in \autoref{fig:shower-footprint}) corresponds to the projection of the shower plane onto the detector 
 plane, i.e. the ground. It can be assumed that the shower plane has a fixed (hyperbolic \cite{bonifazi2005angular}) shape and propagates at the speed of light 
 along the primary particles trajectory. With this knowledge, estimating the arrival direction becomes a task of minimizing the difference between measured and
-expected arrival times given by an example shower axis anchored at the reconstructed shower core. The axis for which the summed differences is minimal is 
-determined to be the reconstructed shower axis, and the arrival direction of the primary particle.
+expected arrival times given by an example shower axis anchored at the reconstructed shower core. The axis for which the summed differences is minimal corresponds
+to the most likely arrival direction of the primary particle.
 
 Naturally, the expected variance on the reconstructed $\phi$ and $\theta$ diminishes the more stations participate in the combined fit. The angular resolution thus
-decreases for larger energies of the primary particle. This can be seen in \autoref{fig:angular-resolution}.
+decreases for larger energies of the primary particle. This can be seen in \autoref{fig:angular-resolution}. In any case, the angular resolution even at smaller 
+energies is better than $2.2^\circ$. For hybrid events, where the shower has also been detected by the FD, the angular resolution is greatly increased to about 
+$0.6^\circ$ \cite{bonifazi2005angular}.
 
 \begin{figure}
 	\begin{subfigure}[b]{0.5\textwidth}
@@ -365,8 +382,10 @@ decreases for larger energies of the primary particle. This can be seen in \auto
 		\label{fig:angular-resolution}
 	\end{subfigure}
 	\caption{
-	\textbf{(a)} . 
-	\textbf{(b)} .}
+	\textbf{(a)} An example shower footprint recorded by the individual SD tanks (circles). The measured signal strength and arrival time is encoded in the	size 
+	and color for each station. Tanks that haven't recorded any signal are shown colorless. For a subset of stations the respective VEM trace and consequently the
+	propagation of the signal in the SD detector is shown in the inset plot on the top right.
+	\textbf{(b)} The angular resolution as a function of $\theta$ for energies exceeding \SI{3}{\exa\electronvolt}. Image from \cite{bonifazi2005angular}.}
 	\label{fig:offline-calibration}
 \end{figure}
 
