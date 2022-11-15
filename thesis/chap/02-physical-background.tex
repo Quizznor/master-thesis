@@ -22,15 +22,80 @@ the highest energies.
 In the meantime, numerous results from different cosmic ray detectors all over the globe have helped propel the related fields of particle physics, astro physics 
 and cosmology to new insights. Observations from cosmic ray physics serve as a valuable cross-check to the hadronic interaction models developed e.g. at CERN 
 \cite{ostapchenko2007status}. New theories modeling the final moments in the life of stars have arisen thanks to results from e.g. Kamiokande 
-\cite{goldman1988implications}. 
+\cite{goldman1988implications}. Last but not least publications by the Pierre Auger collaboration regarding the CR energy spectrum and flux help refine knowledge of 
+our cosmic neighbourhood \cite{abraham2010measurement, aab2015searches}.
+
+\section{Origin}
+\label{sec:cr-origin}
+
+Cosmic rays whose kinetic energy far exceeds their rest energy must originate from some of the most extreme environments in space. In particular, regions with 
+large (either in field strength or spatial extent) electromagnetic fields, where charged particles can be accelerated to significant fractions of to the speed of 
+light, via the Lorentz force. 
+
+\subsection{Acceleration}
+\label{ssec:cr-acceleration}
+
+The question of how particles gain the extremely high kinetic energies that are observed on earth is an active area of research. Since the discovery of cosmic
+rays, several candidate mechanisms and interactions have been identified.
+
+\subsubsection{Fermi Type I}
+\label{sssec:cr-fermi-i}
+
+\textbf{S}uper \textbf{N}ova \textbf{R}emnants (SNR) typically feature a plasma sphere propagating outwards from the former stars core into the 
+\textbf{I}nter\textbf{S}tellar \textbf{M}edium (ISM), in this region of plasma any magnetic field lines will be comoving, according to Alfvén's theorem 
+\cite{alfven1942existence}. First realised by its' namesake Fermi, such SNR shock fronts serve as source of high-energy CRs \cite{fermi1949origin}.
+
+If a low-energy particle is injected into the SNR shock front, it will eventually be reflected by the local $\vec{B}$-field, analogous to a magnetic mirror, or 
+elastic collision. If $\frac{\text{d}\mathbf{B}}{\text{d}t} = 0$, this does not cause the particle to gain any energy, espically because $W = \vec{F}_\text{L} \cdot
+\vec{r} \propto (\vec{v}\times\vec{B})\,\cdot\,\vec{r} = 0$. However, because the $\vec{B}$-field is moving radially outward, a net energy of 
+
+\begin{equation}
+\label{eq:fermi-energy-gain}
+\Delta E = \beta_\text{SNR} \cdot E_0
+\end{equation}
+
+arises, where $\beta_\text{SNR} = v_\text{SNR}\,/\,c$ and $E_0$ are the velocity of the shock-front and the initial energy of the particle. From chapter 7 in 
+\cite{fermi1949origin} it follows that ionization losses within the shock front are not completely negligible. Hence a particle must have a sufficient energy to 
+have a net positive change according to \autoref{eq:fermi-energy-gain}. This is the injection energy, and of the order of \SI{200}{\mega\electronvolt} for 
+protons. Also, because typically $\beta_\text{SNR} \leq 0.10$ a single acceleration cycle is not enough to explain the CR energies observed on earth. Instead, 
+multiple cycles are needed. This requires the need for additional, focusing $\vec{B}$-fields, provided for example by the ISM, which alter the trajectory of 
+injected particles such that they can be reflected off the shock-front again.
+
+With each cycle, the particles rigidity $R = |\vec{p}|c\,/\,q$ increases, until its gyroradius $\rho = R / |\vec{B}|$ exceeds the spatial extent of the focusing 
+$\vec{B}$-field and the particle escapes into space. With an effective ejection probability $p$ per cycle, the energy after $n$ cycles and the expected energy 
+spectrum, $\Upphi(E)$, becomes
+
+\begin{equation}
+\label{eq:fermi-energy}
+E(n) = E_0\;\left( 1 + \beta_\text{SNR} \right)^n.
+\end{equation}
+
+\begin{align*}
+                                                        N(n) &= N_0 \;\left( 1 - p \right)^n \\
+\Leftrightarrow\;\;\;\;\,\log\left( \frac{N(n)}{N_0} \right) &= n\cdot\log\left( 1-p \right) \\ 
+\Leftrightarrow\qquad\qquad\qquad\;\;                        &= \log\left( \frac{E(n)}{E_0} \right) \frac{\log 1-p}{\log 1+\beta_\text{SNR}} \\
+\Leftrightarrow\qquad\qquad                             N(E) &= N_0\cdot\left( \frac{E(n)}{E_0} \right)^{\log(1 - p)\;/\;\log(1 + \beta_\text{SNR})} \\
+\Rightarrow \qquad\qquad                           \Upphi(E) &= \frac{ \text{d}N }{ \text{d}E } \propto E(n)^{\alpha - 1}, \numberthis\label{eq:fermi-spectrum}
+\end{align*}
+
+where $\alpha = \frac{\log(1 - p)}{\log(1 + \beta_\text{SNR})}$ in \autoref{eq:fermi-spectrum} is a spectral coefficient whose exact value will depend on the age 
+of the SNR ($\beta_\text{SNR}$ decreases with age), the injected particle (different primaries have different injection energies and ejection probabilities), as 
+well as many other factors that are often not known a priori. In any case, it can be observed that the expected spectrum is a power law in the ranges from 
+injection energy to maximum energy, which arises due to the finite lifetime of the SNR.
 
 
-\section{Origin \& Composition}
-\label{sec:cr-origin-and-composition}
+\subsubsection{Fermi Type II}
+\label{sssec:cr-fermi-ii}
 
-Cosmic rays whose kinetic energy far exceeds their rest energy must originate from some of the most extreme environments in space. In particular,
-regions with a large (either in field strength or spatial extent) electromagnetic field, where charged particles are accelerated to speeds very
-close to the speed of light, $c$, via e.g. the Lorentz force.
+
+
+
+
+
+\subsection{Composition}
+\label{ssec:cr-composition}
+
+
 
 \section{Energy spectrum}
 \label{sec:cr-energy-spectrum}
