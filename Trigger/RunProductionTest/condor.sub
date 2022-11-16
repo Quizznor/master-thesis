@@ -1,0 +1,15 @@
+JobBatchName    = run-production-test-nuria-10adc
+Executable      = /cr/users/filip/Trigger/RunProductionTest/run_production_test.py
+
+error           = /cr/users/filip/Trigger/RunProductionTest/output/errors.err
+output          = /cr/users/filip/Trigger/RunProductionTest/output/output-10.out
+# log             = /cr/users/filip/Trigger/RunProductionTest/output/logfle.log
+
+arguments       = $(Process)   
+request_memory  = 1.5G
+max_idle        = 150
+
+# NURIA - 798
+# LOQUI - 801
+
+queue 798
