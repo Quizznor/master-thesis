@@ -4,9 +4,8 @@
 \label{chap:physical-background}
 
 This chapter aims to introduce the general physical principles underlaying the analysis presented in this work. For this purpose, an overview of the origin, 
-composition and energy spectrum of cosmic rays is given in \autoref{ssec:cr-history}, \autoref{sec:cr-origin-and-composition}, and \autoref{sec:cr-energy-spectrum}
-respectively. Their interactions with other matter, the physics of extensive air showers and their possible detection methods are listed in 
-\autoref{sec:extensive-air-showers}.
+composition and energy spectrum of cosmic rays is given in \autoref{ssec:cr-history}, \autoref{sec:cr-origin}, and \autoref{sec:cr-energy-spectrum} respectively. 
+Their interactions with other matter, the physics of extensive air showers and their possible detection methods are listed in \autoref{sec:extensive-air-showers}.
 
 \section{History}
 \label{ssec:cr-history}
@@ -28,42 +27,46 @@ our cosmic neighbourhood \cite{abraham2010measurement, aab2015searches}.
 \section{Origin}
 \label{sec:cr-origin}
 
+\subsection{Acceleration}
+\label{ssec:cr-acceleration}
+
 Cosmic rays whose kinetic energy far exceeds their rest energy must originate from some of the most extreme environments in space. In particular, regions with 
 large (either in field strength or spatial extent) electromagnetic fields, where charged particles can be accelerated to significant fractions of to the speed of 
 light, via the Lorentz force. 
 
-\subsection{Acceleration}
-\label{ssec:cr-acceleration}
+The question how particles are accelerated to the extremely high energies observed on earth is an active area of research. Since the discovery of cosmic rays, 
+several candidate mechanisms and interactions have been identified and will be discussed now.
 
-The question of how particles gain the extremely high kinetic energies that are observed on earth is an active area of research. Since the discovery of cosmic
-rays, several candidate mechanisms and interactions have been identified.
-
-\subsubsection{Fermi Type I}
+\subsubsection{Diffusive shock acceleration (Fermi I)}
 \label{sssec:cr-fermi-i}
 
 \textbf{S}uper \textbf{N}ova \textbf{R}emnants (SNR) typically feature a plasma sphere propagating outwards from the former stars core into the 
-\textbf{I}nter\textbf{S}tellar \textbf{M}edium (ISM), in this region of plasma any magnetic field lines will be comoving, according to Alfvén's theorem 
-\cite{alfven1942existence}. First realised by its' namesake Fermi, such SNR shock fronts serve as source of high-energy CRs \cite{fermi1949origin}.
+\textbf{I}nter \textbf{S}tellar \textbf{M}edium (ISM), in this region of plasma any magnetic field lines will be comoving, according to Alfvén's theorem 
+\cite{alfven1942existence}. First realised by Fermi, such SNR shock fronts serve as source of high-energy CRs \cite{fermi1949origin}.
 
-If a low-energy particle is injected into the SNR shock front, it will eventually be reflected by the local $\vec{B}$-field, analogous to a magnetic mirror, or 
-elastic collision. If $\frac{\text{d}\mathbf{B}}{\text{d}t} = 0$, this does not cause the particle to gain any energy, espically because $W = \vec{F}_\text{L} \cdot
-\vec{r} \propto (\vec{v}\times\vec{B})\,\cdot\,\vec{r} = 0$. However, because the $\vec{B}$-field is moving radially outward, a net energy of 
+If a low-energy particle is injected into the SNR shock front, it will eventually be reflected by the local $\vec{B}$-field. If the diffusion length within the
+plasma is much smaller than the spatial extent of the SNR, the shock front can be modelled as a plane, and the process is analogous to an elastic reflection 
+against a wall. Consequently, if $\frac{\text{d}\vec{B}}{\text{d}t} = 0$, this does not cause the particle to gain any energy, espically because 
+$W = \vec{F}_\text{L} \cdot \vec{r} \propto (\vec{v}\times\vec{B})\,\cdot\,\vec{r} = 0$. However, because the $\vec{B}$-field is moving radially outward alongside 
+the plasma, a net energy gain of 
 
 \begin{equation}
 \label{eq:fermi-energy-gain}
-\Delta E = \beta_\text{SNR} \cdot E_0
+\Delta E = +\beta_\text{SNR} \cdot E_0
 \end{equation}
 
-arises, where $\beta_\text{SNR} = v_\text{SNR}\,/\,c$ and $E_0$ are the velocity of the shock-front and the initial energy of the particle. From chapter 7 in 
-\cite{fermi1949origin} it follows that ionization losses within the shock front are not completely negligible. Hence a particle must have a sufficient energy to 
-have a net positive change according to \autoref{eq:fermi-energy-gain}. This is the injection energy, and of the order of \SI{200}{\mega\electronvolt} for 
-protons. Also, because typically $\beta_\text{SNR} \leq 0.10$ a single acceleration cycle is not enough to explain the CR energies observed on earth. Instead, 
-multiple cycles are needed. This requires the need for additional, focusing $\vec{B}$-fields, provided for example by the ISM, which alter the trajectory of 
-injected particles such that they can be reflected off the shock-front again.
+arises, where $\beta_\text{SNR} = |\vec{v}_\text{SNR}|\,/\,c$ and $E_0$ are the velocity of the shock-front and the initial energy of the particle. From chapter 7 
+in \cite{fermi1949origin} it follows that ionization losses within the shock front are not completely negligible. Hence a particle must have a sufficient energy 
+such that $\Delta E$ in \autoref{eq:fermi-energy-gain} exceeds possible ionization losses. The corresponding threshold for the primary energy above which 
+acceleration occurs is dubbed the injection energy, and is of the order of \SI{200}{\mega\electronvolt} for protons. 
+
+Furthermore, because typically $\beta_\text{SNR} \leq 0.10$ a single acceleration cycle is not enough to explain the CR energies observed on earth. Instead, 
+multiple cycles are needed. This requires additional, focusing $\vec{B}$-fields, provided for example by the ISM, which alter the trajectory of injected particles 
+such that they can be reflected off the shock-front again.
 
 With each cycle, the particles rigidity $R = |\vec{p}|c\,/\,q$ increases, until its gyroradius $\rho = R / |\vec{B}|$ exceeds the spatial extent of the focusing 
-$\vec{B}$-field and the particle escapes into space. With an effective ejection probability $p$ per cycle, the energy after $n$ cycles and the expected energy 
-spectrum, $\Upphi(E)$, becomes
+$\vec{B}$-field and the particle escapes into space. With an effective ejection probability $p$ per cycle, the energy after $n$ cycles and the expected flux w.r.t
+energy, $\Upphi(E)$, becomes roughly
 
 \begin{equation}
 \label{eq:fermi-energy}
@@ -73,22 +76,76 @@ E(n) = E_0\;\left( 1 + \beta_\text{SNR} \right)^n.
 \begin{align*}
                                                         N(n) &= N_0 \;\left( 1 - p \right)^n \\
 \Leftrightarrow\;\;\;\;\,\log\left( \frac{N(n)}{N_0} \right) &= n\cdot\log\left( 1-p \right) \\ 
-\Leftrightarrow\qquad\qquad\qquad\;\;                        &= \log\left( \frac{E(n)}{E_0} \right) \frac{\log 1-p}{\log 1+\beta_\text{SNR}} \\
+\Leftrightarrow\qquad\qquad\qquad\;\;&\stackrel{\mathmakebox[\widthof{=}]{\eqref{eq:fermi-energy}}}{=}\;\log\left( \frac{E(n)}{E_0} \right) 
+\frac{\log(1-p)}{\log(1+\beta_\text{SNR})} \\
 \Leftrightarrow\qquad\qquad                             N(E) &= N_0\cdot\left( \frac{E(n)}{E_0} \right)^{\log(1 - p)\;/\;\log(1 + \beta_\text{SNR})} \\
 \Rightarrow \qquad\qquad                           \Upphi(E) &= \frac{ \text{d}N }{ \text{d}E } \propto E(n)^{\alpha - 1}, \numberthis\label{eq:fermi-spectrum}
 \end{align*}
 
 where $\alpha = \frac{\log(1 - p)}{\log(1 + \beta_\text{SNR})}$ in \autoref{eq:fermi-spectrum} is a spectral coefficient whose exact value will depend on the age 
 of the SNR ($\beta_\text{SNR}$ decreases with age), the injected particle (different primaries have different injection energies and ejection probabilities), as 
-well as many other factors that are often not known a priori. In any case, it can be observed that the expected spectrum is a power law in the ranges from 
-injection energy to maximum energy, which arises due to the finite lifetime of the SNR.
+well as many other factors that are often not known a priori. It can be observed that the expected spectrum is a power law in the ranges from injection energy to a
+cutoff at the highest energies, which arises due to the finite lifetime of SNRs.
 
+Results from several studies (e.g. \cite{aab2015searches, hillas2005can, blasi2013origin}) hint that the presented first order Fermi acceleration mechanism is the 
+main source of galactic CRs, extrasolar particles that originate from within the milky way, with energies ranging up to orders 
+$\mathcal{O}(\SI{}{\tera\electronvolt})$.
 
-\subsubsection{Fermi Type II}
+\subsubsection{Stochastic scattering acceleration (Fermi II)}
 \label{sssec:cr-fermi-ii}
 
+Second order (or Stochastic) Fermi acceleration is the more general case of \autoref{sssec:cr-fermi-i} and represents the original idea developed by Fermi in 
+\cite{fermi1949origin}. The underlaying principle of scattering particles off plasma clouds remains unchanged. However, if the diffusion length within the cloud 
+exceeds its radius of curvature, the energy gain per collision instead becomes
 
+\begin{equation}
+\Delta E \propto + \left( \beta_\text{SNR}\right)^2 \cdot E_0.
+\end{equation}
 
+Logically, this represents a much more inefficient acceleration mechanism, but is nevertheless observed in nature under certain circumstances (c.f. 
+\cite{asano2015most}).
+
+\subsubsection{Centrifugal acceleration in rotating $\vec{B}$-fields}
+\label{sssec:cr-centrifugal-acceleration}
+
+Some astrophysical objects such as pulsars or \textbf{A}ctive \textbf{G}alactic \textbf{N}uclei (AGNs) possess strong magnetic fields ranging from \SI{1}{\tesla}
+for some AGNs \cite{daly2019black} to $\approx\SI{10}{\giga\tesla}$ for magnetars, a subset of pulsars with extremely high magnetic flux densities 
+\cite{flowers1977evolution}.
+
+If such objects rotate at an angular velocity $\Omega$, which is in general nonzero, charged particles at a radial distance $r$ from the rotation axis will undergo
+centrifugal acceleration. In particular, their Lorentz factor $\gamma$ behaves like \autoref{eq:lorentz-factor-acceleration} \cite{rieger1999particle}.
+
+\begin{equation}
+\label{eq:lorentz-factor-acceleration}
+\gamma := \frac{E}{m_0 c^2} = \frac{\gamma_0}{1 - \left(\frac{\Omega r}{c}\right)^2},
+\end{equation}
+
+where $m_0$ is the rest mass of the particle and $\gamma_0$ the prior Lorentz factor before acceleration. It follows that a test particle can in theory gain an
+arbitrarily high energy from this process by outspiraling towards the light cylinder surface, where $\Omega\cdot r = c$. In reality however, these processes are
+stopped by e.g. inverse Compton scattering at some point \cite{osmanov2007efficiency}. In any case, \cite{rieger1999particle} and \cite{osmanov2007efficiency}
+conclude that values of $\gamma \approx 10^7-10^8$ are possible, corresponding to protons at $\approx\SI{10}{\peta\electronvolt}-\SI{10}{\peta\electronvolt}$ or 
+iron nuclei at $\approx\SI{500}{\peta\electronvolt}-\SI{5}{\exa\electronvolt}$ energy.
+
+\subsubsection{Direct electrostatic acceleration}
+\label{sssec:cr-electrostatic-acceleration}
+
+The presence of non-static $\vec{B}$-fields implies the existance of $\vec{E}$-fields and a corresponding electrical potential difference $\Upphi$ across different
+regions within the magnetosphere. A back-of-the-envelope calculation reveals that they are (neglecting constant factors) proportional to
+
+\begin{align}
+|\vec{E}| &\propto \frac{\Omega r_0}{c} \cdot |\vec{B}|, \\
+\Upphi &\propto r_0 \cdot |\vec{E}|,
+\end{align}
+
+where $r_0$ is the radius of the central object rotating at an angular frequency $\Omega$. Consequently, an ion with atomic number $Z$ can be accelerated to 
+energies $E = Z \cdot e \cdot \Upphi$, which can in some cases easily exceed $10^{20}\SI{}{\electronvolt}$ \cite{rieger2009cosmic}. 
+
+Some caveats to this consideration need to be mentioned. Screening effects from plasma clouds surrounding the central body are expected to limit the electrical 
+field strength and maximum acceleration energy by extension. Additionally, losses via e.g. Bremsstrahlung have been neglected in the above calculation, limiting
+the maximum attainable energy in theory even further. 
+
+\subsection{Propagation}
+\label{ssec:cr-propagation}
 
 
 
@@ -99,6 +156,7 @@ injection energy to maximum energy, which arises due to the finite lifetime of t
 
 \section{Energy spectrum}
 \label{sec:cr-energy-spectrum}
+
 
 
 \section{Extensive air showers}
