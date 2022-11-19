@@ -173,8 +173,8 @@ This allows for an elegant classification of different cosmic ray sources, in pa
 \subsection{Propagation}
 \label{ssec:cr-propagation}
 
-Once a cosmic ray begins its journey from origin towards an eventual target, tracking its' trajectory is, ignoring external factors, in the literal sense, straight 
-forward. 
+Once a cosmic ray has been observed coming from some arrival direction $(\phi, \theta)$, backtracking its' trajectory is, ignoring external factors, in the literal 
+sense, straight forward. As studies have shown however, several effects need to be considered. 
 
 For uncharged CRs ($\gamma$, $n$), the identification of a source is generally possible, as they travel mostly in a straight path. Possible interactions either 
 demand the destruction of the particle (pair production, weak decay), or occur close to the source (e.g. Compton scattering), in which case the observed arrival 
@@ -215,7 +215,7 @@ via the below transport equation:
 	\item \textbf{Energy loss} $\partial k_i(E)\,/\,\partial E$ :
 
 	During propagation, a cosmic ray can interact with the ISM, and lose energy in the process. If this happens often enough, the CR is eventually thermalized and 
-	does not contribute to the population any longer. Different interaction channels for different CR types $i$ require different loss models $k_i(E)$ for each 
+	does not contribute to the population $i$ any longer. Different interaction channels for different CR types $i$ require different loss models $k_i(E)$ for each 
 	type. 
 
 	\item \textbf{Spallation} $\left( n_i\,/\,\tau_{\text{spal.},\,i} - \sum n_j\,p_{ij}\,/\,\tau_{\text{spal.},\,j} \right)$ :
@@ -231,10 +231,65 @@ via the below transport equation:
 	during propagation. The decay term reflects this and describes both decay from heavier and decay into lighter nuclei.
 \end{itemize}
 
-TODO: Simulation?
+Insights to the physical implications of this transport equation can be gathered from a greatly simplified example. Consider the case of a galaxy with height $2H$ 
+and width $W$. It is $H \ll W$. Logically, diffusion along the $\pm z$-direction will be of the highest importance. Considering only $n_0$ protons located at the 
+center of the disc ($z=0$) initially, and ignoring interactions with the ISM, the transport equation becomes 
+
+\begin{equation}
+\label{eq:simplified-transport-equation}
+\frac{\partial n_p}{\partial t} - D_z \frac{\partial^2 n_p}{\partial^2 z} = n_0\,\delta(z)\,\delta(t_0)
+\end{equation}
+
+It can quickly be verified that a solution to \autoref{eq:simplified-transport-equation} is given by a normal distribution with mean $\upmu = 0$ and standard 
+deviation $\sigma = \sqrt{2D_zt}$. The diffusion coefficient $D_z$ is a measure of how quickly the population spreads out. According to  
+\cite{skilling1970diffusion}, $D_z$ can be parametrized via the particles energy $E_p$, and characteristics of the present $\vec{B}$-fields.
+
+\begin{equation}
+	\label{eq:diffusion-coefficient}
+	D_z = \frac{1}{3}\,\gamma\cdot\lambda =\frac{1}{3}\,\frac{E_p}{m_p\,c^2}\cdot\frac{|\vec{B}|\cdot\langle L_{\vec{B}}\rangle}{\sqrt{\upmu_0\,\rho_\text{ISM}}},
+\end{equation}
+
+where $\langle L_{\vec{B}} \rangle$ is the characteristic length scale of deflecting $\vec{B}$-fields, $\upmu_0$ and $\rho_\text{ISM}$ are the magnetic vacuum 
+permeability and density of the interstellar medium respectively. After some time $t$, a fraction $r_\text{esc.}(t)$ of particles will have a $z$-coordinate 
+$|z| > H$, and exit the disc consequently. In reality, this is not equivalent to the particle leaving the galaxy, as large-scale halo structures extend above and 
+below the visible disc \cite{searle1978compositions}. These are ignored here. $r_\text{esc.}(t)$ can thus be calculated according to \autoref{eq:escape-fraction}.
+For some selected energies, a plot of the escaping ratio over time is offered in \autoref{fig:escape-fraction}.
+
+\begin{equation}
+\label{eq:escape-fraction}
+r_\text{esc.}(t) := 1 - \int\limits_{-H}^{H} \frac{n(z,t)}{n_0}\,\text{d}z
+\end{equation}
+
+It can be noted that \textbf{U}ltra \textbf{H}igh \textbf{E}nergy CRs (UHECR, $E>10^{18}\,\text{eV}$) spend little time in their parent galaxy before leaving it on
+a ballistic trajectory. If such particles are observed on earth they are thus likely to be extragalactic, not last also due to the limited energies that CR sources 
+in the milky way can provide (compare \autoref{ssec:cr-acceleration}).
+
+This observation is consistent with a dipole in the \textbf{A}rrival \textbf{D}irection (AD) of UHECRs observed by the Pierre Auger observatory. The dipole points
+roughly in the opposite direction of the galactic core, marked with an asterisk in \autoref{fig:ad-anisotropy}.
+
+\begin{figure}[H]
+	\begin{subfigure}[b]{0.32\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{./plots/galactic_diffusion.png}
+		\caption{\textbf{Escape fraction}}
+		\label{fig:escape-fraction}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.68\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{./plots/auger_dipole.png}
+		\caption{\textbf{AD anisotropy}}
+		\label{fig:ad-anisotropy}
+	\end{subfigure}
+	\caption{\textbf{(a)} $r_\text{esc.}(t)$ according to \autoref{eq:escape-fraction} for protons of different energies.\\ \textbf{(b)} Dipole in the arrival
+	direction of CRs with $E>\SI{8}{\exa\electronvolt}$. Image copied from \cite{pierre2017observation}.}
+\end{figure}
 
 \subsection{Composition}
 \label{ssec:cr-composition}
+
+The composition of CRs largely mirrors the relative abundancies of elements in the universe with some noteable exceptions. This is visualized in 
+\autoref{fig:cr-composition}.
 
 \begin{figure}
 	\centering
