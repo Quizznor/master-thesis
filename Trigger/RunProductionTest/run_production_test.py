@@ -234,11 +234,9 @@ if __name__ == "__main__":
     Trigger = HardwareClassifier()
 
     i = int(sys.argv[1])
-    station = s = "nuria"
-    overshoot = 1
-
-    save_file = f"{s}_all_triggers_{overshoot}adc"
-
+    station = s = "coarse_baseline/converted"
+    overshoot = 0
+    
     n_trigger = 0
     Buffer = RandomTrace(station = s, index = i)
     file = Buffer.random_file
@@ -251,8 +249,9 @@ if __name__ == "__main__":
         # apply downsampling to trace
         downsampled_trace = apply_downsampling(trace)
         for k in range(3):
-            Buffer.q_peak[k] -= overshoot
+            # Buffer.q_peak[k] -= overshoot
             # downsampled_trace[k] += overshoot
+            downsampled_trace[k] += np.random.uniform(0, 1)
             downsampled_trace[k] /= Buffer.q_peak[k]
 
         # split trigger procedure up into different chunks due to performance
@@ -267,5 +266,7 @@ if __name__ == "__main__":
                     n_trigger += 1
                     break
 
-    with open(f"/cr/users/filip/Trigger/RunProductionTest/production/nuria_all_triggers_1vem.csv", "a") as f:
+    with open(f"/cr/users/filip/Trigger/RunProductionTest/production/nuria_all_triggers_coarse_baseline_float.csv", "a") as f:
         f.write(f"{file} {len(Buffer._these_traces)} {duration} {n_trigger} {overshoot}\n")
+
+        

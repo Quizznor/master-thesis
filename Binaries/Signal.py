@@ -199,7 +199,7 @@ class Trace(Signal):
         # clipping and bitshifting
         for i, pmt in enumerate(sampled_trace):
             for j, adc in enumerate(pmt):
-                sampled_trace[i,j] = np.clip(int(adc) >> kFirNormalizationBitShift, a_min = -20, a_max = None)
+                sampled_trace[i,j] = np.clip(int(adc) >> kFirNormalizationBitShift, a_min = -20, a_max = None)              # why clip necessary, why huge negative values?
                 # sampled_trace[i,j] = int(adc) >> kFirNormalizationBitShift
 
         return sampled_trace

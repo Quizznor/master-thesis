@@ -1,4 +1,4 @@
-JobBatchName    = run-production-test-nuria-1vem
+JobBatchName    = run-production-test-nuria-baseline_float
 Executable      = /cr/users/filip/Trigger/RunProductionTest/run_production_test.py
 
 error           = /cr/users/filip/Trigger/RunProductionTest/output/errors.err
@@ -12,4 +12,4 @@ max_idle        = 150
 # NURIA - 798
 # LOQUI - 801
 
-queue 798
+queue 800

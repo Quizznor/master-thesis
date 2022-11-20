@@ -11,7 +11,7 @@ from Binaries import *
 # #######################################################################
 
 Hardware = HardwareClassifier()
-Hardware.production_test(100000, apply_downsampling = True, station = "lo_qui_don")
+Hardware.production_test(100000, apply_downsampling = True, station = "nuria")
 # Test1 = Ensemble("minimal_conv2d_real_background")
 # Test2 = Ensemble("minimal_conv2d_real_background_1.00VEM")
 # Test5 = NNClassifier("minimal_conv2d_real_background_cut+prior")
