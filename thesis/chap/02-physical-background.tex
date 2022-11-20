@@ -176,6 +176,9 @@ This allows for an elegant classification of different cosmic ray sources, in pa
 Once a cosmic ray has been observed coming from some arrival direction $(\phi, \theta)$, backtracking its' trajectory is, ignoring external factors, in the literal 
 sense, straight forward. As studies have shown however, several effects need to be considered. 
 
+\subsubsection{Intergalactic propagation \& transport equation}
+\label{sssec:transport-equation}
+
 For uncharged CRs ($\gamma$, $n$), the identification of a source is generally possible, as they travel mostly in a straight path. Possible interactions either 
 demand the destruction of the particle (pair production, weak decay), or occur close to the source (e.g. Compton scattering), in which case the observed arrival 
 direction will still be coincident with the actual source \cite{fermi201398}. Gravitational lensing effects in some cases alter the trajectory of extragalactic 
@@ -231,43 +234,12 @@ via the below transport equation:
 	during propagation. The decay term reflects this and describes both decay from heavier and decay into lighter nuclei.
 \end{itemize}
 
-Insights to the physical implications of this transport equation can be gathered from a greatly simplified example. Consider the case of a galaxy with height $2H$ 
-and width $W$. It is $H \ll W$. Logically, diffusion along the $\pm z$-direction will be of the highest importance. Considering only $n_0$ protons located at the 
-center of the disc ($z=0$) initially, and ignoring interactions with the ISM, the transport equation becomes 
+Insights to the physical implications of this parametrization can be gathered from a simplified example. Consider the case of a galaxy with height $2H$ and width 
+$W$. It is $H \ll W$, and thus only diffusion along the $\pm z$-direction will be examined. Considering $n_0$ protons located at $z=0$ initially, and ignoring 
+interactions with the ISM, the transport equation reduces to the first two terms, with $D = \left( 0, 0, D_z \right)^\text{T}$ and 
+$Q = n_0\,\delta(z)\,\delta(t_0)$.
 
-\begin{equation}
-\label{eq:simplified-transport-equation}
-\frac{\partial n_p}{\partial t} - D_z \frac{\partial^2 n_p}{\partial^2 z} = n_0\,\delta(z)\,\delta(t_0)
-\end{equation}
-
-It can quickly be verified that a solution to \autoref{eq:simplified-transport-equation} is given by a normal distribution with mean $\upmu = 0$ and standard 
-deviation $\sigma = \sqrt{2D_zt}$. The diffusion coefficient $D_z$ is a measure of how quickly the population spreads out. According to  
-\cite{skilling1970diffusion}, $D_z$ can be parametrized via the particles energy $E_p$, and characteristics of the present $\vec{B}$-fields.
-
-\begin{equation}
-	\label{eq:diffusion-coefficient}
-	D_z = \frac{1}{3}\,\gamma\cdot\lambda =\frac{1}{3}\,\frac{E_p}{m_p\,c^2}\cdot\frac{|\vec{B}|\cdot\langle L_{\vec{B}}\rangle}{\sqrt{\upmu_0\,\rho_\text{ISM}}},
-\end{equation}
-
-where $\langle L_{\vec{B}} \rangle$ is the characteristic length scale of deflecting $\vec{B}$-fields, $\upmu_0$ and $\rho_\text{ISM}$ are the magnetic vacuum 
-permeability and density of the interstellar medium respectively. After some time $t$, a fraction $r_\text{esc.}(t)$ of particles will have a $z$-coordinate 
-$|z| > H$, and exit the disc consequently. In reality, this is not equivalent to the particle leaving the galaxy, as large-scale halo structures extend above and 
-below the visible disc \cite{searle1978compositions}. These are ignored here. $r_\text{esc.}(t)$ can thus be calculated according to \autoref{eq:escape-fraction}.
-For some selected energies, a plot of the escaping ratio over time is offered in \autoref{fig:escape-fraction}.
-
-\begin{equation}
-\label{eq:escape-fraction}
-r_\text{esc.}(t) := 1 - \int\limits_{-H}^{H} \frac{n(z,t)}{n_0}\,\text{d}z
-\end{equation}
-
-It can be noted that \textbf{U}ltra \textbf{H}igh \textbf{E}nergy CRs (UHECR, $E>10^{18}\,\text{eV}$) spend little time in their parent galaxy before leaving it on
-a ballistic trajectory. If such particles are observed on earth they are thus likely to be extragalactic, not last also due to the limited energies that CR sources 
-in the milky way can provide (compare \autoref{ssec:cr-acceleration}).
-
-This observation is consistent with a dipole in the \textbf{A}rrival \textbf{D}irection (AD) of UHECRs observed by the Pierre Auger observatory. The dipole points
-roughly in the opposite direction of the galactic core, marked with an asterisk in \autoref{fig:ad-anisotropy}.
-
-\begin{figure}[H]
+\begin{figure}[t]
 	\begin{subfigure}[b]{0.32\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{./plots/galactic_diffusion.png}
@@ -285,16 +257,68 @@ roughly in the opposite direction of the galactic core, marked with an asterisk 
 	direction of CRs with $E>\SI{8}{\exa\electronvolt}$. Image copied from \cite{pierre2017observation}.}
 \end{figure}
 
+It can quickly be verified that a solution to the transport equation in this case is given by a normal distribution with mean $\upmu = 0$ and standard deviation 
+$\sigma = \sqrt{2D_zt}$. The diffusion coefficient $D_z$ is a measure of how quickly the population spreads out (along the $\pm z$-direction). According to 
+\cite{skilling1970diffusion}, $D_z$ can be parametrized via the particles energy $E_p$, and characteristics of the present $\vec{B}$-fields.
+
+\begin{equation}
+	\label{eq:diffusion-coefficient}
+	D_z = \frac{1}{3}\,\gamma\cdot\lambda =\frac{1}{3}\,\frac{E_p}{m_p\,c^2}\cdot\frac{|\vec{B}|\cdot\langle L_{\vec{B}}\rangle}{\sqrt{\upmu_0\,\rho_\text{ISM}}},
+\end{equation}
+
+where $\langle L_{\vec{B}} \rangle$ is the characteristic length scale of deflecting $\vec{B}$-fields, $\upmu_0$ and $\rho_\text{ISM}$ are the magnetic vacuum 
+permeability and density of the interstellar medium respectively. After some time $t$, a fraction $r_\text{esc.}(t)$ of particles will have a $z$-coordinate 
+$|z| > H$, and exit the disc consequently. In reality, this is not equivalent to the particle leaving the galaxy, as large-scale halo structures extend above and 
+below the visible disc \cite{searle1978compositions}. These halos are ignored here. $r_\text{esc.}(t)$ can thus be calculated according to 
+\autoref{eq:escape-fraction}. For some selected energies, a plot of the escaping ratio over time is offered in \autoref{fig:escape-fraction}.
+
+\begin{equation}
+\label{eq:escape-fraction}
+r_\text{esc.}(t) := 1 - \int\limits_{-H}^{H} \frac{n(z,t)}{n_0}\,\text{d}z
+\end{equation}
+
+It can be concluded that low energy CRs do not travel outside their host galaxy within reasonable timeframes. Meanwhile, \textbf{U}ltra \textbf{H}igh 
+\textbf{E}nergy CRs (UHECR, $E>10^{18}\,\text{eV}$) escape swiftly on ballistic trajectories and can (and often do) have an extragalactic origin, not last also due
+to the limited energies that CR sources in the milky way can provide (compare \autoref{ssec:cr-acceleration}).
+
+This observation is consistent with a dipole in the \textbf{A}rrival \textbf{D}irection (AD) of UHECRs observed by the Pierre Auger observatory. The dipole points
+roughly in the opposite direction of the galactic core, marked with an asterisk in \autoref{fig:ad-anisotropy}.
+
+\subsubsection{Extragalactic propagation \& GZK-Cutoff}
+\label{sssec:gzk-cutoff}
+
+In the last paragraph the (likely) extragalactic origin of UHECRs was discussed. Such particles must traverse millions of lightyears of extragalactic space before
+inducing a large air shower on earth. As the energy of these primaries increases above the \textbf{G}reisen-\textbf{Z}atsepin-\textbf{K}usmin threshold (GZK),
+their propagation through space is thought to be severely impeded. At energies above $\approx10^{20}\,\text{eV}$ the \textbf{C}osmic \textbf{M}icrowave
+\textbf{B}ackground (CMB) consisting of photons in the microwave rage are blueshifted to energies $E_\gamma > \SI{300}{\mega\electronvolt}$. A proton with the 
+corresponding energy can thus absorb such CMB photons and convert to its' excited spin state, the $\Delta^+$-baryon. The $\Delta^+$-baryon decays nearly 
+instantanouely to (for example) its' ground state again, by radiating away a $\pi^0$ \cite{PDG} and losing energy in the process \cite{PDG}. 
+
+The mean free path of this interaction, also labelled GZK horizon is both energy- and primary-dependant. For \SI{75}{\exa\electronvolt} protons, it is 
+$\approx \SI{100}{\mega\parsec}$. Cosmic rays exceeding the GZK threshold should ergo not be observed from faraway sources, and an overall reduction in flux 
+at these energies should be recorded.
+
+Indeed, results published by the Auger collaboration (see \autoref{sec:cr-energy-spectrum}) are consistent with this assumption. Whether or not the GZK-supression
+is the main cause for this hard spectrum at the highest energies remains unclear for now, but shall hopefully be answered with the ongoing AugerPrime upgrade of 
+Pierre Auger observatory. 
+
 \subsection{Composition}
 \label{ssec:cr-composition}
 
-The composition of CRs largely mirrors the relative abundancies of elements in the universe with some noteable exceptions. This is visualized in 
-\autoref{fig:cr-composition}.
+The composition of CRs largely mirror the relative abundancies of elements in the universe with some noteable exceptions shown in \autoref{fig:cr-composition}.
+Elements like beryllium (Be) or vanadium (V) are atypical products of supernovae and thus not as common as e.g. oxygen (O) \cite{gamezo2005three, cowan2004r}. This
+leads to a dip in the abundancy spectrum for the solar system. The same dip is not observed in CR primary abundancies. Here, the dip is a priori existant, but 
+gradually gets "filled up" via e.g. spallation processes during propagation of cosmic rays until an equilibrium state of compositions is reached. 
+
+This equilibrium depends sensitively on the characteristic age of cosmic rays, i.e. the mean travel time until a particle escapes the galaxy. Measuring CR 
+composition hence enables the estimation of this parameter. This is done in \cite{garcia1977age}, where it is analyzed that the characteristic age of such high 
+energy particles is of the order of \SI{1.7e7}{\year}.
 
 \begin{figure}
 	\centering
 	\includegraphics[width=1\textwidth]{./plots/cosmic_ray_composition.png}
-	\caption{}
+	\caption{Composition expressed as abundancy relative to carbon for different sources. The ragged, alternating structure stems from an increased stability of 
+	nuclei with an even amount of protons (c.f. for example \cite{kirson2008mutual}). Data from \cite{gaisser2016cosmic}}
 	\label{fig:cr-composition}
 \end{figure}
 
@@ -303,5 +327,9 @@ The composition of CRs largely mirrors the relative abundancies of elements in t
 
 
 
+
 \section{Extensive air showers}
 \label{sec:extensive-air-showers}
+
+
+
