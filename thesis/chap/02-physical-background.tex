@@ -129,11 +129,12 @@ iron nuclei at $\approx\SI{500}{\peta\electronvolt}-\SI{5}{\exa\electronvolt}$ e
 \subsubsection{Direct electrostatic acceleration}
 \label{sssec:cr-electrostatic-acceleration}
 
-The presence of non-static $\vec{B}$-fields implies the existance of $\vec{E}$-fields and a corresponding electrical potential difference $\Upphi$ across different
-regions within the magnetosphere. A back-of-the-envelope calculation reveals that they are (neglecting constant factors) proportional to
+The presence of non-static $\vec{B}$-fields implies the existance of (in vacuum) comparably strong $\vec{E}$-fields and a corresponding electrical potential 
+difference $\Upphi$ across different regions within the magnetosphere. A back-of-the-envelope calculation reveals that they are (neglecting constant factors) 
+proportional to
 
 \begin{align}
-|\vec{E}| &\propto \frac{\Omega r_0}{c} \cdot |\vec{B}|, \\
+|\vec{E}| &\propto \frac{\Omega\;r_0}{c} \cdot |\vec{B}|, \\
 \Upphi &\propto r_0 \cdot |\vec{E}|,
 \end{align}
 
@@ -141,18 +142,106 @@ where $r_0$ is the radius of the central object rotating at an angular frequency
 energies $E = Z \cdot e \cdot \Upphi$, which can in some cases easily exceed $10^{20}\SI{}{\electronvolt}$ \cite{rieger2009cosmic}. 
 
 Some caveats to this consideration need to be mentioned. Screening effects from plasma clouds surrounding the central body are expected to limit the electrical 
-field strength and maximum acceleration energy by extension. Additionally, losses via e.g. Bremsstrahlung have been neglected in the above calculation, limiting
+field strength, and maximum acceleration energy by extension. Additionally, losses via e.g. Bremsstrahlung have been neglected in the above calculation, limiting
 the maximum attainable energy in theory even further. 
+
+\subsubsection{Other types}
+\label{sssec:cr-hillas-plot}
+
+Several acceleration mechanisms have been discussed. A plethora of other interactions that are able to accelerate elementary particles to fantastic energies remain
+unmentioned, or even undiscovered, as CR physics is an active area of research. In general though the driving force behind all considered (and non-considered)
+acceleration mechanisms are thought to be (electro-) magnetic fields. Consequently, the maximum energy a specific CR accelerator with magnetic field $\vec{B}$ and 
+size $L$ moving at velocity $\beta c$ can in theory provide for a particle with charge $Ze$ is given by the Hillas formula \cite{hillas1984origin}:
+
+\begin{equation}
+\label{eq:hillas-formula}
+E_\text{max}\;[\SI{}{\peta\electronvolt}] = |\vec{B}|\;[\SI{}{\micro\gauss}] \cdot L\;[\SI{}{\parsec}] \cdot Z \cdot \beta
+\end{equation}
+
+This allows for an elegant classification of different cosmic ray sources, in part discussed on the previous pages, according to the Hillas plot shown in 
+\autoref{fig:hillas-plot}.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=1\textwidth]{./plots/hillas_plot.png}
+	\caption{Rough estimate of field strength and size of different CR sources as well as the corresponding maximum energy estimated with 
+    \autoref{eq:hillas-formula} ($\beta = Z = 1$). Isoenergetic lines mark notable points in the energy spectrum discussed in 
+    \autoref{sec:cr-energy-spectrum}.}
+	\label{fig:hillas-plot}
+\end{figure}
 
 \subsection{Propagation}
 \label{ssec:cr-propagation}
 
+Once a cosmic ray begins its journey from origin towards an eventual target, tracking its' trajectory is, ignoring external factors, in the literal sense, straight 
+forward. 
 
+For uncharged CRs ($\gamma$, $n$), the identification of a source is generally possible, as they travel mostly in a straight path. Possible interactions either 
+demand the destruction of the particle (pair production, weak decay), or occur close to the source (e.g. Compton scattering), in which case the observed arrival 
+direction will still be coincident with the actual source \cite{fermi201398}. Gravitational lensing effects in some cases alter the trajectory of extragalactic 
+photons. Such phenomena (if present in the first place) are however well understood in the scope of general relativity, and can be corrected for 
+\cite{bartelmann2010gravitational, bartelmann2001weak}.
+
+Contrary, charged particles ($e^\pm$, $p$, ions) propagate along a non-trivial path due to deflections from solar- and galactic EM-fields. While the galactic field 
+is coherent over large scales, numerous irregular magnetic domains, seeded in part by individual stars complicate CR propagation to essentially a three-dimensional 
+random walk \cite{haverkorn2015magnetic}. It is thus challenging to pinpoint the origin of a charged cosmic ray. 
+
+Nevertheless, related queries, such as for example the question whether or not a particle of given energy is likely to be of extragalactic origin can be answered by
+examining the distribution of cosmic rays within a region of spacetime. The behaviour of a population of $n_i$ particles of type $i$ can be approximately recreated 
+via the below transport equation:
+
+\begin{equation*}
+\label{eq:leaky-box-model}
+\frac{\partial n_i}{\partial t} =   \underbrace{Q_i \vphantom{\left(\sum\limits_{j>i}\frac{p_{ij}}{\tau_{\text{spal.},\,j}} n_j\right)}}_\text{Source} 
+ 								  + \underbrace{\nabla D_i \left( \nabla n_i \right) \vphantom{\left(\sum\limits_{j>i}\frac{p_{ij}}{\tau_{\text{spal.},\,j}} n_j\right)}}_\text{Diffusion} 
+								  - \underbrace{\frac{\partial k_i(E)}{\partial E} \vphantom{\left(\sum\limits_{j>i}\frac{p_{ij}}{\tau_{\text{spal.},\,j}} n_j\right)}}_\text{Energy} 
+								  - \underbrace{\left( \frac{n_i}{\tau_{\text{spal.},\,i}} - \sum\limits_{j>i} \frac{n_j\,p_{ij}}{\tau_{\text{spal.},\,j}} \right)}_\text{Spallation}
+								  - \underbrace{\left( \frac{n_i}{\tau_{\text{rad.},\,i}} - \sum\limits_{j>i} \frac{ n_j\,d_{ij}}{\tau_{\text{rad.},\,j}} \right)}_\text{Weak decay}
+\end{equation*}
+
+\begin{itemize}
+	\item \textbf{Source} $Q_i$ :
+
+	The source term is responsible for the creation of CR particles (of type $i$). The exact form of $Q_i$ will depend on the considered creation process. For 
+	example, the near instantaneous creation of $n_\gamma$ photons in a \textbf{G}amma-\textbf{R}ay \textbf{B}urst (GRB) at time $t_0$ and location $\vec{r_0}$ can 
+	be modelled like $Q_\gamma = n_\gamma \; \delta(\vec{r} - \vec{r_0})\delta(t - t_0)$.
+
+	\item \textbf{Diffusion} $\nabla D_i \left( \nabla n_i \right)$ :
+
+	The random walk mentioned above is accounted for in the diffusion term, which takes a similar form to the Stokes-Einstein equation. The diffusion 
+	coefficient(s) $D_i$ in general take a tensor form due to anisotropic diffusion in different directions. Furthermore, $D_i$ is different for each particle 
+	type, as the deflecting EM-fields couple to the respective charges $q_i$, which need not be equal in principle.
+
+	\item \textbf{Energy loss} $\partial k_i(E)\,/\,\partial E$ :
+
+	During propagation, a cosmic ray can interact with the ISM, and lose energy in the process. If this happens often enough, the CR is eventually thermalized and 
+	does not contribute to the population any longer. Different interaction channels for different CR types $i$ require different loss models $k_i(E)$ for each 
+	type. 
+
+	\item \textbf{Spallation} $\left( n_i\,/\,\tau_{\text{spal.},\,i} - \sum n_j\,p_{ij}\,/\,\tau_{\text{spal.},\,j} \right)$ :
+
+	Nuclear spallation describes the process of violent disintegration of a target nucleus upon being struck by an energetic projectile. The resulting fragments
+	can retain energies up to the projectiles energy. The spallation term in the transport equation considers both the destruction (first term), as well as 
+	creation (second term) of CRs $i$ from heavier types $j$. It is assumed that spallation from type $j \rightarrow i$ occurs at a constant probability of 
+	$p_{ij}$ in a characteristic time frame $\tau_{\text{spal.},\,j}$.
+
+	\item \textbf{Weak decay} $\left( n_i\,/\,\tau_{\text{rad.},\,i} - \sum n_j\,d_{ij}\,/\,\tau_{\text{rad.},\,j} \right)$ :
+
+	If a particle $j$ is weakly unstable ($\tau_{\text{rad.},\,i} < \infty$) there is a nonzero chance $d_{ij}$ it decays into a daughter nuclei of some type $i$ 
+	during propagation. The decay term reflects this and describes both decay from heavier and decay into lighter nuclei.
+\end{itemize}
+
+TODO: Simulation?
 
 \subsection{Composition}
 \label{ssec:cr-composition}
 
-
+\begin{figure}
+	\centering
+	\includegraphics[width=1\textwidth]{./plots/cosmic_ray_composition.png}
+	\caption{}
+	\label{fig:cr-composition}
+\end{figure}
 
 \section{Energy spectrum}
 \label{sec:cr-energy-spectrum}
@@ -161,11 +250,3 @@ the maximum attainable energy in theory even further.
 
 \section{Extensive air showers}
 \label{sec:extensive-air-showers}
-
-
-
-
-
-
-
-
