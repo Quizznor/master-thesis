@@ -234,10 +234,12 @@ if __name__ == "__main__":
     Trigger = HardwareClassifier()
 
     i = int(sys.argv[1])
-    station = s = "coarse_baseline/converted"
-    overshoot = 0
+    station = s = "nuria"
+    overshoot_adc = 0
+    # overshoot_vem = np.random.choice([1, 10])
+    overshoot_vem = 10
     
-    n_trigger = 0
+    n_trigger, n_th, n_tot, n_totd = 0, 0, 0, 0
     Buffer = RandomTrace(station = s, index = i)
     file = Buffer.random_file
     duration = len(Buffer._these_traces) * trace_duration 
@@ -249,24 +251,30 @@ if __name__ == "__main__":
         # apply downsampling to trace
         downsampled_trace = apply_downsampling(trace)
         for k in range(3):
-            # Buffer.q_peak[k] -= overshoot
-            # downsampled_trace[k] += overshoot
-            downsampled_trace[k] += np.random.uniform(0, 1)
+            Buffer.q_peak[k] -= overshoot_vem
+            downsampled_trace[k] += np.random.uniform(overshoot_adc, overshoot_adc + 1)
             downsampled_trace[k] /= Buffer.q_peak[k]
 
         # split trigger procedure up into different chunks due to performance
         if Trigger.Th(3.2, downsampled_trace):
             n_trigger += 1
+            n_th += 1
         else:
+
+            # ToT, ToTd implicitly assumes chunks of 120 bins
             for (start, stop) in zip(window_start, window_stop):
 
                 window = downsampled_trace[:, start : stop]
 
-                if Trigger.ToT(window) or Trigger.ToTd(window): 
+                if Trigger.ToT(window):
                     n_trigger += 1
+                    n_tot += 1
+                    break
+                
+                elif Trigger.ToTd(window):
+                    n_trigger += 1
+                    n_totd += 1
                     break
 
-    with open(f"/cr/users/filip/Trigger/RunProductionTest/production/nuria_all_triggers_coarse_baseline_float.csv", "a") as f:
-        f.write(f"{file} {len(Buffer._these_traces)} {duration} {n_trigger} {overshoot}\n")
-
-        
+    with open(f"/cr/users/filip/Trigger/RunProductionTest/production/nuria_all_triggers_10vem.csv", "a") as f:
+        f.write(f"{file} {len(Buffer._these_traces)} {duration} {n_trigger} {n_th} {n_tot} {n_totd}\n")

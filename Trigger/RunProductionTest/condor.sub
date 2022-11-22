@@ -1,5 +1,5 @@
-JobBatchName    = run-production-test-nuria-baseline_float
-Executable      = /cr/users/filip/Trigger/RunProductionTest/run_production_test.py
+JobBatchName    = run-production-test-nuria-10vem
+Executable      = /cr/users/filip/Trigger/RunProductionTest/run_production_test_10vem.py
 
 error           = /cr/users/filip/Trigger/RunProductionTest/output/errors.err
 # output          = /cr/users/filip/Trigger/RunProductionTest/output/output.out

@@ -670,7 +670,7 @@ class Ensemble(NNClassifier):
             model.PRC(dataset, title = f"{self.name}", label = f"model instance {i}")
 
 # Wrapper for currently employed station-level triggers (T1, T2, ToT, etc.)
-# Information on magic numbers comes from Davids Mail on 03.03.22 @ 12:30pm
+# Information on magic numbers comes from Davids Mail on 10.03.22 @ 12:30pm
 class HardwareClassifier(Classifier):
 
     def __init__(self, name : str = False) : 
