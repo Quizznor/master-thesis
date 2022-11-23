@@ -4,11 +4,12 @@
 \label{chap:physical-background}
 
 This chapter aims to introduce the general physical principles underlaying the analysis presented in this work. For this purpose, an overview of the origin, 
-composition and energy spectrum of cosmic rays is given in \autoref{ssec:cr-history}, \autoref{sec:cr-origin}, and \autoref{sec:cr-energy-spectrum} respectively. 
-Their interactions with other matter, the physics of extensive air showers and their possible detection methods are listed in \autoref{sec:extensive-air-showers}.
+composition and energy spectrum of cosmic rays is given in \autoref{sec:cr-history}, \autoref{sec:cr-acceleration}, and \autoref{sec:cr-energy-spectrum} 
+respectively. Their interactions with other matter, the physics of extensive air showers and their possible detection methods are listed in 
+\autoref{sec:extensive-air-showers}.
 
 \section{History}
-\label{ssec:cr-history}
+\label{sec:cr-history}
 
 A first hint at the existance of high-energy particles in the upper atmosphere was given by Hess in 1912, who found that the discharge rate of an electroscope is 
 altitude-dependant. Millikan coined the term cosmic "rays" for these particles, as he argued the ionizing radiation must be part of the electromagnetic spectrum 
@@ -24,11 +25,8 @@ and cosmology to new insights. Observations from cosmic ray physics serve as a v
 \cite{goldman1988implications}. Last but not least publications by the Pierre Auger collaboration regarding the CR energy spectrum and flux help refine knowledge of 
 our cosmic neighbourhood \cite{abraham2010measurement, aab2015searches}.
 
-\section{Origin}
-\label{sec:cr-origin}
-
-\subsection{Acceleration}
-\label{ssec:cr-acceleration}
+\section{Acceleration}
+\label{sec:cr-acceleration}
 
 Cosmic rays whose kinetic energy far exceeds their rest energy must originate from some of the most extreme environments in space. In particular, regions with 
 large (either in field strength or spatial extent) electromagnetic fields, where charged particles can be accelerated to significant fractions of to the speed of 
@@ -37,8 +35,8 @@ light, via the Lorentz force.
 The question how particles are accelerated to the extremely high energies observed on earth is an active area of research. Since the discovery of cosmic rays, 
 several candidate mechanisms and interactions have been identified and will be discussed now.
 
-\subsubsection{Diffusive shock acceleration (Fermi I)}
-\label{sssec:cr-fermi-i}
+\subsection{Diffusive shock acceleration (Fermi I)}
+\label{ssec:cr-fermi-i}
 
 \textbf{S}uper \textbf{N}ova \textbf{R}emnants (SNR) typically feature a plasma sphere propagating outwards from the former stars core into the 
 \textbf{I}nter \textbf{S}tellar \textbf{M}edium (ISM), in this region of plasma any magnetic field lines will be comoving, according to Alfvén's theorem 
@@ -91,10 +89,10 @@ Results from several studies (e.g. \cite{aab2015searches, hillas2005can, blasi20
 main source of galactic CRs, extrasolar particles that originate from within the milky way, with energies ranging up to orders 
 $\mathcal{O}(\SI{}{\tera\electronvolt})$.
 
-\subsubsection{Stochastic scattering acceleration (Fermi II)}
-\label{sssec:cr-fermi-ii}
+\subsection{Stochastic scattering acceleration (Fermi II)}
+\label{ssec:cr-fermi-ii}
 
-Second order (or Stochastic) Fermi acceleration is the more general case of \autoref{sssec:cr-fermi-i} and represents the original idea developed by Fermi in 
+Second order (or Stochastic) Fermi acceleration is the more general case of \autoref{ssec:cr-fermi-i} and represents the original idea developed by Fermi in 
 \cite{fermi1949origin}. The underlaying principle of scattering particles off plasma clouds remains unchanged. However, if the diffusion length within the cloud 
 exceeds its radius of curvature, the energy gain per collision instead becomes
 
@@ -105,8 +103,8 @@ exceeds its radius of curvature, the energy gain per collision instead becomes
 Logically, this represents a much more inefficient acceleration mechanism, but is nevertheless observed in nature under certain circumstances (c.f. 
 \cite{asano2015most}).
 
-\subsubsection{Centrifugal acceleration in rotating $\vec{B}$-fields}
-\label{sssec:cr-centrifugal-acceleration}
+\subsection{Centrifugal acceleration in rotating $\vec{B}$-fields}
+\label{ssec:cr-centrifugal-acceleration}
 
 Some astrophysical objects such as pulsars or \textbf{A}ctive \textbf{G}alactic \textbf{N}uclei (AGNs) possess strong magnetic fields ranging from \SI{1}{\tesla}
 for some AGNs \cite{daly2019black} to $\approx\SI{10}{\giga\tesla}$ for magnetars, a subset of pulsars with extremely high magnetic flux densities 
@@ -126,8 +124,8 @@ stopped by e.g. inverse Compton scattering at some point \cite{osmanov2007effici
 conclude that values of $\gamma \approx 10^7-10^8$ are possible, corresponding to protons at $\approx\SI{10}{\peta\electronvolt}-\SI{10}{\peta\electronvolt}$ or 
 iron nuclei at $\approx\SI{500}{\peta\electronvolt}-\SI{5}{\exa\electronvolt}$ energy.
 
-\subsubsection{Direct electrostatic acceleration}
-\label{sssec:cr-electrostatic-acceleration}
+\subsection{Direct electrostatic acceleration}
+\label{ssec:cr-electrostatic-acceleration}
 
 The presence of non-static $\vec{B}$-fields implies the existance of (in vacuum) comparably strong $\vec{E}$-fields and a corresponding electrical potential 
 difference $\Upphi$ across different regions within the magnetosphere. A back-of-the-envelope calculation reveals that they are (neglecting constant factors) 
@@ -145,8 +143,8 @@ Some caveats to this consideration need to be mentioned. Screening effects from 
 field strength, and maximum acceleration energy by extension. Additionally, losses via e.g. Bremsstrahlung have been neglected in the above calculation, limiting
 the maximum attainable energy in theory even further. 
 
-\subsubsection{Other types}
-\label{sssec:cr-hillas-plot}
+\subsection{Other types \& general classification}
+\label{ssec:cr-hillas-plot}
 
 Several acceleration mechanisms have been discussed. A plethora of other interactions that are able to accelerate elementary particles to fantastic energies remain
 unmentioned, or even undiscovered, as CR physics is an active area of research. In general though the driving force behind all considered (and non-considered)
@@ -170,8 +168,8 @@ This allows for an elegant classification of different cosmic ray sources, in pa
 	\label{fig:hillas-plot}
 \end{figure}
 
-\subsubsection{Acceleration of uncharged particles}
-\label{sssec:cr-uncharged-acceleration}
+\subsection{Acceleration of uncharged particles}
+\label{ssec:cr-uncharged-acceleration}
 
 Particles like neutrons, neutrinos or photons possess no electromagnetic charge $q = 0$. Assuming \autoref{eq:hillas-formula} holds in these cases, they 
 should thus not appear in the CR spectrum. This is in disagreement with reality, where energies from \SI{100}{\giga\electronvolt} up to 
@@ -179,7 +177,7 @@ $\approx\SI{100}{\exa\electronvolt}$ have been observed \cite{abeysekara2018very
 required to explain the existance of such uncharged CRs.
 
 High energy $\gamma$-rays in particular can be created by accelerated, charged particles via Bremsstrahlung. This occurs for example during centrifugal 
-acceleration near pulsars or AGNs (compare \autoref{sssec:cr-centrifugal-acceleration}). Furthermore, inverse Compton scattering with a high-energy cosmic ray can 
+acceleration near pulsars or AGNs (compare \autoref{ssec:cr-centrifugal-acceleration}). Furthermore, inverse Compton scattering with a high-energy cosmic ray can 
 imply a significant energy gain for a photon \cite{jones1965inverse}.
 
 Uncharged CRs are also frequently produced in nuclear interactions, such as e.g. deeply inelastic scattering of charged CRs with the ISM. This espically 
@@ -188,7 +186,7 @@ Furthermore, neutrons or neutrinos can originate from interactions involving the
 dacy of a UHECR ion, the resulting decay products positron, neutron and electron-antineutrino inherit the parents' energy, and are thus high energy cosmic rays as 
 well.
 
-\subsection{Propagation}
+\section{Propagation}
 \label{ssec:cr-propagation}
 
 Once a cosmic ray has been observed coming from some arrival direction $(\phi, \theta)$, backtracking its' trajectory to an eventual origin is, ignoring external 
@@ -200,8 +198,8 @@ direction will still be coincident with the actual source \cite{fermi201398}. Gr
 photons. Such phenomena (if present in the first place) are however well understood in the scope of general relativity, and can be corrected for 
 \cite{bartelmann2010gravitational, bartelmann2001weak}.
 
-\subsubsection{Intergalactic propagation \& transport equation}
-\label{sssec:transport-equation}
+\subsection{Intergalactic propagation \& transport equation}
+\label{ssec:transport-equation}
 
 Contrary, charged particles ($e^\pm$, $p$, ions) propagate along non-trivial paths within galaxies due to deflections from solar- and galactic EM-fields. While the 
 galactic field is coherent over large scales, numerous irregular magnetic domains, seeded in part by individual stars complicate CR propagation to essentially a 
@@ -297,13 +295,13 @@ r_\text{esc.}(t) := 1 - \int\limits_{-H}^{H} \frac{n(z,t)}{n_0}\,\text{d}z
 
 It can be concluded that low energy CRs do not travel outside their host galaxy within reasonable timeframes. Meanwhile, \textbf{U}ltra \textbf{H}igh 
 \textbf{E}nergy CRs (UHECR, $E>10^{18}\,\text{eV}$) escape swiftly on ballistic trajectories and can (and often do) have an extragalactic origin, not last also due
-to the limited energies that CR sources in the milky way can provide (compare \autoref{ssec:cr-acceleration}).
+to the limited energies that CR sources in the milky way can provide (compare \autoref{sec:cr-acceleration}).
 
 This observation is consistent with a dipole in the \textbf{A}rrival \textbf{D}irection (AD) of UHECRs observed by the Pierre Auger observatory. The dipole points
 roughly in the opposite direction of the galactic core, marked with an asterisk in \autoref{fig:ad-anisotropy}.
 
-\subsubsection{Extragalactic propagation \& GZK-Cutoff}
-\label{sssec:gzk-cutoff}
+\subsection{Extragalactic propagation \& GZK-Cutoff}
+\label{ssec:gzk-cutoff}
 
 In the last paragraph the (likely) extragalactic origin of UHECRs was discussed. Such particles must traverse millions of lightyears of extragalactic space before
 inducing a large air shower on earth. As the energy of these primaries increases above the \textbf{G}reisen-\textbf{Z}atsepin-\textbf{K}usmin threshold (GZK),
@@ -320,8 +318,8 @@ Indeed, results published by the Auger collaboration (see \autoref{sec:cr-energy
 is the main cause for this hard spectrum at the highest energies remains unclear for now, but shall hopefully be answered with the ongoing AugerPrime upgrade of 
 Pierre Auger observatory. 
 
-\subsection{Composition}
-\label{ssec:cr-composition}
+\section{Composition}
+\label{sec:cr-composition}
 
 The composition of CRs largely mirror the relative abundancies of elements in the universe with some noteable exceptions shown in \autoref{fig:cr-composition}.
 Elements like beryllium (Be) or vanadium (V) are atypical products of supernovae and thus not as common as e.g. oxygen (O) \cite{gamezo2005three, cowan2004r} in
@@ -334,7 +332,7 @@ are consistent with a characteristic age of \SI{1.7e7}{\year} for such high ener
 
 Contrary, hydrogen (H) and helium (He) are underrepresented (w.r.t their natural abundancy in the solar system) in cosmic ray particles. This is likely due to the 
 comparably high ionization energy of both elements, which leads to less readily available hydrogen/helium ions. Since the acceleration mechanisms discussed in 
-\autoref{ssec:cr-acceleration} all couple to the net charge $q$ of a particle, unionized hydrogen and helium are not accelerated \cite{wang2002measurement}.
+\autoref{sec:cr-acceleration} all couple to the net charge $q$ of a particle, unionized hydrogen and helium are not accelerated \cite{wang2002measurement}.
 
 \begin{figure}
 	\centering
@@ -347,7 +345,15 @@ comparably high ionization energy of both elements, which leads to less readily 
 \section{Energy spectrum}
 \label{sec:cr-energy-spectrum}
 
-It has been discussed in \autoref{ssec:cr-acceleration} that the expected CR flux w.r.t energy for supernova remnants is a powerlaw in the rough range of 
+\begin{figure}
+	\centering
+	\includegraphics[width=1\textwidth]{./plots/cosmic_ray_spectrum.png}
+	\caption{Measurements of the cosmic ray flux, multiplied by a factor $E^{2.6}$ for all types (black), and broken down by primary. Shown are protons (red), 
+	helium (yellow), oxygen (green) and iron (blue). Plot adopted from \cite{dembinski2017data}.}
+	\label{fig:cr-energy-spectrum}
+\end{figure}
+
+It has been discussed in \autoref{sec:cr-acceleration} that the expected CR flux w.r.t energy for supernova remnants is a powerlaw in the rough range of 
 $\SI{200}{\mega\electronvolt} < E \lesssim \SI{100}{\tera\electronvolt}$. Observations by various experiments extend this result to even higher energies. Their 
 combined results are shown in \autoref{fig:cr-energy-spectrum}. However, while the general assumption of a powerlaw $\Upphi(E)\propto E^\alpha$ holds over a large
 range of energies, kinks and other feature in the spectrum indicate that the spectral index $\alpha$ is not uniform, and instead a function of energy. The 
@@ -357,34 +363,43 @@ approximate form of $\alpha(E)$ will be discussed in the following by examining 
 \label{ssec:cr-proton-knee}
 
 Below an energy of $\approx \SI{1}{\peta\electronvolt} = 10^6\,\SI{}{\electronvolt}$, it is $\alpha(E)\approx 2.7$, while above a spectral index of 
-$\alpha(E)\approx 3.0$ is found \cite{gaisser2016cosmic}. This softening of the spectrum (i.e. fewer particles of higher energy), can be attributed to several
-effects, some of which could not be falsified by measurements yet.
+$\alpha(E)\approx 3.0$ is found \cite{gaisser2016cosmic}. This softening of the spectrum (i.e. fewer particles of higher energy) could be attributed to several
+effects.
 
 \begin{itemize}
 	\item \textbf{Dark matter channel} (partially falsified)
 
 	\textbf{W}eakly \textbf{I}nteractive \textbf{M}assive \textbf{P}articles (WIMPs) are a popular candidate for \textbf{D}ark \textbf{M}atter (DM), as they 
 	correctly estimate the cosmological evolution of the universe \cite{klypin1993structure}. A WIMP with a sufficiently high mass could explain the kink in the 
-	above spectrum. CRs with an energy exceeding the rest mass of the WIMP could in theory produce DM in deeply-inelastic scattering processes. The degree of 
-	steepening in the spectrum is a measure for how readily the process $X \rightarrow \text{WIMP} + Y$ occurs, and can be used to estimate the corresponding 
-	cross sections. Most theories involving WIMP creation can be excluded, since detectors at earthbound particle accelerators should have observed DM production 
-	at the observed steepening from $2.7$ to $3.0$ \cite{donato2009constraints}.
+	energy spectrum. CRs with $E > m_\text{WIMP}c^2$ could in theory produce DM in deeply-inelastic scattering processes. The degree of steepening in the spectrum 
+	is a measure for how readily the process $X \rightarrow \text{WIMP} + Y$ occurs. The steeper the spectrum gets, the more particles are converted to DM, and the
+	higher the corresponding cross sections are. Most theories involving WIMP creation can be excluded, since detectors at earthbound particle accelerators should 
+	have observed DM production at the observed steepening from $2.7$ to $3.0$ \cite{donato2009constraints}.
 
 	\item \textbf{Escape during propagation}
 
-	While the analysis in \autoref{sssec:transport-equation} concludes that the escape time for $\,10^{15}\,\text{eV}$ protons to leave their host 	galaxy is at 
-	least of the order $\approx{10^{8}}\text{yr}$ (compare \autoref{fig:escape-fraction}), the calculations leading to this result are extremely simplified. 
-	If a more accurate treatment finds that particles with rigidities corresponding to the relevant energies are no longer confined by galactic magnetic fields, 
-	the kink could originate from particles leaving the milky way and not contributing to the flux observed on earth any longer.
+	While the analysis in \autoref{ssec:transport-equation} concludes that the escape time for $\,10^{15}\,\text{eV}$ protons to leave their host 	galaxy is at 
+	least of the order ${10^{8}}\,\text{yr}$ (compare \autoref{fig:escape-fraction}), the calculations leading to this result are extremely simplified. If a more 
+	accurate treatment finds that particles with rigidities corresponding to the relevant energies are no longer confined by galactic magnetic fields, the kink 
+	could originate from particles leaving the milky way and not contributing to the flux observed on earth any longer.
 
 	\item \textbf{Limited source energy}
 
+	A last possible explanation might lie in \autoref{eq:hillas-formula}. A prevalent acceleration mechanism for CRs below $10^{15}\SI{}{\electronvolt}$, such as 
+	shock acceleration in SNRs for example, might not be able to provide energies exceeding this threshold due to physical constraints. The spectrum above the 
+	proton knee is thus populated by CRs that originate from different acceleration mechanisms with differen relations $\alpha(E)$.
 \end{itemize}
 
 \subsection{Iron knee $E \approx 10^{17}\,\SI{}{\electronvolt}$}
 \label{ssec:cr-iron-knee}
 
-sughlksghksulhg
+The spectrum exhibits various similar kinks at slightly higher energy than the one discussed in \autoref{ssec:proton-knee}, each one corresponding to a different 
+primary particle. Representatively, the iron knee at $E \approx 10^{17}\,\text{eV}$ is discussed here. 
+
+Because iron both has a higher mass and charge ($Z = 26$, $A = 56$) compared to the proton ($Z = A = 1$), different processes couple to both nuclei with 
+different strengths. For example, an iron core has a higher magnetic rigidity $R \propto \frac{A}{Z}$ than a proton of equivalent energy. More intuitively, while 
+the iron core experiences a larger Lorentz force ($\propto Z$), the resulting acceleration ($\propto A^{-1}$) is not as strong due to a disproportionally larger 
+mass.
 
 \subsection{Ankle $E \approx 10^{18}\,\SI{}{\electronvolt}$}
 \label{ssec:cr-ankle}
@@ -393,14 +408,6 @@ ajshgkljghkfgkldfyg
 
 \subsection{Cutoff $E \approx 10^{20}\,\SI{}{\electronvolt}$}
 
-
-\begin{figure}
-	\centering
-	\includegraphics[width=1\textwidth]{./plots/cosmic_ray_spectrum.png}
-	\caption{Measurements of the cosmic ray flux, multiplied by a factor $E^{2.6}$ for all types (black), and broken down by primary. Shown are protons (red), 
-	helium (yellow), oxygen (green) and iron (blue). Plot adopted from \cite{dembinski2017data}.}
-	\label{fig:cr-composition}
-\end{figure}
 
 \section{Extensive air showers}
 \label{sec:extensive-air-showers}
