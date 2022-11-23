@@ -1,11 +1,21 @@
 #!/usr/bin/env python3
 
 from dataclasses import dataclass
+# import matplotlib.pyplot as plt
+# import matplotlib.cm as cmap
+# from matplotlib.patches import Rectangle
+# from matplotlib.colors import BoundaryNorm
+# from matplotlib.colorbar import ColorbarBase
 
-import random
 import numpy as np
 import sys, os
+import random
 
+
+class EmptyFileError(Exception): pass
+class SlidingWindowError(Exception): pass
+class EarlyStoppingError(Exception): pass
+class SignalError(Exception): pass
 class RandomTraceError(Exception): pass
 
 @dataclass
@@ -18,7 +28,7 @@ class GLOBAL():
     # Trace details, can be overwritten in __new__ of EventGenerator
     background_frequency        = 4665                                          # frequency of accidental injections / Hz
     single_bin_duration         = 8.3e-9                                        # time length of a single bin, in s                                               
-    n_bins                      = 2048                                          # 1 Bin = 8.3 ns, 2048 Bins = ~17. us
+    n_bins                      = 2048                                          # 1 Bin = 8.3 ns, 2048 Bins = ~17. µs
     baseline_std                = 2                                             # two ADC counts, NOT converted here!
     baseline_mean               = 0                                             # gaussian mean of the actual baseline
     real_background             = False                                         # use random traces instead of gaussian baseline
@@ -43,13 +53,14 @@ class GLOBAL():
     n_production_traces         = int(1e6)                                      # how many random traces to look at for predictions
     n_ensembles                 = 10                                            # how many networks of same architecture to train
 
+
 class RandomTrace():
 
-    baseline_dir = "/cr/tempdata01/filip/iRODS/"                                      # storage path of the station folders
+    baseline_dir : str = "/cr/tempdata01/filip/iRODS/"                              # storage path of the station folders
     # all_files : np.ndarray = np.asarray(os.listdir(baseline_dir))                   # container for all baseline files
     # all_n_files : int = len(all_files)                                              # number of available baseline files
 
-    def __init__(self, station = None, index = None): 
+    def __init__(self, station : str = None, index : int = None) -> None : 
 
         ## (HOPEFULLY) TEMPORARILY FIXED TO NURIA/LO_QUI_DON DUE TO BAD FLUCTUATIONS IN OTHER STATIONS
         self.station = random.choice(["nuria", "lo_qui_don"]) if station is None else station.lower()
@@ -96,7 +107,7 @@ class RandomTrace():
 
 
     # get random traces for a single stations
-    def get(self): 
+    def get(self) -> np.ndarray : 
         
         try:                                                                        # update pointer after loading
             self.__current_traces += 1
@@ -112,12 +123,10 @@ class RandomTrace():
 
             return self.get()
 
+
 class HardwareClassifier():
 
-    def __init__(self, name= False): 
-        self.name = name or "HardwareClassifier"
-
-    def __call__(self, trace ): 
+    def __call__(self, trace : np.ndarray) -> bool : 
         
         # Threshold of 3.2 immediately gets promoted to T2
         # Threshold of 1.75 if a T3 has already been issued
@@ -128,7 +137,7 @@ class HardwareClassifier():
             return np.array([self.__call__(t) for t in trace])
 
     # method to check for (coincident) absolute signal threshold
-    def Th(self, threshold, signal): 
+    def Th(self, threshold : float, signal : np.ndarray) -> bool : 
 
         pmt_1, pmt_2, pmt_3 = signal
 
@@ -145,7 +154,7 @@ class HardwareClassifier():
         return False
 
     # method to check for elevated baseline threshold trigger
-    def ToT(self, signal): 
+    def ToT(self, signal : np.ndarray) -> bool : 
 
         threshold     = 0.2      # bins above this threshold are 'active'
 
@@ -163,11 +172,11 @@ class HardwareClassifier():
             return False
 
     # method to check for elevated baseline of deconvoluted signal
-    # first bin of trace is ignored, this shouldn't matter too much hopefully
-    def ToTd(self, signal): 
+    # note that this only ever gets applied to UB-like traces, with 25 ns binning
+    def ToTd(self, signal : np.ndarray) -> bool : 
 
         # for information on this see GAP note 2018-01
-        dt      = 8.3                                                               # UUB bin width
+        dt      = 25                                                                # UB bin width
         tau     = 67                                                                # decay constant
         decay   = np.exp(-dt/tau)                                                   # decay term
         deconvoluted_trace = []
@@ -179,48 +188,50 @@ class HardwareClassifier():
         return self.ToT(np.array(deconvoluted_trace))
 
     # method to count positive flanks in an FADC trace
-    def MoPS(self, signal): 
+    def MoPS(self, signal : np.ndarray) -> bool : 
 
         # as per GAP note 2018-01; an exact offline reconstruction of the trigger is not possible
         # Can this be fixed in some way? perhaps with modified integration threshold INT?
         return False 
 
+
 def apply_downsampling(trace):
 
-    # ensure downsampling works as intended
-    # cuts away (at most) the last two bins
-    if trace.shape[-1] % 3 != 0:
-        trace = np.array([pmt[0 : -(trace.shape[-1] % 3)] for pmt in trace])
+        # ensure downsampling works as intended
+        # cuts away (at most) the last two bins
+        if trace.shape[-1] % 3 != 0:
+            trace = np.array([pmt[0 : -(trace.shape[-1] % 3)] for pmt in trace])
 
-    # see /cr/data01/filip/offline/trunk/Framework/SDetector/UUBDownsampleFilter.h for more information
-    kFirCoefficients = [ 5, 0, 12, 22, 0, -61, -96, 0, 256, 551, 681, 551, 256, 0, -96, -61, 0, 22, 12, 0, 5 ]
-    buffer_length = int(0.5 * len(kFirCoefficients))
-    kFirNormalizationBitShift = 11
-    # kADCsaturation = 4095                             # bit shift not really needed
+        # see /cr/data01/filip/offline/trunk/Framework/SDetector/UUBDownsampleFilter.h for more information
+        kFirCoefficients = [ 5, 0, 12, 22, 0, -61, -96, 0, 256, 551, 681, 551, 256, 0, -96, -61, 0, 22, 12, 0, 5 ]
+        buffer_length = int(0.5 * len(kFirCoefficients))
+        kFirNormalizationBitShift = 11
+        # kADCsaturation = 4095                             # bit shift not really needed
 
-    n_bins_uub      = np.shape(trace)[1]                # original trace length
-    n_bins_ub       = int(n_bins_uub / 3)               # downsampled trace length
-    sampled_trace   = np.zeros((3, n_bins_ub))          # downsampled trace container
+        n_bins_uub      = np.shape(trace)[1]                # original trace length
+        n_bins_ub       = int(n_bins_uub / 3)               # downsampled trace length
+        sampled_trace   = np.zeros((3, n_bins_ub))          # downsampled trace container
 
-    temp = np.zeros(n_bins_uub + len(kFirCoefficients))
+        temp = np.zeros(n_bins_uub + len(kFirCoefficients))
 
-    for i_pmt, pmt in enumerate(trace):
+        for i_pmt, pmt in enumerate(trace):
 
-        temp[0 : buffer_length] = pmt[:: -1][-buffer_length - 1 : -1]
-        temp[-buffer_length - 1: -1] = pmt[:: -1][0 : buffer_length]
-        temp[buffer_length : -buffer_length - 1] = pmt
+            temp[0 : buffer_length] = pmt[:: -1][-buffer_length - 1 : -1]
+            temp[-buffer_length - 1: -1] = pmt[:: -1][0 : buffer_length]
+            temp[buffer_length : -buffer_length - 1] = pmt
 
-        # perform downsampling
-        for j, coeff in enumerate(kFirCoefficients):
-            sampled_trace[i_pmt] += [temp[k + j] * coeff for k in range(0, n_bins_uub, 3)]
+            # perform downsampling
+            for j, coeff in enumerate(kFirCoefficients):
+                sampled_trace[i_pmt] += [temp[k + j] * coeff for k in range(0, n_bins_uub, 3)]
 
-    # clipping and bitshifting
-    for i, pmt in enumerate(sampled_trace):
-        for j, adc in enumerate(pmt):
-            sampled_trace[i,j] = np.clip(int(adc) >> kFirNormalizationBitShift, a_min = -20, a_max = None)
-            # sampled_trace[i,j] = int(adc) >> kFirNormalizationBitShift
+        # clipping and bitshifting
+        for i, pmt in enumerate(sampled_trace):
+            for j, adc in enumerate(pmt):
+                sampled_trace[i,j] = np.clip(int(adc) >> kFirNormalizationBitShift, a_min = -20, a_max = None)              # why clip necessary, why huge negative values?
 
-    return sampled_trace
+        return sampled_trace
+
+
 
 if __name__ == "__main__":
 
@@ -228,16 +239,15 @@ if __name__ == "__main__":
     # LOQUI - 801
 
     trace_duration = GLOBAL.n_bins * GLOBAL.single_bin_duration
-
     window_start = range(0, 682 - 120, 1)
     window_stop = range(120, 682, 1)
     Trigger = HardwareClassifier()
-
-    i = int(sys.argv[1])
     station = s = "nuria"
     overshoot_adc = 0
-    # overshoot_vem = np.random.choice([1, 10])
-    overshoot_vem = 1
+    i = int(sys.argv[1])
+
+    overshoot_vem = 0.5
+    overshoot_string = "05"
     
     n_trigger, n_th, n_tot, n_totd = 0, 0, 0, 0
     Buffer = RandomTrace(station = s, index = i)
@@ -276,5 +286,5 @@ if __name__ == "__main__":
                     n_totd += 1
                     break
 
-    with open(f"/cr/users/filip/Trigger/RunProductionTest/production/nuria_all_triggers_1vem.csv", "a") as f:
+    with open(f"/cr/users/filip/Trigger/RunProductionTest/production/nuria_all_triggers_{overshoot_string}vem.csv", "a") as f:
         f.write(f"{file} {len(Buffer._these_traces)} {duration} {n_trigger} {n_th} {n_tot} {n_totd}\n")

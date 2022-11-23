@@ -722,11 +722,11 @@ class HardwareClassifier(Classifier):
             return False
 
     # method to check for elevated baseline of deconvoluted signal
-    # first bin of trace is ignored, this shouldn't matter too much hopefully
+    # note that this only ever gets applied to UB-like traces, with 25 ns binning
     def ToTd(self, signal : np.ndarray) -> bool : 
 
         # for information on this see GAP note 2018-01
-        dt      = 8.3                                                               # UUB bin width
+        dt      = 25                                                                # UB bin width
         tau     = 67                                                                # decay constant
         decay   = np.exp(-dt/tau)                                                   # decay term
         deconvoluted_trace = []
