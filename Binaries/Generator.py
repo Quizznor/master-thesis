@@ -286,7 +286,8 @@ class Generator(tf.keras.utils.Sequence):
 
         background_hist, signal_hist, baseline_hist, priors = [], [], [], []
         n_signals, n_backgrounds, n_injected = 0, 0, 0
-        has_label, has_no_label = [], []
+        has_label_integral, has_no_label_integral = [], []
+        has_label_particles, has_no_label_particles = [], []
 
         if n_traces is None: n_traces = self.__len__()
         
@@ -301,6 +302,8 @@ class Generator(tf.keras.utils.Sequence):
                 print(f"{100 * (batch/n_traces):.2f}% - {mean_per_step_ms:.2f}ms/batch, ETA = {(n_traces - batch) * mean_per_step_ms * 1e-3:.0f}s {traces[0]}", end ="\r")
                 
                 for trace in traces:
+
+                    n_particles = trace.n_muons + trace.n_electrons + trace.n_photons
 
                     if trace.has_accidentals: 
                         background_hist.append(np.mean(trace.Injected))
@@ -329,9 +332,15 @@ class Generator(tf.keras.utils.Sequence):
                         _, n_sig, integral, _ = trace.get_trace_window((i, f))
 
                         if self.ignore_low_VEM: n_sig = 0 if integral < self.ignore_low_VEM else n_sig
+                        if self.ignore_particles: n_sig = 0 if self.ignore_particles <= n_particles else n_sig 
 
-                        if n_sig: has_label.append(integral)
-                        else: has_no_label.append(integral)
+
+                        if n_sig: 
+                            has_label_integral.append(integral)
+                            has_label_particles.append(n_particles)
+                        else: 
+                            has_no_label_integral.append(integral)
+                            has_no_label_particles.append(n_particles)
 
         histogram_ranges = [(0.01,3), (0.01,2e5), None]
         histogram_titles = ["Injected Background", "Signal", "Baseline"]
@@ -352,9 +361,18 @@ class Generator(tf.keras.utils.Sequence):
         plt.figure()
         plt.title("Sliding window integral")
         plt.axvline(self.ignore_low_VEM, c = "gray", ls = "--", lw = 2, label = "low VEM cut")
-        plt.hist(has_no_label, bins = 500, histtype = "step", label = f"Background: n = {len(has_no_label)}", range = (-1,20), ls = "--")
-        plt.hist(has_label, bins = 500, histtype = "step", label = f"Signal: n = {len(has_label)}", range = (-1,20), ls = "--")
+        plt.hist(has_no_label_integral, bins = 500, histtype = "step", label = f"Background: n = {len(has_no_label_integral)}", range = (-1,20), ls = "--")
+        plt.hist(has_label_integral, bins = 500, histtype = "step", label = f"Signal: n = {len(has_label_integral)}", range = (-1,20), ls = "--")
         plt.xlabel("Integrated signal / VEM")
+        plt.yscale("log")
+        plt.legend()
+
+        plt.figure()
+        plt.title("Number of particles")
+        plt.axvline(self.ignore_particles, c = "gray", ls = "--", lw = 2, label = "low particle cut")
+        plt.hist(has_no_label_particles, bins = 500, histtype = "step", label = f"Background: n = {len(has_no_label_particles)}", range = (-1,20), ls = "--")
+        plt.hist(has_label_particles, bins = 500, histtype = "step", label = f"Signal: n = {len(has_label_particles)}", range = (-1,20), ls = "--")
+        plt.xlabel("number of particles")
         plt.yscale("log")
         plt.legend()
 
