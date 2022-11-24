@@ -54,7 +54,9 @@ class EventGenerator():
 
         * *window* (``int``) -- the length of the sliding window
         * *step* (``int``) -- step size of the sliding window analysis
-        * *ignore_low_vem* (``float``) -- intentionally mislabel low signal
+        * *ignore_low_vem* (``float``) -- intentionally mislabel low VEM_charge signals
+        * *ignore_particles* (``int``) -- intentionally mislabel few-particle signals
+
         '''
 
         # set all desired environmental variables
@@ -74,11 +76,12 @@ class EventGenerator():
         station = kwargs.get("station", GLOBAL.station)
 
         ignore_low_VEM = kwargs.get("ignore_low_vem", GLOBAL.ignore_low_VEM)
+        ignore_particles = kwargs.get("ignore_particles", GLOBAL.ignore_particles)
         sliding_window_length = kwargs.get("window", GLOBAL.window)
         sliding_window_step = kwargs.get("step", GLOBAL.step)
 
         trace_options = [q_peak, q_charge, n_bins, baseline_std, baseline_mean, n_injected, downsampling, real_background, random_index, station]
-        classifier_options = [ignore_low_VEM, sliding_window_length, sliding_window_step, prior]
+        classifier_options = [ignore_low_VEM, ignore_particles, sliding_window_length, sliding_window_step, prior]
         
         # set RNG seed if desired
         if seed:
@@ -119,11 +122,15 @@ class Generator(tf.keras.utils.Sequence):
 
     def __init__(self, signal_files : list, trace_options : list, classifier_options : list) :
 
-        self.ignore_low_VEM, self.prior = classifier_options[0], classifier_options[-1]
-        self.window_length, self.window_step = classifier_options[1], classifier_options[2]
+        # classifier_options = [ignore_low_VEM, ignore_particles, sliding_window_length, sliding_window_step, prior]
+        #                                    0,                1,                     2,                   3,     4,
+
+        self.ignore_low_VEM, self.ignore_particles, self.prior = classifier_options[0], classifier_options[1]
+        self.window_length, self.window_step = classifier_options[2], classifier_options[3]
+        self.prior = classifier_options[-1]
 
         # trace_options = [q_peak, q_charge, n_bins, baseline_std, baseline_mean, n_injected, downsampling, real_background, random_index, station]
-        #                       0,        1,      2,            3,             4,          5,            6,               7             8        9
+        #                       0,        1,      2,            3,             4,          5,            6,               7,            8,       9,
         
         self.q_peak, self.q_charge = trace_options[0], trace_options[1]
         self.length, self.n_injected = trace_options[2], trace_options[5]
@@ -182,6 +189,9 @@ class Generator(tf.keras.utils.Sequence):
 
                         # mislabel low energy 
                         if self.ignore_low_VEM: n_sig = 0 if integral < self.ignore_low_VEM else n_sig
+
+                        # mislabel few particles
+                        if self.ignore_particles: n_sig = 0 if self.ignore_particles <= (VEMTrace.n_muons + VEMTrace.n_electrons + VEMTrace.n_photons) else n_sig 
 
                         traces.append(pmt_data), labels.append(EventGenerator.labels[1 if n_sig else 0])
 

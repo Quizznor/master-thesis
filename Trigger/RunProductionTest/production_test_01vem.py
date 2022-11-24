@@ -286,5 +286,5 @@ if __name__ == "__main__":
                     n_totd += 1
                     break
 
-    with open(f"/cr/users/filip/Trigger/RunProductionTest/production/nuria_all_triggers_{overshoot_string}vem.csv", "a") as f:
+    with open(f"/cr/users/filip/Trigger/RunProductionTest/trigger_output/nuria_all_triggers_{overshoot_string}vem.csv", "a") as f:
         f.write(f"{file} {len(Buffer._these_traces)} {duration} {n_trigger} {n_th} {n_tot} {n_totd}\n")

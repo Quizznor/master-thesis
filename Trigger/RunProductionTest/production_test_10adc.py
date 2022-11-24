@@ -243,11 +243,11 @@ if __name__ == "__main__":
     window_stop = range(120, 682, 1)
     Trigger = HardwareClassifier()
     station = s = "nuria"
-    overshoot_adc = 0
+    overshoot_vem = 0
     i = int(sys.argv[1])
 
-    overshoot_vem = 0.5
-    overshoot_string = "05"
+    overshoot_adc = 10
+    overshoot_string = "10"
     
     n_trigger, n_th, n_tot, n_totd = 0, 0, 0, 0
     Buffer = RandomTrace(station = s, index = i)
@@ -286,5 +286,5 @@ if __name__ == "__main__":
                     n_totd += 1
                     break
 
-    with open(f"/cr/users/filip/Trigger/RunProductionTest/trigger_output/nuria_all_triggers_{overshoot_string}vem.csv", "a") as f:
+    with open(f"/cr/users/filip/Trigger/RunProductionTest/trigger_output/nuria_all_triggers_{overshoot_string}adc.csv", "a") as f:
         f.write(f"{file} {len(Buffer._these_traces)} {duration} {n_trigger} {n_th} {n_tot} {n_totd}\n")

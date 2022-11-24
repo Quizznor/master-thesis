@@ -246,8 +246,8 @@ if __name__ == "__main__":
     overshoot_adc = 0
     i = int(sys.argv[1])
 
-    overshoot_vem = 0.5
-    overshoot_string = "05"
+    overshoot_vem = 0
+    overshoot_string = "0"
     
     n_trigger, n_th, n_tot, n_totd = 0, 0, 0, 0
     Buffer = RandomTrace(station = s, index = i)

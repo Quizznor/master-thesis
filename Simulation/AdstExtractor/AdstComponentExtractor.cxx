@@ -126,7 +126,7 @@ struct VectorWrapper
 // should ensure complete containment in most cases. Might not be true for highly inclined showers. Should in any case be a fair first estimate
 std::vector<int> consideredStations{
 
-              // 4 rings with 5398 in center
+             // 4 rings with 5398 in center
               4049, 4050, 4051, 4052, 4053,
             4006, 4007, 4008, 4009, 4010, 4011,
         5480, 5481, 5482, 5483, 5484, 5485, 5486,

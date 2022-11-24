@@ -1,9 +1,9 @@
-JobBatchName    = production-test-nuria-10vem
-Executable      = /cr/users/filip/Trigger/RunProductionTest/production_test_10vem.py
+JobBatchName    = production-test-nuria-10adc
+Executable      = /cr/users/filip/Trigger/RunProductionTest/production_test_10adc.py
 
 error           = /cr/users/filip/Trigger/RunProductionTest/output/errors.err
-output          = /cr/users/filip/Trigger/RunProductionTest/output/output.out
-log             = /cr/users/filip/Trigger/RunProductionTest/output/logfle.log
+# output          = /cr/users/filip/Trigger/RunProductionTest/output/output.out
+# log             = /cr/users/filip/Trigger/RunProductionTest/output/logfle.log
 
 arguments       = $(Process)   
 request_memory  = 2G
