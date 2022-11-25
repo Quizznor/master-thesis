@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from dataclasses import dataclass
+import matplotlib as plt
 
 import random
 import numpy as np
@@ -224,14 +225,16 @@ def apply_downsampling(trace):
 
 if __name__ == "__main__":
 
-    # NURIA - 798
-    # LOQUI - 801
+    overshoot_vem = 0.1
+    overshoot_adc = 0.0
+
+    n_trigger = n_th = n_tot = n_totd = 0
 
     trace_duration = GLOBAL.n_bins * GLOBAL.single_bin_duration
 
     window_start = range(0, 682 - 120, 1)
     window_stop = range(120, 682, 1)
-    Trigger = HardwareClassifier()
+    Trigger = HardwareClassifier("ToTSanityChecks")
 
     i = int(sys.argv[1])
     station = s = "nuria"
@@ -242,24 +245,66 @@ if __name__ == "__main__":
 
     for j, trace in enumerate(Buffer._these_traces):
 
-        # print(f"Trace {j + 1}/{len(Buffer._these_traces)}...      ", end = "\r")
+        rate =  n_trigger / ((j + 1) * trace_duration)
+
+        print(f"Trace {j + 1}/{len(Buffer._these_traces)}... {n_th}/{n_tot}/{n_totd} -> {rate:.2f} Hz", end = "\r")
 
         # apply downsampling to trace
-        downsampled_trace = apply_downsampling(trace)
+        downsampled_trace = np.array([(apply_downsampling(trace)[k] + overshoot_adc) / (Buffer.q_peak[k] - overshoot_vem) for k in range(3)])
 
-        vem1_trace = np.array([downsampled_trace[k] / (Buffer.q_peak[k] - 1) for k in range(3)])
-        vem10_trace = np.array([downsampled_trace[k] / (Buffer.q_peak[k] - 10) for k in range(3)])
+        # split trigger procedure up into different chunks due to performance
+        if Trigger.Th(3.2, downsampled_trace):
+            n_trigger += 1
+            n_th += 1
+        else:
 
-        # # ToT, ToTd implicitly assumes chunks of 120 bins
-        for (start, stop) in zip(window_start, window_stop):
+            # ToT, ToTd implicitly assumes chunks of 120 bins
+            for (start, stop) in zip(window_start, window_stop):
 
-            window_1vem = vem1_trace[:, start : stop]
-            window_10vem = vem10_trace[:, start : stop]
+                window = downsampled_trace[:, start : stop]
 
-            one_vem_trigger = Trigger.ToT(window_1vem) or Trigger.ToTd(window_1vem)
-            ten_vem_trigger = Trigger.ToT(window_10vem) or Trigger.ToTd(window_10vem)
+                if Trigger.ToT(window):
+                    n_trigger += 1
+                    n_tot += 1
+                    break
+                
+                elif Trigger.ToTd(window):
+                    n_trigger += 1
+                    n_totd += 1
+                    break
 
-            if one_vem_trigger and not ten_vem_trigger:
-                with open(f"/cr/users/filip/Trigger/RunProductionTest/production/nuria_misclassified.csv", "a") as f:
-                    np.savetxt(f, window_1vem)
-                    np.savetxt(f, window_10vem)
+
+        # ToT, ToTd implicitly assumes chunks of 120 bins
+        # for (start, stop) in zip(window_start, window_stop):
+
+            # window_vem = vem_trace[:, start : stop]
+            # window_01vem = vem01_trace[:, start : stop]
+
+            # vem_trigger = Trigger.ToT(window_vem) or Trigger.ToTd(window_vem)
+            # tenth_vem_trigger = Trigger.ToT(window_01vem) or Trigger.ToTd(window_01vem)
+
+            # if tenth_vem_trigger and not vem_trigger:
+
+            #     print("\nFound something")
+
+            #     fig, (ax1, ax2) = plt.subplots(nrows = 2, ncols = 1, sharex = True, sharey = True)
+
+            #     ax1.set_title("Online VEM peak value")
+            #     ax1.plot(range(window_vem[0]), window_vem[0])
+            #     ax1.plot(range(window_vem[1]), window_vem[1])
+            #     ax1.plot(range(window_vem[2]), window_vem[2])
+            #     ax1.axhline(0.2)
+
+            #     ax2.set_title("Online VEM peak value - 0.1")
+            #     ax2.plot(range(window_01vem[0]), window_01vem[0])
+            #     ax2.plot(range(window_01vem[1]), window_01vem[1])
+            #     ax2.plot(range(window_01vem[2]), window_01vem[2])
+            #     ax2.axhline(0.2)
+
+            #     plt.show()
+
+            #     with open(f"/cr/users/filip/Trigger/RunProductionTest/trigger_output/{station}_misclassified.csv", "a") as f:
+            #         np.savetxt(f, window_vem)
+            #         np.savetxt(f, window_01vem)
+
+            

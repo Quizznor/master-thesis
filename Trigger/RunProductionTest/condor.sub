@@ -1,8 +1,8 @@
-JobBatchName    = production-test-nuria-10adc
-Executable      = /cr/users/filip/Trigger/RunProductionTest/production_test_10adc.py
+JobBatchName    = production-test-nuria-0vem
+Executable      = /cr/users/filip/Trigger/RunProductionTest/production_test_0vem.py
 
 error           = /cr/users/filip/Trigger/RunProductionTest/output/errors.err
-# output          = /cr/users/filip/Trigger/RunProductionTest/output/output.out
+output          = /cr/users/filip/Trigger/RunProductionTest/output/output.out
 # log             = /cr/users/filip/Trigger/RunProductionTest/output/logfle.log
 
 arguments       = $(Process)   

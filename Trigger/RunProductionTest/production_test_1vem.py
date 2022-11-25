@@ -235,35 +235,31 @@ def apply_downsampling(trace):
 
 if __name__ == "__main__":
 
-    # NURIA - 798
-    # LOQUI - 801
+    overshoot_vem = 1
+    overshoot_adc = 0.0
+
+    n_trigger = n_th = n_tot = n_totd = 0
 
     trace_duration = GLOBAL.n_bins * GLOBAL.single_bin_duration
+
     window_start = range(0, 682 - 120, 1)
     window_stop = range(120, 682, 1)
     Trigger = HardwareClassifier()
-    station = s = "nuria"
-    overshoot_adc = 0
-    i = int(sys.argv[1])
 
-    overshoot_vem = 1
-    overshoot_string = "1"
+    i = int(sys.argv[1])
+    station = s = "nuria"
     
-    n_trigger, n_th, n_tot, n_totd = 0, 0, 0, 0
     Buffer = RandomTrace(station = s, index = i)
     file = Buffer.random_file
     duration = len(Buffer._these_traces) * trace_duration 
 
     for j, trace in enumerate(Buffer._these_traces):
 
-        # print(f"Looking at trace {j + 1}/{len(Buffer._these_traces)} ==> {n_trigger} found", end = "\r")
+        # rate =  n_trigger / ((j + 1) * trace_duration)
+        # print(f"Trace {j + 1}/{len(Buffer._these_traces)}... {n_th}/{n_tot}/{n_totd} -> {rate:.2f} Hz", end = "\r")
 
         # apply downsampling to trace
-        downsampled_trace = apply_downsampling(trace)
-        for k in range(3):
-            Buffer.q_peak[k] -= overshoot_vem
-            downsampled_trace[k] += np.random.uniform(overshoot_adc, overshoot_adc + 1)
-            downsampled_trace[k] /= Buffer.q_peak[k]
+        downsampled_trace = np.array([(apply_downsampling(trace)[k] + overshoot_adc) / (Buffer.q_peak[k] - overshoot_vem) for k in range(3)])
 
         # split trigger procedure up into different chunks due to performance
         if Trigger.Th(3.2, downsampled_trace):
@@ -286,5 +282,5 @@ if __name__ == "__main__":
                     n_totd += 1
                     break
 
-    with open(f"/cr/users/filip/Trigger/RunProductionTest/trigger_output/nuria_all_triggers_{overshoot_string}vem.csv", "a") as f:
+    with open(f"/cr/users/filip/Trigger/RunProductionTest/trigger_output/{station}_all_triggers_{overshoot_vem}vem.csv", "a") as f:
         f.write(f"{file} {len(Buffer._these_traces)} {duration} {n_trigger} {n_th} {n_tot} {n_totd}\n")
