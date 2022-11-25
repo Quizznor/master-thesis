@@ -5,8 +5,7 @@
 
 This chapter aims to introduce the general physical principles underlaying the analysis presented in this work. For this purpose, an overview of the origin, 
 composition and energy spectrum of cosmic rays is given in \autoref{sec:cr-history}, \autoref{sec:cr-acceleration}, and \autoref{sec:cr-energy-spectrum} 
-respectively. Their interactions with other matter, the physics of extensive air showers and their possible detection methods are listed in 
-\autoref{sec:extensive-air-showers}.
+respectively.
 
 \section{History}
 \label{sec:cr-history}
@@ -255,7 +254,7 @@ $W$. It is $H \ll W$, and thus only diffusion along the $\pm z$-direction will b
 interactions with the ISM, the transport equation reduces to the first two terms, with $D = \left( 0, 0, D_z \right)^\text{T}$ and 
 $Q = n_0\,\delta(z)\,\delta(t_0)$.
 
-\begin{figure}[t]
+\begin{figure}
 	\begin{subfigure}[b]{0.32\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{./plots/galactic_diffusion.png}
@@ -310,9 +309,9 @@ their propagation through space is thought to be severely impeded. At energies a
 corresponding energy can thus absorb such CMB photons and convert to its' excited spin state, the $\Delta^+$-baryon. The $\Delta^+$-baryon decays nearly 
 instantanouely to (for example) its' ground state again, by radiating away a $\pi^0$ \cite{PDG} and losing energy in the process \cite{PDG}. 
 
-The mean free path of this interaction, also labelled GZK horizon is both energy- and primary-dependant. For \SI{75}{\exa\electronvolt} protons, it is 
-$\approx \SI{100}{\mega\parsec}$. Cosmic rays exceeding the GZK threshold should ergo not be observed from faraway sources, and an overall reduction in flux 
-at these energies should be recorded.
+The mean free path of this interaction, also labelled GZK horizon is both energy- and primary-dependant (i.e. what kind of cosmic ray is considered). For 
+\SI{75}{\exa\electronvolt} protons, it is $\approx \SI{100}{\mega\parsec}$. Cosmic rays exceeding the GZK threshold should ergo not be observed from faraway 
+sources, and an overall reduction in flux at these energies should be recorded \cite{greisen1966end, zatsepin1966j}.
 
 Indeed, results published by the Auger collaboration (see \autoref{sec:cr-energy-spectrum}) are consistent with this assumption. Whether or not the GZK-supression
 is the main cause for this hard spectrum at the highest energies remains unclear for now, but shall hopefully be answered with the ongoing AugerPrime upgrade of 
@@ -359,10 +358,10 @@ combined results are shown in \autoref{fig:cr-energy-spectrum}. However, while t
 range of energies, kinks and other feature in the spectrum indicate that the spectral index $\alpha$ is not uniform, and instead a function of energy. The 
 approximate form of $\alpha(E)$ will be discussed in the following by examining several key regions of the energy spectrum. 
 
-\subsection{Proton knee $E\approx 10^{15}\,\SI{}{\electronvolt}$}
+\subsection{The proton knee $E\approx 10^{15}\,\SI{}{\electronvolt}$}
 \label{ssec:cr-proton-knee}
 
-Below an energy of $\approx \SI{1}{\peta\electronvolt} = 10^6\,\SI{}{\electronvolt}$, it is $\alpha(E)\approx 2.7$, while above a spectral index of 
+Below an energy of $\approx \SI{1}{\peta\electronvolt} = 10^6\,\SI{}{\giga\electronvolt}$, it is $\alpha(E)\approx 2.7$, while above a spectral index of 
 $\alpha(E)\approx 3.0$ is found \cite{gaisser2016cosmic}. This softening of the spectrum (i.e. fewer particles of higher energy) could be attributed to several
 effects.
 
@@ -390,27 +389,38 @@ effects.
 	proton knee is thus populated by CRs that originate from different acceleration mechanisms with differen relations $\alpha(E)$.
 \end{itemize}
 
-\subsection{Iron knee $E \approx 10^{17}\,\SI{}{\electronvolt}$}
+\subsection{The iron knee $E \approx 10^{17}\,\SI{}{\electronvolt}$}
 \label{ssec:cr-iron-knee}
 
-The spectrum exhibits various similar kinks at slightly higher energy than the one discussed in \autoref{ssec:proton-knee}, each one corresponding to a different 
-primary particle. Representatively, the iron knee at $E \approx 10^{17}\,\text{eV}$ is discussed here. 
+The spectrum exhibits various similar kinks at slightly higher energies than the one discussed in \autoref{ssec:cr-proton-knee}, while it is assumed that they are 
+ultimately caused by the same physical principles, each one corresponds to a different primary particle. Representatively, the iron knee at 
+$E \approx 10^{17}\,\text{eV}$ is discussed here. 
 
-Because iron both has a higher mass and charge ($Z = 26$, $A = 56$) compared to the proton ($Z = A = 1$), different processes couple to both nuclei with 
-different strengths. For example, an iron core has a higher magnetic rigidity $R \propto \frac{A}{Z}$ than a proton of equivalent energy. More intuitively, while 
-the iron core experiences a larger Lorentz force ($\propto Z$), the resulting acceleration ($\propto A^{-1}$) is not as strong due to a disproportionally larger 
-mass.
+Because iron has both a higher mass and charge ($Z = 26$, $A = 56$) compared to the proton ($Z = A = 1$), different processes couple to the different nuclei with 
+disparate strength. In particular, an iron core has a higher magnetic rigidity $R \propto \frac{A}{Z}$ than a proton of equivalent energy. This is explained by the
+fact that, while the iron core experiences a larger Lorentz force ($\propto Z$), the resulting acceleration ($\propto \frac{Z}{A}$) is not as strong due to a
+disproportionally larger mass ($\propto A$). It is thus logical to expect differences in the creation, propagation, and shower characteristics 
+(see \autoref{ssec:superposition-principle} for details) of different CR primary particles. By extension, the spectral index $\alpha(E)$ should be contrasting for 
+each distinct particle type $i$, giving rise to different fluxes $\Upphi(E)_i$, which is confirmed by \autoref{fig:cr-energy-spectrum}.
 
-\subsection{Ankle $E \approx 10^{18}\,\SI{}{\electronvolt}$}
+The ultimate cause of the different knees remains unknown currently. In the context of the ongoing AugerPrime upgrade, the Pierre Auger observatory will scan the
+energy spectrum at higher precision \cite{castellina2019augerprime}. This will allow to test whether the location of the various kinks scale with $A$ or with $Z$, 
+and consequently shed light on the processes giving rise to these features.
+
+\subsection{The Ankle $E \approx 10^{18}\,\SI{}{\electronvolt}$}
 \label{ssec:cr-ankle}
 
-ajshgkljghkfgkldfyg
+At an energy of roughly $\approx\SI{1}{\exa\electronvolt} = 10^9\,\SI{}{\giga\electronvolt}$ an inflection point is found, where the spectrum hardens again from an 
+index $\alpha(E) = 3.0$ to $\approx 2.7$. This might mark the final transition from predominantely galactic to intergalactic cosmic rays. If intergalactic CR 
+sources such as AGNs have a harder spectrum (but lower luminosity) than galactic sources, the ankle could be well explained by a smooth transition from the latter to 
+the former spectrum \cite{aloisio2007dip}. Other explanations focus on a change of the primary composition, which seems to be apparent in 
+\autoref{fig:cr-energy-spectrum} at the correct energy \cite{allard2012extragalactic}. In any case, more data needs to be gathered to come to an informed 
+conclusion on the ultimate cause.
 
-\subsection{Cutoff $E \approx 10^{20}\,\SI{}{\electronvolt}$}
+\subsection{The suppression $E \approx 10^{20}\,\SI{}{\electronvolt}$}
+\label{ssec:cr-cutoff}
 
-
-\section{Extensive air showers}
-\label{sec:extensive-air-showers}
-
-
-
+At energies beyond $10^{20}\,\text{eV}$ a sharp drop in the flux can be noted. This represents the tail end of the spectrum, beyond which events are so rare that 
+cosmic ray observatories can mostly just identify upper limits with their available statistics. The cause for the drop is actively debated, and might lie in the 
+GZK cutoff discussed in \autoref{ssec:gzk-cutoff}. Another explanation might be that the tail end represents the point at which even the largest and most powerful
+(in terms of energy) CR sources in the universe are not able to accelerate particles any further (c.f. \autoref{fig:hillas-plot}). 
