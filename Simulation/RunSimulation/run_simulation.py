@@ -7,7 +7,8 @@ import subprocess
 # 15.5 - 18.5 log E = /lsdf/auger/corsika/prague/QGSJET-II.04/proton/ -    NO EXTENSION
 # 18.5 - 20.2 log E = /lsdf/auger/corsika/napoli/QGSJET-II.04/proton/ - .part EXTENSION
 
-E_DICT = {"16_16.5" : ["prague","*","(1)"],
+E_DICT = {
+          "16_16.5" : ["prague","*","(1)"],
           "16.5_17" : ["prague","*","(1)"],
           "17_17.5" : ["prague","*","(1)"],
           "17.5_18" : ["prague","*","(1)"],
@@ -16,7 +17,7 @@ E_DICT = {"16_16.5" : ["prague","*","(1)"],
           "19_19.5" : ["napoli","*.part","(1).part"],
           }
 
-E_RANGE = "19_19.5"
+E_RANGE = "16_16.5"
 ALREADY_PRESENT = 0
 NUM_RETHROWS = 1
 
@@ -38,6 +39,7 @@ EVENT_NAME = FILE_NAME.replace(".part", "")
 for j in range(ALREADY_PRESENT, ALREADY_PRESENT + NUM_RETHROWS):
     NAME = f"{EVENT_NAME}_{str(j).zfill(2)}"
     SEED = str(j).zfill(6)
+
     try:
         if os.path.isfile(f"{DESTINATION_DIR}/root_files/{NAME}.root"):
             raise IndexError

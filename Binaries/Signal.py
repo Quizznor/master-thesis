@@ -199,7 +199,7 @@ class Trace(Signal):
         # clipping and bitshifting
         for i, pmt in enumerate(sampled_trace):
             for j, adc in enumerate(pmt):
-                sampled_trace[i,j] = np.clip(int(adc) >> kFirNormalizationBitShift, a_min = -20, a_max = None)
+                sampled_trace[i,j] = np.clip(int(adc) >> kFirNormalizationBitShift, a_min = -20, a_max = None)              # why clip necessary, why huge negative values?
                 # sampled_trace[i,j] = int(adc) >> kFirNormalizationBitShift
 
         return sampled_trace
@@ -275,7 +275,6 @@ class SignalBatch():
                 signal = [np.array([float(x) for x in line.split()]) for line in file.readlines()]
 
         for station in range(0, len(signal), 3):
-            print("Yield station")
             yield np.array([signal[station], signal[station + 1], signal[station + 2]]) 
 
 # container for gaussian baseline
@@ -285,7 +284,6 @@ class Baseline():
         return np.random.normal(mu, sigma, (3, length))
 
 # container for random traces
-# TODO pair with q_peak and q_charge values
 class RandomTrace():
 
     baseline_dir : str = "/cr/tempdata01/filip/iRODS/"                              # storage path of the station folders
@@ -294,9 +292,8 @@ class RandomTrace():
 
     def __init__(self, station : str = None, index : int = None) -> None : 
 
-        ## (HOPEFULLY) TEMPORARILY FIXED TO NURIA DUE TO BAD FLUCTUATIONS IN OTHER STATIONS
-        # self.station = random.choice(["nuria", "peru", "jaco"]) if station is None else station.lower()
-        self.station = "nuria"
+        ## (HOPEFULLY) TEMPORARILY FIXED TO NURIA/LO_QUI_DON DUE TO BAD FLUCTUATIONS IN OTHER STATIONS
+        self.station = random.choice(["nuria", "lo_qui_don"]) if station is None else station.lower()
         self.index = index
 
         all_files = np.asarray(os.listdir(RandomTrace.baseline_dir + self.station)) # container for all baseline files
@@ -322,7 +319,8 @@ class RandomTrace():
             self.q_peak = [180.23, 182.52, 169.56]
             self.q_charge = [3380.59, 3508.69, 3158.88]
         elif "lo_qui_don" in self.random_file:
-            self.q_peak = [164.79, 163.49, 174.71]
+            # self.q_peak = [164.79, 163.49, 174.71]
+            self.q_peak = [163.79, 162.49, 173.71]
             self.q_charge = [2846.67, 2809.48, 2979.65]
         elif "jaco" in self.random_file:
             self.q_peak = [189.56, 156.48, 168.20]

@@ -28,6 +28,7 @@ class GLOBAL():
     real_background             = False                                         # use random traces instead of gaussian baseline
     random_index                = None                                          # this file is used first when creating randoms
     force_inject                = None                                          # whether or not to force injection of muons
+    station                     = None                                          # what station to use for random traces
 
     # trace_opts                  = [q_peak, q_charge, length, sigma, mu, n_injected, downsampling]
 
@@ -40,6 +41,7 @@ class GLOBAL():
     
     # Classifier details, can be overwritten in __new__ of EventGenerator
     ignore_low_VEM              = 0                                             # label signals under threshold as background
+    ignore_particles            = 0                                             # label traces with n < ignore_particles as bg
     window                      = 120                                           # Length (in bins) of the sliding window
     step                        = 10                                            # Sliding window analysis step size (in bins)
     early_stopping_patience     = 10000                                         # number of batches for early stopping patience
