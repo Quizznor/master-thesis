@@ -92,6 +92,8 @@ class Classifier():
         (pmt1, pmt2, pmt3), x = trace, len(trace[0])
         assert len(pmt1) == len(pmt2) == len(pmt3), "TRACE LENGTHS DO NOT MATCH"
 
+        plt.rcParams["figure.figsize"] = [20, 10]
+
         plt.plot(range(x), pmt1, label = "PMT #1")
         plt.plot(range(x), pmt2, label = "PMT #2")
         plt.plot(range(x), pmt3, label = "PMT #3")

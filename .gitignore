@@ -5,6 +5,9 @@ condor_binaries/
 scripts/binaries/__pycache__/*
 __CONDOR__/
 plots/production_tests/*
+Trigger/RunProductionTest/production/*
+Trigger/RunProductionTest/output/*
+Trigger/CompareEvents/events.root
 
 scripts/CDAS_triggers/io
 scripts/CDAS_triggers/sd

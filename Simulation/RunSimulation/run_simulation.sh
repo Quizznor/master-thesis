@@ -31,3 +31,6 @@ rm -rf $BOOTSTRAP
 
 # New ADST Component extractor! =)
 /cr/users/filip/Simulation/AdstExtractor/AdstComponentExtractor "$3/root_files/$4.root"
+
+# Delete root file
+# rm -rf "$3/root_files/$4.root"
