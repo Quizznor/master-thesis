@@ -126,14 +126,21 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
 {
   const auto csvTraceFile = pathToAdst.parent_path() / pathToAdst.filename().replace_extension("csv");
 
-  (2) start main loop
+  // (2) start main loop
   RecEventFile     recEventFile(pathToAdst.string());
   RecEvent*        recEvent = nullptr;
 
-  will be assigned by root
+  // will be assigned by root
   recEventFile.SetBuffers(&recEvent);
 
-  for (unsigned int i = 0; i < recEventFile.GetNEvents(); ++i) 
+  // create csv file stream
+  ofstream traceFile(csvTraceFile.string(), std::ios_base::app);
+
+  // only recreate n events
+  const int max_events = recEventFile.GetNEvents();
+  // const int max_events = 10;
+
+  for (unsigned int i = 0; i < max_events; ++i) 
   // for (unsigned int i = 0; i < 2; ++i) 
   {
     // skip if event reconstruction failed
@@ -141,64 +148,60 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
 
     // allocate memory for data
     const SDEvent& sdEvent = recEvent->GetSDEvent();                              // contains the traces
-    
-    // create csv file stream
-    ofstream traceFile(csvTraceFile.string(), std::ios_base::app);
 
     // loop over all stations
     for (const auto& recStation : sdEvent.GetStationVector()) 
     {
 
+      // only consider UUB stations
+      if (!recStation.IsUUB()){continue;}
+      
       // calculate shower plane distance from generated shower parameters
       const auto stationID = recStation.GetId();
       const auto showerPlaneDistance = recStation.GetSPDistance();
+      const auto GPSTimestamp = recStation.GetTimeSecond();
 
+      // #####################################################     
+      // recreating trace from FADC bins
 
-      // loop over all PMTs
-      for (unsigned int PMT = 1; PMT < 4; PMT++)
+      const auto traces = recStation.GetPMTTraces();
+
+      for (int j = 0; j < 3; j++)
       {
-        // total trace container
-        VectorWrapper TotalTrace(2048,0);
+        const auto temp = traces[j];
+        const auto trace = ( recStation.IsHighGainSaturated() ) ? temp.GetLowGainComponent() : temp.GetHighGainComponent();
+        const auto baseline = ( recStation.IsHighGainSaturated() ) ? temp.GetBaselineLG() : temp.GetBaseline();
+        const auto DynAnRatio = ( recStation.IsHighGainSaturated() ) ? temp.GetDynodeAnodeRatio() : 0;
 
-        // // get VEM trace of PMT
-        // const auto TotalTrace = VectorWrapper( recStation.GetVEMTrace(PMT) );
-
-        // loop over all components
-        for (int component = ePhotonTrace; component <= eMuonTrace; component++)
+        if (trace.size() != 0 && temp.GetPeak() != 0) 
         {
-          const auto component_trace = recStation.GetPMTTraces((ETraceType)component, PMT);
-          auto CalibratedTrace = VectorWrapper( component_trace.GetVEMComponent() );
-
-          // make sure there exists a component of this type
-          if (CalibratedTrace.values.size() != 0)
-          {
-            const auto vem_peak = component_trace.GetPeak();
-            VectorWrapper UncalibratedTrace = CalibratedTrace * vem_peak;
-            TotalTrace = TotalTrace + UncalibratedTrace;
-          }
+          traceFile << stationID << " " << showerPlaneDistance << " " << temp.GetPeak() << " " << baseline << " " << DynAnRatio << " " << GPSTimestamp << " 0 0 ";
+          for (const auto& bin : trace){traceFile << bin << " ";}
+          traceFile << "\n";
         }
-        
-        // write all information to trace file
-        traceFile << stationID << " " << showerPlaneDistance << " 0 0";
-
-        // "digitize" component trace...
-        // this used to be converted to VEM
-        const auto signal_start = recStation.GetSignalStartSlot();
-        const auto signal_end = recStation.GetSignalEndSlot();
-        const auto trace_vector = TotalTrace.get_trace(signal_start, signal_end);
-
-        // ... and write to disk
-        for (const auto& bin : trace_vector)
-        {
-          traceFile << bin << " ";
-        }
-
-        traceFile << "\n";
       }
-    }
 
-    traceFile.close();
+      // // #####################################################
+      // // extracting the Offline reconstructed VEM trace
+
+      // for (unsigned int PMT = 1; PMT < 4; PMT++)
+      // {
+      //   const auto trace = recStation.GetVEMTrace(PMT);
+
+
+      //   if (trace.size() != 0) 
+      //   {
+      //     traceFile << stationID << " " << showerPlaneDistance << " 0 0 0 0 0 0 ";
+      //     for (const auto& bin : trace){traceFile << bin << " ";}
+      //     traceFile << "\n";
+      //   }
+      // }
+
+      // #####################################################
+    }
   }
+
+  traceFile.close();
 }
 
 int main(int argc, char** argv) 
@@ -207,6 +210,3 @@ int main(int argc, char** argv)
   ExtractDataFromAdstFiles(argv[1]);
   return 0;
 }
-
-root[] TFile f("cernstaff.root")
-root[] T->StartViewer()

@@ -1,13 +1,13 @@
 <!-- A sequence for an SD only reconstruction -->
 
 <!DOCTYPE sequenceFile [
-  <!ENTITY % sd SYSTEM "/cr/data01/filip/offline/install/share/auger-offline/config/standardSdSequences.dtd">
+  <!ENTITY % sd SYSTEM "/cr/data01/filip/offline_ubuntu20/install/share/auger-offline/config/standardSdSequences.dtd">
   %sd;
 ] >
 
 <sequenceFile
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:noNamespaceSchemaLocation='/cr/data01/filip/offline/install/share/auger-offline/config/ModuleSequence.xsd'>
+  xsi:noNamespaceSchemaLocation='/cr/data01/filip/offline_ubuntu20/install/share/auger-offline/config/ModuleSequence.xsd'>
 
   <enableTiming/>
 

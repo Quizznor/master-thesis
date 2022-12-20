@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 
 <!DOCTYPE bootstrap [
-  <!ENTITY standardSdIdealDetConfig SYSTEM '/cr/data01/filip/offline/install/share/auger-offline/config/standardSdIdealDetConfig.xml'>
-  <!ENTITY standardSdSimModuleConfig SYSTEM '/cr/data01/filip/offline/install/share/auger-offline/config/standardSdSimModuleConfig.xml'>
-  <!ENTITY standardSdRecModuleConfig SYSTEM '/cr/data01/filip/offline/install/share/auger-offline/config/standardSdRecModuleConfig.xml'>
+  <!ENTITY standardSdIdealDetConfig SYSTEM '/cr/data01/filip/offline_ubuntu20/install/share/auger-offline/config/standardSdIdealDetConfig.xml'>
+  <!ENTITY standardSdSimModuleConfig SYSTEM '/cr/data01/filip/offline_ubuntu20/install/share/auger-offline/config/standardSdSimModuleConfig.xml'>
+  <!ENTITY standardSdRecModuleConfig SYSTEM '/cr/data01/filip/offline_ubuntu20/install/share/auger-offline/config/standardSdRecModuleConfig.xml'>
 ]>
 
 <bootstrap
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:noNamespaceSchemaLocation='/cr/data01/filip/offline/install/share/auger-offline/config/bootstrap.xsd'
+  xsi:noNamespaceSchemaLocation='/cr/data01/filip/offline_ubuntu20/install/share/auger-offline/config/bootstrap.xsd'
   xmlns:xlink="http://www.auger.org/schema/types">
 
   &standardSdIdealDetConfig;

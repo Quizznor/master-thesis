@@ -1,6 +1,0 @@
-/home/tmp/condor//dir_2313053/condor_exec.exe:263: RuntimeWarning: divide by zero encountered in true_divide
-  downsampled_trace = np.array([(apply_downsampling(trace)[k]) / (Buffer.q_peak[k] * (1 + overshoot_vem)) for k in range(3)])
-/home/tmp/condor//dir_2313053/condor_exec.exe:263: RuntimeWarning: invalid value encountered in true_divide
-  downsampled_trace = np.array([(apply_downsampling(trace)[k]) / (Buffer.q_peak[k] * (1 + overshoot_vem)) for k in range(3)])
-/home/tmp/condor//dir_2313053/condor_exec.exe:184: RuntimeWarning: invalid value encountered in double_scalars
-  deconvoluted_pmt = [(pmt[i] - pmt[i-1] * decay)/(1 - decay) for i in range(1,len(pmt))]

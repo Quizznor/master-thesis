@@ -8,6 +8,12 @@ plots/production_tests/*
 Trigger/RunProductionTest/production/*
 Trigger/RunProductionTest/output/*
 Trigger/CompareEvents/events.root
+scripts/validity-plot/showersim
+Simulation/condor
+Simulation/Bootstraps/*
+Trigger/CompareEvents/*.csv
+Trigger/CompareEvents/*.root
+thesis/scripts/validity-plot/showersim
 
 scripts/CDAS_triggers/io
 scripts/CDAS_triggers/sd

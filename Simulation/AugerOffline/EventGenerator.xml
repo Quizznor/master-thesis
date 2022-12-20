@@ -12,7 +12,7 @@
 
 <EventGenerator
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:noNamespaceSchemaLocation='/cr/data01/filip/offline/install/share/auger-offline/config/EventGenerator.xsd'>
+  xsi:noNamespaceSchemaLocation='/cr/data01/filip/offline_ubuntu20/install/share/auger-offline/config/EventGenerator.xsd'>
 
   <!-- Specify what you are planning to simulate: SD, FD, Hy -->
   <mode> SD </mode>

@@ -194,14 +194,14 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
       // calculate shower plane distance for considered station
       const auto showerPlaneDistance = detectorGeometry.GetStationAxisDistance(consideredStationId, showerAxis, showerCore);
 
-      // check if considered station has received particles
-      if (genIndex != simulatedStationIds.end())
-      {
-        // simulated station is hit by the shower
-        //      -> write spd and theta to hits.csv
-        //      -> check if it actually triggered
+      // // check if considered station has received particles
+      // if (genIndex != simulatedStationIds.end())
+      // {
+      //   // simulated station is hit by the shower
+      //   //      -> write spd and theta to hits.csv
+      //   //      -> check if it actually triggered
 
-        const auto genIndex = std::find(simulatedStationIds.begin(), simulatedStationIds.end(), consideredStationId);
+        // const auto genIndex = std::find(simulatedStationIds.begin(), simulatedStationIds.end(), consideredStationId);
         const auto stationId = simulatedStationIds[genIndex - simulatedStationIds.begin()];
         const auto genStation = sdEvent.GetSimStationById(stationId);
 
@@ -209,7 +209,14 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
         const auto nElectrons = genStation->GetNumberOfElectrons();
         const auto nPhotons = genStation->GetNumberOfPhotons();
 
-        ldfFileHits << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " " << nMuons << ", " << nElectrons << ", " << nPhotons << std::endl;
+        if (nMuons == 0 && nElectrons == 0 && nPhotons == 0)
+        {
+          ldfFileMisses << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " " << nMuons << " " << nElectrons << " " << nPhotons << std::endl;
+        }
+        else
+        {
+          ldfFileHits << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " " << nMuons << " " << nElectrons << " " << nPhotons << std::endl;
+        }
 
         if (std::find(recreatedStationIds.begin(), recreatedStationIds.end(), consideredStationId) != recreatedStationIds.end())
         {
@@ -219,8 +226,6 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
 
           // fetch data from desired station
           const auto recStation = sdEvent.GetStationById(stationId);
-
-          std::cout << "Station " << stationId << " at SPD = " << showerPlaneDistance << "m received (" << nMuons << ", " << nElectrons << ", " << nPhotons << ") particles" << std::endl;
 
           // loop over all PMTs
           for (unsigned int PMT = 1; PMT < 4; PMT++)
@@ -232,7 +237,8 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
             for (int component = ePhotonTrace; component <= eMuonTrace; component++)
             {
               const auto component_trace = recStation->GetPMTTraces((ETraceType)component, PMT);
-              auto CalibratedTrace = VectorWrapper( component_trace.GetVEMComponent() );
+              const auto DynAnRatio = (recStation->IsHighGainSaturated()) ? component_trace.GetDynodeAnodeRatio() : 1;
+              auto CalibratedTrace = VectorWrapper( component_trace.GetVEMComponent() ) * DynAnRatio;
 
               // make sure there exists a component of this type
               if (CalibratedTrace.values.size() != 0)
@@ -244,7 +250,7 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
             }
 
             // write all information to trace file
-            traceFile << stationId << " " << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " " << nMuons << " " << nElectrons << " " << nPhotons;
+            traceFile << stationId << " " << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " " << nMuons << " " << nElectrons << " " << nPhotons << " ";
 
             // "digitize" component trace...
             // this used to be converted to VEM
@@ -261,14 +267,14 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
             traceFile << "\n";
           }
         }
-      }
-      else
-      {
-        // simulated station is not hit by the shower
-        //   -> write spd and theta to misses.csv
+      // }
+      // else
+      // {
+      //   // simulated station is not hit by the shower
+      //   //   -> write spd and theta to misses.csv
 
-        ldfFileMisses << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " 0 0 0" << std::endl;
-      }
+      //   ldfFileMisses << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " 0 0 0" << std::endl;
+      // }
     }
 
     traceFile.close();

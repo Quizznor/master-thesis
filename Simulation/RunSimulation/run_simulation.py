@@ -19,9 +19,10 @@ E_DICT = {
 
 E_RANGE = "16_16.5"
 ALREADY_PRESENT = 0
-NUM_RETHROWS = 1
+NUM_RETHROWS = 3
 
 SRC_DIR=f"/lsdf/auger/corsika/{E_DICT[E_RANGE][0]}/QGSJET-II.04/proton/{E_RANGE}/"
+# SRC_DIR=f"/cr/users/filip/Simulation/TestOutput/"
 DESTINATION_DIR=f"/cr/tempdata01/filip/QGSJET-II/protons/{E_RANGE}/"
 file_list = [file for file in os.listdir(SRC_DIR) if not '.' in file or file.endswith(".part")]
 FILE_NAME = file_list[int(sys.argv[1])]

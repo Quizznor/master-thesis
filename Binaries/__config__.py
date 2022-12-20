@@ -11,6 +11,7 @@ class SlidingWindowError(Exception): pass
 class EarlyStoppingError(Exception): pass
 class SignalError(Exception): pass
 class RandomTraceError(Exception): pass
+class ElectronicsError(Exception): pass
 
 @dataclass
 class GLOBAL():

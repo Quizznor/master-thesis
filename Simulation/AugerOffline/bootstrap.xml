@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 
 <!DOCTYPE bootstrap [
-  <!ENTITY standardSdIdealDetConfig SYSTEM '/cr/data01/filip/offline/install/share/auger-offline/config/standardSdIdealDetConfig.xml'>
-  <!ENTITY standardSdSimModuleConfig SYSTEM '/cr/data01/filip/offline/install/share/auger-offline/config/standardSdSimModuleConfig.xml'>
-  <!ENTITY standardSdRecModuleConfig SYSTEM '/cr/data01/filip/offline/install/share/auger-offline/config/standardSdRecModuleConfig.xml'>
+  <!ENTITY standardSdIdealDetConfig SYSTEM '/cr/data01/filip/offline_ubuntu20/install/share/auger-offline/config/standardSdIdealDetConfig.xml'>
+  <!ENTITY standardSdSimModuleConfig SYSTEM '/cr/data01/filip/offline_ubuntu20/install/share/auger-offline/config/standardSdSimModuleConfig.xml'>
+  <!ENTITY standardSdRecModuleConfig SYSTEM '/cr/data01/filip/offline_ubuntu20/install/share/auger-offline/config/standardSdRecModuleConfig.xml'>
 ]>
 
 <bootstrap
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:noNamespaceSchemaLocation='/cr/data01/filip/offline/install/share/auger-offline/config/bootstrap.xsd'
+  xsi:noNamespaceSchemaLocation='/cr/data01/filip/offline_ubuntu20/install/share/auger-offline/config/bootstrap.xsd'
   xmlns:xlink="http://www.auger.org/schema/types">
 
   &standardSdIdealDetConfig;
@@ -20,27 +20,32 @@
     <configLink
       id         = "ModuleSequence"
       type       = "XML"
-      xlink:href = "./ModuleSequence_trigger_all.xml"/>
+      xlink:href = "/cr/users/filip/Simulation/AugerOffline/ModuleSequence_trigger_all.xml"/>
 
     <configLink
       id         = "EventFileReader"
       type       = "XML"
-      xlink:href = "./EventFileReader.xml"/>
+      xlink:href = "/cr/users/filip/Simulation/AugerOffline/EventFileReader.xml"/>
 
     <configLink
       id         = "EventFileExporter"
       type       = "XML"
-      xlink:href = "./EventFileExporter.xml"/>
+      xlink:href = "/cr/users/filip/Simulation/AugerOffline/EventFileExporter.xml"/>
 
     <configLink
       id         = "EventGenerator"
       type       = "XML"
-      xlink:href = "./EventGenerator.xml"/>
+      xlink:href = "/cr/users/filip/Simulation/AugerOffline/EventGenerator.xml"/>
 
    <configLink
        id         = "SStationListXMLManager"
        type       = "XML"
-       xlink:href = "./CustomStationList.xml"/>
+       xlink:href = "/cr/users/filip/Simulation/AugerOffline/CustomStationList.xml"/>
+
+   <configLink
+       id         = "SDenseStationListXMLManager"
+       type       = "XML"
+       xlink:href = '/cr/users/filip/Simulation/AugerOffline/SDenseStations_purged.xml'/>
 
   </centralConfig>
 
@@ -53,9 +58,13 @@
           <InputFilenames>
             @INPUTFILE@
           </InputFilenames>
-          <PatternPath> * </PatternPath>
+          <PatternPath> 
+            @PATTERNPATH@ 
+          </PatternPath>
           <InputMapping>
-            <GroundData> (1) </GroundData>
+            <GroundData> 
+              @GROUNDDATA@ 
+            </GroundData>
             <ProfileData> (1).long </ProfileData>
           </InputMapping>
         </CORSIKA>
@@ -106,8 +115,12 @@
 
     <configLink id="RandomEngineRegistry">
       <RandomEngineRegistry>
-        <DetectorSeed> 000001 </DetectorSeed>
-        <PhysicsSeed> 000002 </PhysicsSeed>
+        <DetectorSeed> 
+        @DETECTORSEED@
+        </DetectorSeed>
+        <PhysicsSeed> 
+        @PHYSICSSEED@
+        </PhysicsSeed>
       </RandomEngineRegistry>
     </configLink>
 
