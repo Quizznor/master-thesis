@@ -14,6 +14,7 @@ Simulation/Bootstraps/*
 Trigger/CompareEvents/*.csv
 Trigger/CompareEvents/*.root
 thesis/scripts/validity-plot/showersim
+antrag/
 
 scripts/CDAS_triggers/io
 scripts/CDAS_triggers/sd
