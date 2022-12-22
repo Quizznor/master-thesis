@@ -1,13 +1,13 @@
-JobBatchName    = create_training_data_16.5_17
-Executable      = /cr/users/filip/Simulation/RunSimulation/run_simulation.py 
+JobBatchName    = create_training_data_19_19.5
+Executable      = /cr/users/filip/Simulation/RunSimulation/production/run_simulation_19_19.5.py 
 
 # error           = /cr/users/filip/Simulation/condor/errors-$(Process).err
 # output          = /cr/users/filip/Simulation/condor/output-$(Process).log
 # error           = /cr/users/filip/Simulation/condor/errors-$(Item).err
 # output          = /cr/users/filip/Simulation/condor/output-$(Item).log
 
-# arguments       = $(Process)   
-arguments       = $(Item)
+arguments       = $(Process)   
+# arguments       = $(Item)
 request_memory  = 2G
 max_idle        = 150
                                                             
@@ -16,7 +16,8 @@ should_transfer_files = YES
 Requirements	= (OpSysName == "Ubuntu" && OpSysMajorVer == 22  && TARGET.Machine != "crc2.ikp.kit.edu" && TARGET.Machine != "crc1.ikp.kit.edu" && TARGET.Machine != "crcds99.iap.kit.edu")
 transfer_input_files  = ../AugerOffline/userAugerOffline, ../AugerOffline/ModuleSequence_trigger_all.xml, ../AugerOffline/EventFileReader.xml, ../AugerOffline/EventFileExporter.xml, ../AugerOffline/EventGenerator.xml, ../AugerOffline/CustomStationList.xml
 
-queue from seq 0 4999 |
+# queue from seq 0 4998 |
+queue 5200
 
 # PRAGUE LIBRARIES
 # 15_15.5 log E = 4999 Files

@@ -41,7 +41,7 @@ class GLOBAL():
     downsampling                = False                                         # make UUB traces look like UB ones instead
     
     # Classifier details, can be overwritten in __new__ of EventGenerator
-    ignore_low_VEM              = 0                                             # label signals under threshold as background
+    ignore_low_VEM              = False                                         # label signals under threshold as background
     ignore_particles            = 0                                             # label traces with n < ignore_particles as bg
     window                      = 120                                           # Length (in bins) of the sliding window
     step                        = 10                                            # Sliding window analysis step size (in bins)

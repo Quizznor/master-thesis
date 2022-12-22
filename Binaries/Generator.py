@@ -125,7 +125,7 @@ class Generator(tf.keras.utils.Sequence):
         # classifier_options = [ignore_low_VEM, ignore_particles, sliding_window_length, sliding_window_step, prior]
         #                                    0,                1,                     2,                   3,     4,
 
-        self.ignore_low_VEM, self.ignore_particles, self.prior = classifier_options[0], classifier_options[1]
+        self.ignore_low_VEM, self.ignore_particles = classifier_options[0], classifier_options[1]
         self.window_length, self.window_step = classifier_options[2], classifier_options[3]
         self.prior = classifier_options[-1]
 
@@ -187,13 +187,16 @@ class Generator(tf.keras.utils.Sequence):
                         pmt_data, n_sig, integral, metadata = VEMTrace.get_trace_window((index, index + self.window_length), skip_integral, skip_metadata)
                         metadata_per_batch.append([integral, metadata])
 
+
                         # mislabel low energy 
                         if self.ignore_low_VEM: n_sig = 0 if integral < self.ignore_low_VEM else n_sig
 
                         # mislabel few particles
-                        if self.ignore_particles: n_sig = 0 if self.ignore_particles <= (VEMTrace.n_muons + VEMTrace.n_electrons + VEMTrace.n_photons) else n_sig 
+                        if self.ignore_particles: 
+                            n_sig = 0 if self.ignore_particles >= (VEMTrace.n_muons + VEMTrace.n_electrons + VEMTrace.n_photons) else n_sig 
 
                         traces.append(pmt_data), labels.append(EventGenerator.labels[1 if n_sig else 0])
+
 
         # ... raise a mock background trace if this fails for various reasons
         except EmptyFileError:
@@ -205,7 +208,7 @@ class Generator(tf.keras.utils.Sequence):
             else:
                 for index in self.__sliding_window__(VEMTrace, override_prior = True):
                     pmt_data, n_sig, integral, metadata = VEMTrace.get_trace_window((index, index + self.window_length), skip_integral, skip_metadata)
-                    traces.append(pmt_data), labels.append(EventGenerator.labels[1 if n_sig else 0])
+                    traces.append(pmt_data), labels.append(EventGenerator.labels[0])
                     metadata_per_batch.append([integral, metadata])
 
         if skip_metadata:
@@ -285,7 +288,7 @@ class Generator(tf.keras.utils.Sequence):
         start = perf_counter_ns()
 
         background_hist, signal_hist, baseline_hist, priors = [], [], [], []
-        n_signals, n_backgrounds, n_injected = 0, 0, 0
+        n_signals, n_backgrounds, n_injected, n_p, n_n = 0, 0, 0, 0, 0
         has_label_integral, has_no_label_integral = [], []
         has_label_particles, has_no_label_particles = [], []
 
@@ -303,10 +306,12 @@ class Generator(tf.keras.utils.Sequence):
                 
                 for trace in traces:
 
-                    n_particles = trace.n_muons + trace.n_electrons + trace.n_photons
+                    try:
+                        n_particles = trace.n_muons + trace.n_electrons + trace.n_photons
+                    except AttributeError: n_particles = 0
 
                     if trace.has_accidentals: 
-                        background_hist.append(np.mean(trace.Injected))
+                        background_hist.append(np.max(trace.Injected))
                         n_injected += len(trace.injections_start)
                     
                     if trace.has_signal: 
@@ -318,8 +323,8 @@ class Generator(tf.keras.utils.Sequence):
                             priors.append(signal_length / window_length)
                         except ZeroDivisionError: priors.append(1)
 
-                        
-                        signal_hist.append(np.mean(trace.Signal))
+                        signal_hist.append(np.max(trace.Signal))
+
                         n_signals += 1
 
                     else: n_backgrounds += 1
@@ -332,26 +337,28 @@ class Generator(tf.keras.utils.Sequence):
                         _, n_sig, integral, _ = trace.get_trace_window((i, f))
 
                         if self.ignore_low_VEM: n_sig = 0 if integral < self.ignore_low_VEM else n_sig
-                        if self.ignore_particles: n_sig = 0 if self.ignore_particles <= n_particles else n_sig 
+                        if self.ignore_particles: n_sig = 0 if self.ignore_particles >= n_particles else n_sig 
 
 
                         if n_sig: 
                             has_label_integral.append(integral)
                             has_label_particles.append(n_particles)
+                            n_p += 1
                         else: 
                             has_no_label_integral.append(integral)
                             has_no_label_particles.append(n_particles)
+                            n_n += 1
 
-        histogram_ranges = [(0.01,3), (0.01,2e5), None]
-        histogram_titles = ["Injected Background", "Signal", "Baseline"]
-        for j, histogram in enumerate([background_hist, signal_hist, baseline_hist]):
+        # histogram_ranges = [(0.01,3), None, None]
+        # histogram_titles = ["Injected Background peak", "Signal peak", "Baseline"]
+        # for j, histogram in enumerate([background_hist, signal_hist, baseline_hist]):
 
-            plt.figure()
-            plt.title(histogram_titles[j])
-            plt.hist(histogram, histtype = "step", range = histogram_ranges[j], bins = 100, lw = 2)
-            plt.yscale("log") if j != 2 else None
+        #     plt.figure()
+        #     plt.title(histogram_titles[j])
+        #     plt.hist(histogram, histtype = "step", range = histogram_ranges[j], bins = 100, lw = 2)
+        #     plt.yscale("log") if j != 2 else None
 
-            plt.xlabel("Signal / VEM")
+        #     plt.xlabel("Signal / VEM")
 
         plt.figure()
         plt.title("Distribution of priors")
@@ -369,15 +376,16 @@ class Generator(tf.keras.utils.Sequence):
 
         plt.figure()
         plt.title("Number of particles")
-        plt.axvline(self.ignore_particles, c = "gray", ls = "--", lw = 2, label = "low particle cut")
-        plt.hist(has_no_label_particles, bins = 500, histtype = "step", label = f"Background: n = {len(has_no_label_particles)}", range = (-1,20), ls = "--")
-        plt.hist(has_label_particles, bins = 500, histtype = "step", label = f"Signal: n = {len(has_label_particles)}", range = (-1,20), ls = "--")
+        plt.axvline(self.ignore_particles + 1, c = "gray", ls = "--", lw = 2, label = "low particle cut")
+        plt.hist(has_no_label_particles, bins = 21, histtype = "step", label = f"Background: n = {len(has_no_label_particles)}", range = (-1,20), ls = "--")
+        plt.hist(has_label_particles, bins = 21, histtype = "step", label = f"Signal: n = {len(has_label_particles)}", range = (-1,20), ls = "--")
         plt.xlabel("number of particles")
         plt.yscale("log")
         plt.legend()
 
         print(f"\n\nTotal time: {(perf_counter_ns() - start) * 1e-9 :.2f}s - {n_signals + n_backgrounds} traces")
         print(f"n_signal = {n_signals}, n_background = {n_backgrounds}")
+        print(f"n_classified = {n_p}, n_ignored = {n_n}")
         print(f"n_injected = {n_injected} -> {n_injected / (self.length * (n_signals + n_backgrounds) * GLOBAL.single_bin_duration):.2f} Hz background")
         print("")
 

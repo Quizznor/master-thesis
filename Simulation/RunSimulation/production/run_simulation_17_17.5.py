@@ -17,9 +17,9 @@ E_DICT = {
           "19_19.5" : ["napoli","*.part","(1).part"],
           }
 
-E_RANGE = "16_16.5"
+E_RANGE = "17_17.5"
 ALREADY_PRESENT = 0
-NUM_RETHROWS = 3
+NUM_RETHROWS = 1
 
 SRC_DIR=f"/lsdf/auger/corsika/{E_DICT[E_RANGE][0]}/QGSJET-II.04/proton/{E_RANGE}/"
 # SRC_DIR=f"/cr/users/filip/Simulation/TestOutput/"

@@ -31,16 +31,18 @@ def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -
             os.system(f"touch {file}")
 
         # open all files only once, increases performance
-        with open(save_file["TP"], "a") as TP, \
-            open(save_file["TN"], "a") as TN, \
-            open(save_file["FP"], "a") as FP, \
-            open(save_file["FN"], "a") as FN:
+        with open(save_file["TP"], "w") as TP, \
+            open(save_file["TN"], "w") as TN, \
+            open(save_file["FP"], "w") as FP, \
+            open(save_file["FN"], "w") as FN:
 
             for batch, (traces, true_labels, metadata) in enumerate(Dataset): 
 
-                print(f"Fetching batch {batch + 1}/{Dataset.__len__()}: {100 * (batch/Dataset.__len__()):.2f}%", end = "...\r")
+                print(f"Fetching batch {batch + 1}/{Dataset.__len__()}: {100 * (batch/Dataset.__len__()):.2f}%, (TP, FP) = ({TPs}, {FPs})", end = "\r")
 
                 for predicted_label, true_label, info in zip(Classifier(traces), true_labels, metadata):
+
+                    print(true_label)
 
                     Integral, (SignalBins, Energy, SPDistance, Zenith) = info
                     true_label = true_label.argmax()
@@ -60,7 +62,7 @@ def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -
                             FPs += 1
                         else: prediction = TN
 
-                        # only save signal and number of background bins
+                        # only save deposited charge
                         save_string = f"{Integral:.3f}"
 
                     prediction.write(save_string + "\n")

@@ -142,8 +142,9 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
 {
   // const auto csvTraceFile = pathToAdst.parent_path()/ pathToAdst.filename().replace_extension("csv"); // for testing
   const auto csvTraceFile = pathToAdst.parent_path().parent_path() / pathToAdst.filename().replace_extension("csv");
-  const std::string csvLdfFileMisses = "/cr/tempdata01/filip/QGSJET-II/lateral_density_function/misses.csv";
-  const std::string csvLdfFileHits = "/cr/tempdata01/filip/QGSJET-II/lateral_density_function/hits.csv";
+  const auto energyRange = pathToAdst.string().substr(39, 7);
+  const std::string csvLdfFileMisses = "/cr/tempdata01/filip/QGSJET-II/lateral_density_function_" + energyRange + "/misses.csv";
+  const std::string csvLdfFileHits = "/cr/tempdata01/filip/QGSJET-II/lateral_density_function_" + energyRange + "/hits.csv";
 
   // (2) start main loop
   RecEventFile     recEventFile(pathToAdst.string());
@@ -267,14 +268,6 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
             traceFile << "\n";
           }
         }
-      // }
-      // else
-      // {
-      //   // simulated station is not hit by the shower
-      //   //   -> write spd and theta to misses.csv
-
-      //   ldfFileMisses << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " 0 0 0" << std::endl;
-      // }
     }
 
     traceFile.close();

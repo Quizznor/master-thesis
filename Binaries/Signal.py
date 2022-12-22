@@ -293,7 +293,7 @@ class RandomTrace():
     def __init__(self, station : str = None, index : int = None) -> None : 
 
         ## (HOPEFULLY) TEMPORARILY FIXED TO NURIA/LO_QUI_DON DUE TO BAD FLUCTUATIONS IN OTHER STATIONS
-        self.station = random.choice(["nuria", "lo_qui_don"]) if station is None else station.lower()
+        self.station = random.choice(["nuria"]) if station is None else station.lower()
         self.index = index
 
         all_files = np.asarray(os.listdir(RandomTrace.baseline_dir + self.station)) # container for all baseline files
@@ -315,7 +315,7 @@ class RandomTrace():
 
         # IF YOU WANT TO USE DAY AVERAGE FROM ONLINE ESTIMATE #########################################
         # values come from $TMPDATA/iRODS/MonitoringData/read_monitoring_data.ipynb -> monitoring files
-        if "nuria" in self.random_file:
+        if "nuria" in self.station:
             self.q_peak = [180.23, 182.52, 169.56]
             self.q_charge = [3380.59, 3508.69, 3158.88]
         elif "lo_qui_don" in self.random_file:
