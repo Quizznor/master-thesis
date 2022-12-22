@@ -173,11 +173,21 @@ The Heitler model and Heitler-Matthews model discussed in \autoref{sec:heitler-m
 rudimentary assumptions on the underlaying physics of particle cascades. Nevertheless, the equations recovered from these assumptions are already a close 
 approximation of real world processes up to $X_\text{max}$. 
 
-Of course, adding a stochastic component to the above assumptions (c.f. \cite{MartinShowerSim}) improve predictions, but even full-fledged Monte-Carlo simulation 
+Of course, adding a stochastic component to the above assumptions (c.f. \cite{MartinShowerSim}) improves predictions, but even full-fledged Monte-Carlo simulation 
 software frameworks like GEANT4 \cite{agostinelli2003geant4} or CORSIKA \cite{heck1998corsika} show discrepancies between observed and predicted shower 
-development. An example of this is presented in \autoref{fig:model-validity}.
+development. An example of this is presented in \autoref{fig:model-validity}. 
 
+While shower-to-shower fluctuations can explain discrepancies to a degree, there also exist systematic differences between the simulated and observed extensive air
+showers. These are largely owed to imprecise knowledge of the underlaying physical processes. For example, hadronic interaction models (e.g. QGSJETII-04 shown in 
+\autoref{fig:validity-plot}) rely on extrapolation of measured cross sections in the \SI{}{\giga\electronvolt}-\SI{}{\tera\electronvolt} scales to the relevant 
+energies. While this is not an unfair assumption given the scale invariance of deep inelastic scattering \TODO{cite}
 
+\begin{figure}
+	\centering
+	\includegraphics[width=1.0\textwidth]{./plots/validity_plot.png}
+	\caption{Comparison of the number of charged particles for different physics models. }
+	\label{fig:LABEL}
+\end{figure}
 
 \section{Detection methods}
 \label{sec:detecion-methods}
