@@ -481,6 +481,7 @@ class NNClassifier(Classifier):
 
     def train(self, Datasets : tuple, epochs : int) -> None :
         
+        training_status = "normally"
         TrainingSet, ValidationSet = Datasets
 
         try:
@@ -490,11 +491,12 @@ class NNClassifier(Classifier):
                 self.epochs += 1
         except EarlyStoppingError: 
             self.epochs = "converged"
+            training_status = "early"
 
         self.save()
 
         # provide some metadata
-        print("\nTraining exited normally. Onto providing metadata now...")
+        print(f"\nTraining exited {training_status}. Onto providing metadata now...")
 
         true_positive_rate = make_dataset(self, ValidationSet, f"validation_data")
 

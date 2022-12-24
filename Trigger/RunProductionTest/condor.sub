@@ -1,11 +1,13 @@
-JobBatchName    = production-test-nuria-0p
+JobBatchName    = production-test-nuria
 Executable      = /cr/users/filip/Trigger/RunProductionTest/production/production_test_0p.py
 
-# error           = /cr/users/filip/Trigger/RunProductionTest/output/errors.err
+error           = /cr/users/filip/Trigger/RunProductionTest/output/errors-$(Process).err
 # output          = /cr/users/filip/Trigger/RunProductionTest/output/output.out
 # log             = /cr/users/filip/Trigger/RunProductionTest/output/logfle.log
 
-arguments       = $(Process)   
+
+arguments       = $(Process)
+# arguments     = $(Item) $(Process1)
 request_memory  = 2G
 max_idle        = 150
 
@@ -13,3 +15,5 @@ max_idle        = 150
 # LOQUI - 801
 
 queue 800
+# queue 2 in (0, 1, 2, 3, 4)
+#       ^ step     ^ item  (or other way around?)
