@@ -173,21 +173,61 @@ The Heitler model and Heitler-Matthews model discussed in \autoref{sec:heitler-m
 rudimentary assumptions on the underlaying physics of particle cascades. Nevertheless, the equations recovered from these assumptions are already a close 
 approximation of real world processes up to $X_\text{max}$. 
 
-Of course, adding a stochastic component to the above assumptions (c.f. \cite{MartinShowerSim}) improves predictions, but even full-fledged Monte-Carlo simulation 
-software frameworks like GEANT4 \cite{agostinelli2003geant4} or CORSIKA \cite{heck1998corsika} show discrepancies between observed and predicted shower 
-development. An example of this is presented in \autoref{fig:model-validity}. 
+Of course, adding a stochastic component to the above assumptions (c.f. \cite{MartinShowerSim}) improves predictions. But even full-fledged Monte-Carlo simulation 
+software frameworks like GEANT4 \cite{agostinelli2003geant4} or CORSIKA \cite{heck1998corsika} show discrepancies between observed and predicted shower development. 
+An example of this is presented in \autoref{fig:model-validity}. 
 
 While shower-to-shower fluctuations can explain discrepancies to a degree, there also exist systematic differences between the simulated and observed extensive air
 showers. These are largely owed to imprecise knowledge of the underlaying physical processes. For example, hadronic interaction models (e.g. QGSJETII-04 shown in 
 \autoref{fig:validity-plot}) rely on extrapolation of measured cross sections in the \SI{}{\giga\electronvolt}-\SI{}{\tera\electronvolt} scales to the relevant 
-energies. While this is not an unfair assumption given the scale invariance of deep inelastic scattering \cite{fox1974early}, the approach yields only .
+CR energies \cite{ostapchenko2006qgsjet}. While this is not an unfair assumption given the scale invariance of deep inelastic scattering \cite{fox1974early}, it is 
+clear, that the approach cannot accurately encompass all effects that may take place at high energies.
+
+In conclusion, the particle cascades evolving from relativistic CRs impinging on earth are still not fully understood. Several simulation frameworks have been 
+developed, which each have their own shortcomings. It is therefore important to compare not only results from simulations using one framework to observations, but 
+also different simulations with each other.
 
 \begin{figure}
 	\centering
 	\includegraphics[width=1.0\textwidth]{./plots/validity_plot.png}
-	\caption{Comparison of the number of charged particles for different physics models. }
-	\label{fig:validity-plot}
+	\caption{Comparison of the number of charged particles for different physics models to reconstructed observations from a $~\SI{3}{\exa\electronvolt}$ proton 
+	shower. Shown in steelblue and orange is the Heitler-Matthews model as described in \autoref{sec:heitler-matthews-model}, and extended with a stochastic 
+	component. An example of a more in-depth simulation in red, and observed shower multiplicities in green.}
+	\label{fig:model-validity}
 \end{figure}
 
 \section{Detection methods}
-\label{sec:detecion-methods}
+\label{sec:detection-methods}
+
+\subsection{Fluoresence}
+\label{ssec:fluoresence}
+
+\subsubsection{In Air}
+
+
+\subsubsection{In Scintillators}
+
+
+\subsection{Cherenkov light}
+\label{ssec:cherenkov-light}
+
+When a charged particle exceeds the phase velocity of light in a medium with refractive index $n$, the optical equivalent of a sonic boom occurs. Photons travel in a 
+shockwave along an angle $\theta = \arccos\left(n^{-1}\beta^{-1}\right)$ relative to the trajectory of the particle while $\beta \geq \frac{c}{n}$. This process is 
+well understood and can be used to detect high energy cosmic rays.
+
+\subsubsection{In Air}
+
+The refractive index of air ranges from 1 in the near vacuum of the upper atmosphere to $\approx1+2.9\cdot10^{-4}$ at sea level \cite{andrews1992analytical}. This
+implies that only particles with a Lorentz factor $\gamma \gtrsim 41.5$ emit Cherenkov light, which is satisfied for e.g. muons and protons already in the low
+\SI{}{\giga\electronvolt} ranges.
+
+It can therefore be expected that extensive air showers, that contain high energy charged particles, produce considerable amounts of Cherenkov light. With a 
+sensitive enough telescope, or telescope array, this light, and by extension the air shower can be detected. The \textbf{C}herenkov \textbf{T}elescope 
+\textbf{A}rray (CTA) utilizes this measurement technique and is due to commence operations in 2024 \cite{actis2011design}.
+
+\subsubsection{In Water}
+
+
+
+\subsection{Radio Emission}
+\label{ssec:radio-emission}
