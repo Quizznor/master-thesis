@@ -199,15 +199,6 @@ also different simulations with each other.
 \section{Detection methods}
 \label{sec:detection-methods}
 
-\subsection{Fluoresence}
-\label{ssec:fluoresence}
-
-\subsubsection{In Air}
-
-
-\subsubsection{In Scintillators}
-
-
 \subsection{Cherenkov light}
 \label{ssec:cherenkov-light}
 
@@ -215,19 +206,60 @@ When a charged particle exceeds the phase velocity of light in a medium with ref
 shockwave along an angle $\theta = \arccos\left(n^{-1}\beta^{-1}\right)$ relative to the trajectory of the particle while $\beta \geq \frac{c}{n}$. This process is 
 well understood and can be used to detect high energy cosmic rays.
 
-\subsubsection{In Air}
+\subsubsection{Imaging Air Cherenkov Telescope}
 
 The refractive index of air ranges from 1 in the near vacuum of the upper atmosphere to $\approx1+2.9\cdot10^{-4}$ at sea level \cite{andrews1992analytical}. This
-implies that only particles with a Lorentz factor $\gamma \gtrsim 41.5$ emit Cherenkov light, which is satisfied for e.g. muons and protons already in the low
-\SI{}{\giga\electronvolt} ranges.
+implies that particles with a Lorentz factor $\gamma \gtrsim 41.5$ emit Cherenkov light, which is satisfied for e.g. muons and protons in the low 
+\SI{}{\giga\electronvolt} ranges and above.
 
-It can therefore be expected that extensive air showers, that contain high energy charged particles, produce considerable amounts of Cherenkov light. With a 
-sensitive enough telescope, or telescope array, this light, and by extension the air shower can be detected. The \textbf{C}herenkov \textbf{T}elescope 
-\textbf{A}rray (CTA) utilizes this measurement technique and is due to commence operations in 2024 \cite{actis2011design}.
+It can therefore be expected that extensive air showers, which contain high energy charged particles, produce considerable amounts of Cherenkov light when 
+propagating throught the atmosphere. This light, and by extension the air shower can be detected with \textbf{I}maging \textbf{A}ir \textbf{C}herenkov 
+\textbf{T}elescopes (IACTs). Ground based experiments such as VERITAS \cite{VeritasTelescope} or H.E.S.S \cite{HessTelescope} detect gamma-rays using this technique.
 
-\subsubsection{In Water}
+\subsubsection{Water Cherenkov Detector}
+
+The lightspeed in water is roughly $33\%$ slower than in vacuum. Cherenkov radiation in water therefore occurs more easily than in air. Using this reasoning, a 
+water tank equipped with means of detecting the emitted Cherenkov light, via e.g. \textbf{P}hoto\textbf{M}ultiplier \textbf{T}ubes (PMTs), should be able to 
+measure traces of an air shower. 
+
+Indeed, this exact measurement principle of a \textbf{W}ater \textbf{C}herenkov \textbf{D}etector (WCD) was and is adopted in a variety of cosmic ray observatories 
+such as the Pierre Auger observatory \cite{PierreAugerObservatory}, HAWC \cite{HAWC}, or Kamiokande \cite{Kamiokande}, for example.
 
 
+\subsection{Fluoresence}
+\label{ssec:fluoresence}
+
+Ionization losses have been ignored in the discussion of the formation of extensive air showers. This is of course not completely accurate. During the development of 
+an extensive air showers, particles excite, or even ionize the permeated medium. Consequently, spontaneous emission of photons due to recombination, or transition 
+back to a ground state can be observed. The amount of fluorescence light produced in this way is a gauge for the number of particles present in the shower at a given
+moment.
+
+\subsubsection{In Air}
+
+The predominant element in air is nitrogen ($78\%$), whose transitions lay in the UV-band \cite{FDReconstruction}. After a nitrogen molecule is excited by a passing
+shower particle, a photon with wavelength $\SI{300}{\nano\meter} \leq \lambda \leq \SI{430}{\nano\meter}$ is emitted isotropically due to relaxation. The low 
+attenuation of ultraviolet radiation in air allows the fluorescence light to travel large distances before being absorbed \cite{elterman1968uv}. This enables 
+cameras like EUSO-TA \cite{abdellaoui2018euso} or the \textbf{F}lourescence \textbf{D}etector (FD) of the Pierre Auger observatory (see \cite{FDReconstruction} and
+\autoref{sec:fluoresence-detector}) to observe traces of extensive air showers from faraway during their development. 
+
+However, because of the low light yield of just \SI{5}{photons\per\MeV} \cite{nagano2004new}, the detectors must operate in low UV-noise conditions, which 
+places an upper limit on their duty cycle.
+
+\subsubsection{In Scintillators}
+
+Conventional plastic scintillators have a light yield, that is $1000-10000$ times higher than that of air \cite{holl1988measurement}. Such scintillators therefore 
+pose an effective way of measuring a shower footprint on the ground. The Pierre Auger \textbf{S}urface \textbf{D}etector (SD) is equipped with scintillators. 
+Predecessors like KASCADE \cite{Kascade} have been using scintillation light to detect cosmic rays as well.
 
 \subsection{Radio Emission}
 \label{ssec:radio-emission}
+
+Relativistic charged particles in the cascade are subject to deflections due to the geomagnetic field. This deflection is largest for $e^\pm$ due to their 
+comparably tiny masses. Albeit the deflection of a typical electron in the shower is miniscule and the subsequent emission of Bremsstrahlung tiny, coherence 
+effects along the entire shower front can greatly amplify the electric field strengths obtained from this effect \cite{schroeder2017radio}. This gives rise to radio
+signals emitted by the extensive air shower, which can in principle be detected via antennas.
+
+One challenge in constructing an efficient CR radio detector is the requirement for a radio-quiet environment, where a large enough 
+\textbf{S}ignal-to-\textbf{N}oise-\textbf{R}atio (SNR) permits analysis of measured data. This is the case for the AERA component of the Pierre Auger observatory,
+which has been in operation since \TODO{cite}. Its results have in part lead the proposal of a vast radio array, GRAND \TODO{cite}, which will have an enormous 
+exposure to CR showers, if built.

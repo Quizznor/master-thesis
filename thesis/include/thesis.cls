@@ -47,7 +47,7 @@
 % MATH, PHYSICS
 \usepackage{amsmath}
 \usepackage{mathtools}
-\usepackage{amssymb}
+% \usepackage{amssymb}     % -> LaTeX Error: Command `\Bbbk' already defined.
 \usepackage{upgreek}
 \usepackage{nicefrac}
 \usepackage[load-configurations=abbreviations]{siunitx}
