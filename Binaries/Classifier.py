@@ -258,6 +258,8 @@ class Classifier():
         # TODO: Incorporate LDF / probability that station gets signal!!
         def spd_energy_efficiency(self, dataset : str, **kwargs) -> None : 
 
+            # TODO THETA DEPENDENCY
+
             TP, FP, TN, FN = self.load_and_print_performance(dataset, usecols = [(2, 3), 0, 0, (2, 3)])
             colormap = cmap.get_cmap("jet")
 
@@ -464,7 +466,7 @@ class NNClassifier(Classifier):
             except OSError:
                 choice = input(f"\nSelect epoch from {os.listdir('/cr/data01/filip/models/' + name)}\n Model: ")
                 self.model = tf.keras.models.load_model("/cr/data01/filip/models/" + name + choice)
-                self.epochs = int(choice[-1])
+                self.epochs = int(choice.split("_")[-1])
         else:
 
             self.model = tf.keras.Sequential()

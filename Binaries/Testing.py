@@ -38,11 +38,10 @@ def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -
 
             for batch, (traces, true_labels, metadata) in enumerate(Dataset): 
 
-                print(f"Fetching batch {batch + 1}/{Dataset.__len__()}: {100 * (batch/Dataset.__len__()):.2f}%, (TP, FP) = ({TPs}, {FPs})", end = "\r")
+                print(f"Fetching batch {batch + 1}/{Dataset.__len__()}: {100 * (batch/Dataset.__len__()):.2f}% \
+                , (TP, FP) = ({TPs}, {FPs}) ~ {TPs/(TPs + FPs) * 100 :.2f}", end = "\r")
 
                 for predicted_label, true_label, info in zip(Classifier(traces), true_labels, metadata):
-
-                    print(true_label)
 
                     Integral, (SignalBins, Energy, SPDistance, Zenith) = info
                     true_label = true_label.argmax()
