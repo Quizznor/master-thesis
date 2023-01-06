@@ -6,6 +6,8 @@ from .Classifier import *
 def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -> float :
 
     from .Classifier import Ensemble
+    
+    Dataset.__reset__()
 
     if not isinstance(Classifier, Ensemble):
 
@@ -38,8 +40,10 @@ def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -
 
             for batch, (traces, true_labels, metadata) in enumerate(Dataset): 
 
-                print(f"Fetching batch {batch + 1}/{Dataset.__len__()}: {100 * (batch/Dataset.__len__()):.2f}% \
-                , (TP, FP) = ({TPs}, {FPs}) ~ {TPs/(TPs + FPs) * 100 :.2f}", end = "\r")
+                try:
+                    print(f"Fetching batch {batch + 1}/{Dataset.__len__()}: {100 * (batch/Dataset.__len__()):.2f}% \
+                    (TP, FP) = ({TPs}, {FPs}) ~ {TPs/(TPs + FPs) * 100 :.2f}", end = "\r")
+                except ZeroDivisionError: print("ehy", end = "\r")
 
                 for predicted_label, true_label, info in zip(Classifier(traces), true_labels, metadata):
 
@@ -66,7 +70,7 @@ def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -
 
                     prediction.write(save_string + "\n")
         
-        Dataset.__reset__()
+        
         return TPs / (TPs + FPs)
 
     else:
@@ -83,6 +87,58 @@ def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -
 
             make_dataset(instance, Dataset, save_dir)
             Dataset.__reset__()
+
+
+def confidence_comparison(confidence_level, *args, **kwargs):
+
+    labels = kwargs.get("labels", None)
+    energy_labels = ["16_16.5", "16.5_17", "17_17.5", "17.5_18", "18_18.5", "18.5_19", "19_19.5"]
+    theta_labels = [r"$0^\circ$", r"$26^\circ$", r"$38^\circ$", r"$49^\circ$", r"$60^\circ$", r"$90^\circ$"]
+    colors = ["steelblue", "orange", "green"]
+
+    try:
+        if labels and len(labels) != len(args): raise ValueError
+    except:
+        sys.exit("Provided labels doesn't match the provided fit parameters")
+
+    fig, axes = plt.subplots(nrows = len(theta_labels) - 1, sharex = True, sharey = True)
+    axes[0].set_title(f"Trigger characteristics for r$_{{{confidence_level * 1e2:.0f}}}$")
+
+    for i, fit_info in enumerate(args):
+        fit_params, fit_uncertainties = fit_info
+        
+        for e, energy in enumerate(fit_params):
+            for t, theta in enumerate(energy):
+                acc, p50, scale = theta
+                pcov = fit_uncertainties[e,t]
+
+                station_trigger_probability = lambda x : station_hit_probability(x, acc, p50, scale)
+                inverse_trigger_probability = lambda y : p50 - np.log(acc/(1-y) - 1) / scale
+
+                # calculate gradient
+                exp = lambda x, k, b : np.exp(-k * (x - b))
+                d_accuracy = station_trigger_probability(confidence_level) / acc
+                d_p50 = acc * scale * exp(confidence_level, scale, p50) / (1 + exp(confidence_level, scale, p50))**2
+                d_scale = acc * (p50 - confidence_level) * exp(confidence_level, scale, p50) / (1 + exp(confidence_level, scale, p50))**2
+                grad = np.array([d_accuracy, d_p50, d_scale])
+                y_err = np.sqrt( grad.T @ pcov @ grad.T )
+
+                axes[t].errorbar(e, inverse_trigger_probability(confidence_level), xerr = 0.5, yerr = y_err, capsize = 3, c = colors[i], elinewidth = 1, fmt = "s")
+
+    axes[0].set_xticks(range(7), energy_labels)
+
+    fig.text(0.5, 0.04, 'Energy range', ha='center', fontsize = 27)
+    fig.text(0.04, 0.5, 'Detection radius / m', va='center', rotation='vertical', fontsize = 27)
+    
+    for i, ax in enumerate(axes):
+        if labels: 
+            for ii, label in enumerate(labels):
+                ax.scatter([], [], marker = "s", c = colors[ii], label = labels[ii])
+
+        ax.legend(title = theta_labels[i] + r"$\leq$ $\theta$ < " + theta_labels[i + 1])
+        ax.axhline(0, c = "gray", ls = ":", lw = 2)
+
+
 
 '''
 # trigger efficiency over signal

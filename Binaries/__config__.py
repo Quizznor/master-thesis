@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 import matplotlib.pyplot as plt
 import matplotlib.cm as cmap
-from matplotlib.patches import Rectangle
+from matplotlib.patches import Polygon
 from matplotlib.colors import BoundaryNorm
 from matplotlib.colorbar import ColorbarBase
-
+from scipy.optimize import curve_fit
+import numpy as np
 
 class EmptyFileError(Exception): pass
 class SlidingWindowError(Exception): pass
@@ -12,6 +13,9 @@ class EarlyStoppingError(Exception): pass
 class SignalError(Exception): pass
 class RandomTraceError(Exception): pass
 class ElectronicsError(Exception): pass
+
+def station_hit_probability(x, efficiency, p50, scale):
+    return efficiency * (1 - 1 / (1 + np.exp(-scale * (x - p50))))
 
 @dataclass
 class GLOBAL():

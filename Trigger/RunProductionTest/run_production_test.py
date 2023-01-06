@@ -233,7 +233,7 @@ Buffer = RandomTrace(station = "nuria", index = i)
 n_traces = len(Buffer._these_traces)
 duration = n_traces * trace_duration
 
-percentages = np.array([-6, -11, -12, -13, -14]) * 1e-2
+percentages = np.array([-9, -10, -15]) * 1e-2
 
 for percentage in percentages:
 

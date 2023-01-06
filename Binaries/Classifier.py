@@ -130,11 +130,6 @@ class Classifier():
                     "FN" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/false_negatives.csv"
                 }
 
-                TP = np.loadtxt(save_files['TP'])
-                FP = np.loadtxt(save_files['FP'])
-                TN = np.loadtxt(save_files['TN'])
-                FN = np.loadtxt(save_files['FN'])
-
             except OSError:
 
                 save_files = \
@@ -144,11 +139,12 @@ class Classifier():
                     "FP" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/false_positives.csv",
                     "FN" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/false_negatives.csv"
                 }
-                
-                TP = np.loadtxt(save_files['TP'])
-                FP = np.loadtxt(save_files['FP'])
-                TN = np.loadtxt(save_files['TN'])
-                FN = np.loadtxt(save_files['FN'])
+
+            
+            TP = np.loadtxt(save_files['TP'], usecols = usecols[0])
+            FP = np.loadtxt(save_files['FP'], usecols = usecols[1])
+            TN = np.loadtxt(save_files['TN'], usecols = usecols[2])
+            FN = np.loadtxt(save_files['FN'], usecols = usecols[3])
 
             tp, fp = len(TP), len(FP)
             tn, fn = len(TN), len(FN)
@@ -258,61 +254,115 @@ class Classifier():
         # TODO: Incorporate LDF / probability that station gets signal!!
         def spd_energy_efficiency(self, dataset : str, **kwargs) -> None : 
 
-            # TODO THETA DEPENDENCY
+            draw_plot = not kwargs.get("quiet", False)
 
-            TP, FP, TN, FN = self.load_and_print_performance(dataset, usecols = [(2, 3), 0, 0, (2, 3)])
-            colormap = cmap.get_cmap("jet")
+            # Prediction structure: [ integral, n_signal, energy, SPD, Theta]
+            TP, FP, TN, FN = self.load_and_print_performance(dataset, usecols = [(2, 3, 4), 0, 0, (2, 3, 4)])
+            fitparams = np.loadtxt("/cr/tempdata01/filip/QGSJET-II/LDF/fitparams.csv", usecols = [4,5])
+            colormap = cmap.get_cmap("plasma")
 
-            TP_E, TP_SPD = TP[:, 0], TP[:, 1]
-            FN_E, FN_SPD = FN[:, 0], FN[:, 1]
+            theta_bins = [26, 38, 49, 60]
+            energy_bins = [10**16.5, 1e17, 10**17.5, 1e18, 10**18.5, 1e19]
+            miss_sorted = [[ [] for t in range(len(theta_bins) + 1) ] for e in range(len(energy_bins) + 1)]
+            hits_sorted = [[ [] for t in range(len(theta_bins) + 1) ] for e in range(len(energy_bins) + 1)]
+            e_labels = [r"$16$", r"$16.5$", r"$17$", r"$17.5$", r"$18$", r"$18.5$", r"$19$", r"$19.5$"]
+            fit_params = [[] for e in range(len(energy_bins) + 1)]
+            fit_uncertainties = [[] for e in range(len(energy_bins) + 1)]
 
-            fig = plt.figure()
+            # sort predictions into bins of theta and energy
+            for source, target in zip([TP, FN], [hits_sorted, miss_sorted]):
 
-            # Group predictions by energy first
-            for e, energy in enumerate(EventGenerator.libraries.keys()):
+                E, SPD, T = source[:, 0], source[:, 1], source[:, 2]
 
-                low, high = [float(x) for x in energy.split("_")]
-                c = colormap(e / len(EventGenerator.libraries.keys()))
-                x = np.where(np.logical_and( TP_E >= 10 ** low, TP_E < 10 ** high))
-                o = np.where(np.logical_and( FN_E >= 10 ** low, FN_E < 10 ** high))
+                # sort misses / hits w.r.t zenith and primary energy
+                theta_indices = np.digitize(T, theta_bins)
+                energy_indices = np.digitize(E, energy_bins)
+                
+                for e, t, spd in zip(energy_indices, theta_indices, SPD):
+                    target[e][t].append(spd)
 
-                x, o = TP_SPD[x], FN_SPD[o]
-                bins = np.linspace(min(min(x), min(o)), max(max(x), max(o)), kwargs.get("n", 18))
+            for e, (hits_by_energy, misses_by_energy) in enumerate(zip(hits_sorted, miss_sorted)):
 
-                x_hist, sig = np.histogram(x, bins = bins)
-                o_hist, sig = np.histogram(o, bins = bins)
+                if draw_plot:
+                    fig = plt.figure()
+                    plt.xlim(0, 3000)
+                    plt.ylim(-0.05, 1.05)
+                    plt.plot([], [], ls = ":", c = "k", label = "Simulated")
+                    plt.plot([], [], ls = "solid", c = "k", label = "Extrapolation")
+                    plt.legend(loc = "upper right", title = e_labels[e] + r" $\leq$ log($E$ / eV) < " + e_labels[e + 1], title_fontsize = 19)
 
-                x_val, y_val = [], []
+                for t, (hits_by_theta, miss_by_theta) in enumerate(zip(hits_by_energy, misses_by_energy)):
 
-                for i, (x, o) in enumerate(zip(x_hist, o_hist)):
+                    # spd_bins = np.linspace(min(min(hits_by_theta), min(miss_by_theta)),
+                    #                        max(max(hits_by_theta), max(miss_by_theta)), 20)
 
-                    if x == 0 and o == 0:
-                        continue
-                    else:
-                        distance = sig[i]
-                        width = sig[i + 1] - sig[i]
+                    p50, scale = fitparams[e * 5 + t]
+                    ldf = lambda x : station_hit_probability(x, 1, p50, scale)
+
+                    spd_bins = list(np.geomspace(1, 1500, kwargs.get("n_bins", 30)))
+                    spd_bins += list(np.arange(1500 + np.diff(spd_bins)[-1], 3000, np.diff(spd_bins)[-1]))
+                    c = colormap(t / len(hits_by_energy))
+
+                    x_hist, sig = np.histogram(hits_by_theta, bins = spd_bins)
+                    o_hist, sig = np.histogram(miss_by_theta, bins = spd_bins)
+                    x_val, y_val, y_err = [], [], []
+
+                    # draw individual patches
+                    for i, (x, o) in enumerate(zip(x_hist, o_hist)):
+
+                        if x == o == 0: continue
+
+                        # determine x
+                        left_edge_x, right_edge_x = sig[i], sig[i + 1]
+                        center_x = 0.5 * (left_edge_x + right_edge_x)
+                        x_val.append(center_x)
+
+                        # determine y
+                        center_y = x / (x + o)
                         height = 1/(x+o)**2 * np.sqrt(x * o**2 + o * x**2 + 2 * x*o)
-                        elevation = (x / (x+o)) - height/2
+                        ldf_left, ldf_right, ldf_center = ldf(left_edge_x), ldf(right_edge_x), ldf(center_x)
+                        top_left_y, bottom_left_y = (center_y + height) * ldf_left, (center_y - height) * ldf_left
+                        top_right_y, bottom_right_y = (center_y + height) * ldf_right, (center_y - height) * ldf_right
+                        center_y *= ldf_center
+                        y_val.append(center_y)
+                        y_err.append(height / 2)
 
-                        x_val.append( 0.5 * (sig[1:] + sig[:-1])[i])
-                        y_val.append( elevation + height/2 )
+                        coordinates = [[left_edge_x, top_left_y], [right_edge_x, top_right_y], [right_edge_x, bottom_right_y], [left_edge_x, bottom_left_y]]
 
-                        plt.gca().add_patch(Rectangle((distance, elevation), width, height, color = c, alpha = 0.6, lw = 0))
+                        draw_plot and plt.gca().add_patch(Polygon(coordinates, closed = True, color = c, alpha = 0.1, lw = 0))
 
-                plt.scatter(x_val,y_val, color = c, marker = "s")
+                    draw_plot and plt.errorbar(x_val, y_val, color = c, marker = "s", markersize = 5, ls = ":")
 
-            plt.ylim(0, 1.05)
-            plt.xlabel("Shower plane distance / m")
-            plt.ylabel("Trigger efficiency | Signal")
+                    # perform efficiency fit
+                    try:
+                        popt, pcov = curve_fit(station_hit_probability, x_val, y_val, 
+                                                              p0 = [y_val[0], p50, scale],
+                                                              bounds = ([0, 0, 0], [1, np.inf, np.inf]),
+                                                              sigma = y_err,
+                                                              absolute_sigma = True)
+                    except ValueError:
+                        popt, pcov = curve_fit(station_hit_probability, x_val, y_val, 
+                                                              p0 = [y_val[0], p50, scale],
+                                                              bounds = ([0, 0, 0], [1, np.inf, np.inf]))
 
-            bounds = [float(e.split("_")[0]) for e in EventGenerator.libraries.keys()] + [19.5]
-            norm = BoundaryNorm(bounds, colormap.N)
 
-            # create a second axes for the colorbar
-            ax2 = fig.add_axes([0.95, 0.1, 0.03, 0.8])
-            # cb = ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"log$_{10}(E)$")
-            ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"log$_{10}(E)$")
+                    fit_params[e].append(popt)
+                    fit_uncertainties[e].append(pcov)
 
+                    if draw_plot:
+                        X = np.linspace(0, 3000, 100)
+                        plt.plot(X, station_hit_probability(X, *popt), c = c, lw = 2)
+
+                if draw_plot:
+                    plt.xlabel("Shower plane distance / m")
+                    plt.ylabel("Trigger efficiency")
+
+                    norm = BoundaryNorm([0] + theta_bins + [90], colormap.N)
+                    ax2 = fig.add_axes([0.95, 0.1, 0.01, 0.8])
+                    ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"Zenith angle")
+
+            return np.array(fit_params), np.array(fit_uncertainties)
+            
         @staticmethod
         def __header__() -> None : 
 
