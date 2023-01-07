@@ -5,6 +5,7 @@ from matplotlib.patches import Polygon
 from matplotlib.colors import BoundaryNorm
 from matplotlib.colorbar import ColorbarBase
 from scipy.optimize import curve_fit
+import seaborn as sns
 import numpy as np
 
 class EmptyFileError(Exception): pass

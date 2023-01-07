@@ -1,6 +1,6 @@
 from Binaries import *
 
-AllEventsDownsampled = EventGenerator("all", split = 0, real_background = True, apply_downsampling = True, prior = 1e-5)
+AllEventsDownsampled = EventGenerator("all", split = 0, real_background = True, apply_downsampling = True)
 # AllEventsDownsampled.unit_test(n_traces = 1000)
 
 Hardware = HardwareClassifier()
@@ -10,6 +10,6 @@ make_dataset(Hardware, AllEventsDownsampled, "fullscale_downsampled")
 make_dataset(NN_1_particle, AllEventsDownsampled, "fullscale_downsampled")
 make_dataset(NN_2_particle, AllEventsDownsampled, "fullscale_downsampled")
 
-AllEvents = EventGenerator("all", split = 0, real_background = True, apply_downsampling = False, prior = 1e-5)
+AllEvents = EventGenerator("all", split = 0, real_background = True, apply_downsampling = False)
 make_dataset(NN_1_particle, AllEventsDownsampled, "fullscale")
 make_dataset(NN_2_particle, AllEventsDownsampled, "fullscale")
