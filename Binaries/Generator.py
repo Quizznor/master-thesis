@@ -79,8 +79,9 @@ class EventGenerator():
         ignore_particles = kwargs.get("ignore_particles", GLOBAL.ignore_particles)
         sliding_window_length = kwargs.get("window", GLOBAL.window)
         sliding_window_step = kwargs.get("step", GLOBAL.step)
+        keep_scale = kwargs.get("keep_scale", GLOBAL.keep_scale)
 
-        trace_options = [q_peak, q_charge, n_bins, baseline_std, baseline_mean, n_injected, downsampling, real_background, random_index, station]
+        trace_options = [q_peak, q_charge, n_bins, baseline_std, baseline_mean, n_injected, downsampling, real_background, random_index, station, keep_scale]
         classifier_options = [ignore_low_VEM, ignore_particles, sliding_window_length, sliding_window_step, prior]
         
         # set RNG seed if desired
@@ -130,14 +131,15 @@ class Generator(tf.keras.utils.Sequence):
         self.window_length, self.window_step = classifier_options[2], classifier_options[3]
         self.prior = classifier_options[-1]
 
-        # trace_options = [q_peak, q_charge, n_bins, baseline_std, baseline_mean, n_injected, downsampling, real_background, random_index, station]
-        #                       0,        1,      2,            3,             4,          5,            6,               7,            8,       9,
+        # trace_options = [q_peak, q_charge, n_bins, baseline_std, baseline_mean, n_injected, downsampling, real_background, random_index, station, keep_scale]
+        #                       0,        1,      2,            3,             4,          5,            6,               7,            8,       9,         10
         
         self.q_peak, self.q_charge = trace_options[0], trace_options[1]
         self.length, self.n_injected = trace_options[2], trace_options[5]
         self.sigma, self.mu, self.downsampling = trace_options[3], trace_options[4], trace_options[6]
         self.use_real_background, self.random_index = trace_options[7], trace_options[8]
         self.files, self.station = signal_files, trace_options[9]
+        self.keep_scale = trace_options[10]
 
         if self.use_real_background and self.n_injected is None: self.n_injected = 0
 
@@ -165,10 +167,12 @@ class Generator(tf.keras.utils.Sequence):
             self.q_peak, self.q_charge, baseline = self.RandomTraceBuffer.get()     # load INT baseline trace
             # baseline += np.random.uniform(0, 1, size = (3, self.length))            # convert it to FLOAT now
             # baseline += np.random.uniform(1, 2, size = (3, self.length))            # for testing purposes
-            for k in [0, 1, 2]: baseline[k] += np.random.uniform(1, 2)              # for testing purposes
+            # for k in [0, 1, 2]: baseline[k] += np.random.uniform(1, 2)              # for testing purposes
 
-            self.trace_options[0] = self.q_peak                                     # adjust q_peak for random traces
-            self.trace_options[1] = self.q_charge                                   # adjust q_charge for random traces
+            if not self.keep_scale:
+                print("overwriting vem peak / charge")
+                self.trace_options[0] = self.q_peak                                  # adjust q_peak for random traces
+                self.trace_options[1] = self.q_charge                                # adjust q_charge for random traces
 
         # try to raise a valid trace (i.e. with signal)...
         try:
