@@ -12,8 +12,8 @@ request_memory  = 2G
 max_idle        = 150
 
 # NURIA - 798
-# LOQUI - 801
+# LOQUI - 4000
 
-queue 800
+queue 4000
 # queue 2 in (0, 1, 2, 3, 4)
 #       ^ step     ^ item  (or other way around?)

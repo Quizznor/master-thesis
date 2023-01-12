@@ -221,6 +221,7 @@ def apply_downsampling(trace):
 
         return sampled_trace
 
+station = "lo_qui_don"
 
 i = int(sys.argv[1])
 trace_duration = GLOBAL.n_bins * GLOBAL.single_bin_duration
@@ -229,11 +230,11 @@ window_start = range(0, 682 - 120, 10)
 window_stop = range(120, 682, 10)
 Trigger = HardwareClassifier()
 
-Buffer = RandomTrace(station = "nuria", index = i)
+Buffer = RandomTrace(station = station, index = i)
 n_traces = len(Buffer._these_traces)
 duration = n_traces * trace_duration
 
-percentages = np.array([-9, -10, -15]) * 1e-2
+percentages = np.array([-25, -16, -14, -13, -12, -11, -8, -6, -4, -2, -1, 0, 1, 2, 4, 8, 16]) * 1e-2
 
 for percentage in percentages:
 
@@ -265,5 +266,5 @@ for percentage in percentages:
                     break
 
     perc_str = str(int(percentage * 100)).replace('-','')
-    with open(f"/cr/users/filip/Trigger/RunProductionTest/trigger_output/nuria_all_triggers_{pm}{perc_str}.csv", "a") as f:
+    with open(f"/cr/users/filip/Trigger/RunProductionTest/trigger_output/{station}/{station}_all_triggers_{pm}{perc_str}.csv", "a") as f:
         f.write(f"{Buffer.random_file} {n_traces} {duration} {n_trigger} {n_th} {n_tot} {n_totd}\n")

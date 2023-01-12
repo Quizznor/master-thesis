@@ -7,6 +7,7 @@ from matplotlib.colorbar import ColorbarBase
 from scipy.optimize import curve_fit
 import seaborn as sns
 import numpy as np
+import warnings
 
 class EmptyFileError(Exception): pass
 class SlidingWindowError(Exception): pass
@@ -56,4 +57,4 @@ class GLOBAL():
     n_ensembles                 = 10                                            # how many networks of same architecture to train
 
 plt.rcParams.update({'font.size': 22})
-# plt.rcParams['figure.figsize'] = [20, 10]
+plt.rcParams['figure.figsize'] = [30, 15]

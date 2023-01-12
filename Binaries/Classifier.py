@@ -130,6 +130,11 @@ class Classifier():
                     "FN" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/false_negatives.csv"
                 }
 
+                TP = np.loadtxt(save_files['TP'], usecols = usecols[0])
+                FP = np.loadtxt(save_files['FP'], usecols = usecols[1])
+                TN = np.loadtxt(save_files['TN'], usecols = usecols[2])
+                FN = np.loadtxt(save_files['FN'], usecols = usecols[3])
+
             except OSError:
 
                 save_files = \
@@ -140,11 +145,10 @@ class Classifier():
                     "FN" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/false_negatives.csv"
                 }
 
-            
-            TP = np.loadtxt(save_files['TP'], usecols = usecols[0])
-            FP = np.loadtxt(save_files['FP'], usecols = usecols[1])
-            TN = np.loadtxt(save_files['TN'], usecols = usecols[2])
-            FN = np.loadtxt(save_files['FN'], usecols = usecols[3])
+                TP = np.loadtxt(save_files['TP'], usecols = usecols[0])
+                FP = np.loadtxt(save_files['FP'], usecols = usecols[1])
+                TN = np.loadtxt(save_files['TN'], usecols = usecols[2])
+                FN = np.loadtxt(save_files['FN'], usecols = usecols[3])
 
             tp, fp = len(TP), len(FP)
             tn, fn = len(TN), len(FN)
@@ -253,6 +257,7 @@ class Classifier():
         # plot the classifiers efficiency at a given SPD and energy
         def spd_energy_efficiency(self, dataset : str, **kwargs) -> None : 
 
+            warnings.simplefilter("ignore", RuntimeWarning)
             draw_plot = not kwargs.get("quiet", False)
 
             # Prediction structure: [ integral, n_signal, energy, SPD, Theta]
@@ -349,9 +354,9 @@ class Classifier():
                     fit_params[e].append(popt)
                     fit_uncertainties[e].append(pcov)
 
-                    if draw_plot:
-                        X = np.linspace(0, 3000, 100)
-                        plt.plot(X, station_hit_probability(X, *popt), c = c, lw = 2)
+                    # if draw_plot:
+                    #     X = np.linspace(0, 3000, 100)
+                    #     plt.plot(X, station_hit_probability(X, *popt), c = c, lw = 2)
 
                 if draw_plot:
                     plt.xlabel("Shower plane distance / m")
@@ -361,9 +366,14 @@ class Classifier():
                     ax2 = fig.add_axes([0.95, 0.1, 0.01, 0.8])
                     ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"Zenith angle")
 
-            with open(f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/fit_params.csv", "w") as file:
+            if isinstance(self, NNClassifier): save_dir = f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/fit_params.csv"
+            elif isinstance(self, HardwareClassifier): save_dir = f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/fit_params.csv"
+
+            with open(save_dir, "w") as file:
                 for energy in fit_params:
                     np.savetxt(file, energy)
+
+            warnings.simplefilter("default", RuntimeWarning)
 
             return np.array(fit_params), np.array(fit_uncertainties)
             
@@ -372,7 +382,10 @@ class Classifier():
 
             if isinstance(n_points, float): n_points = int(n_points)
 
-            fitparams = np.loadtxt(f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/fit_params.csv")
+            if isinstance(self, NNClassifier):
+                fitparams = np.loadtxt(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/fit_params.csv")
+            else:
+                fitparams = np.loadtxt(f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/fit_params.csv")
             plt.rcParams["figure.figsize"] = [25, 18]
             plt.rcParams["font.size"] = 22
             colormap = cmap.get_cmap("plasma")

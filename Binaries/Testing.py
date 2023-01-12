@@ -43,7 +43,7 @@ def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -
                 try:
                     print(f"Fetching batch {batch + 1}/{Dataset.__len__()}: {100 * (batch/Dataset.__len__()):.2f}% \
                     (TP, FP) = ({TPs}, {FPs}) ~ {TPs/(TPs + FPs) * 100 :.2f}", end = "\r")
-                except ZeroDivisionError: print("ehy", end = "\r")
+                except ZeroDivisionError: print("Starting simulation...", end = "\r")
 
                 for predicted_label, true_label, info in zip(Classifier(traces), true_labels, metadata):
 

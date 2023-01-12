@@ -170,7 +170,6 @@ class Generator(tf.keras.utils.Sequence):
             # for k in [0, 1, 2]: baseline[k] += np.random.uniform(1, 2)              # for testing purposes
 
             if not self.keep_scale:
-                print("overwriting vem peak / charge")
                 self.trace_options[0] = self.q_peak                                  # adjust q_peak for random traces
                 self.trace_options[1] = self.q_charge                                # adjust q_charge for random traces
 
@@ -219,7 +218,7 @@ class Generator(tf.keras.utils.Sequence):
         if skip_metadata:
             return np.array(traces), np.array(labels)
         else:
-            return np.array(traces), np.array(labels), metadata_per_batch
+            return np.array(traces), np.array(labels), np.array(metadata_per_batch, dtype = object)
 
     # calculate a sliding window range conforming (in most cases at least) to a given prior
     def __sliding_window__(self, VEMTrace : Trace, override_prior : bool = False) -> range :
@@ -296,7 +295,7 @@ class Generator(tf.keras.utils.Sequence):
         n_signals, n_backgrounds, n_injected, n_p, n_n = 0, 0, 0, 0, 0
         has_label_integral, has_no_label_integral = [], []
         has_label_particles, has_no_label_particles = [], []
-        energy_hist = []
+        energy_hist, spd_hist = [], []
 
         if n_traces is None: n_traces = self.__len__()
         
@@ -331,6 +330,7 @@ class Generator(tf.keras.utils.Sequence):
 
                         signal_hist.append(np.max(trace.Signal))
                         energy_hist.append(np.log10(trace.Energy))
+                        spd_hist.append(trace.SPDistance)
 
                         n_signals += 1
 
@@ -338,64 +338,68 @@ class Generator(tf.keras.utils.Sequence):
 
                     baseline_hist.append(np.mean(trace.Baseline))
 
-                    # for index in self.__sliding_window__(trace):
+                    for index in self.__sliding_window__(trace):
 
-                    #     i, f = index, index + self.window_length
-                    #     _, n_sig, integral, _ = trace.get_trace_window((i, f))
+                        i, f = index, index + self.window_length
+                        _, n_sig, integral, _ = trace.get_trace_window((i, f))
 
-                    #     if self.ignore_low_VEM: n_sig = 0 if integral < self.ignore_low_VEM else n_sig
-                    #     if self.ignore_particles: 
-                    #         n_sig = 0 if self.ignore_particles >= n_particles else n_sig
+                        if self.ignore_low_VEM: n_sig = 0 if integral < self.ignore_low_VEM else n_sig
+                        if self.ignore_particles: 
+                            n_sig = 0 if self.ignore_particles >= n_particles else n_sig
 
-                    #     if n_sig: 
-                    #         has_label_integral.append(integral)
-                    #         has_label_particles.append(n_particles)
-                    #         n_p += 1
-                    #     else: 
-                    #         n_particles = n_particles if self.ignore_particles >= n_particles else 0
-                    #         integral = integral if integral < self.ignore_low_VEM else 0
-                    #         has_no_label_integral.append(integral)
-                    #         has_no_label_particles.append(n_particles)
-                    #         n_n += 1
+                        if n_sig: 
+                            has_label_integral.append(integral)
+                            has_label_particles.append(n_particles)
+                            n_p += 1
+                        else: 
+                            n_particles = n_particles if self.ignore_particles >= n_particles else 0
+                            integral = integral if integral < self.ignore_low_VEM else 0
+                            has_no_label_integral.append(integral)
+                            has_no_label_particles.append(n_particles)
+                            n_n += 1
 
-        # histogram_ranges = [(0.01,3), None, None]
-        # histogram_titles = ["Injected Background peak", "Signal peak", "Baseline"]
-        # for j, histogram in enumerate([background_hist, signal_hist, baseline_hist]):
+        histogram_ranges = [(0.01,3), None, None]
+        histogram_titles = ["Injected Background peak", "Signal peak", "Baseline"]
+        for j, histogram in enumerate([background_hist, signal_hist, baseline_hist]):
 
-        #     plt.figure()
-        #     plt.title(histogram_titles[j])
-        #     plt.hist(histogram, histtype = "step", range = histogram_ranges[j], bins = 100, lw = 2)
-        #     plt.yscale("log") if j != 2 else None
+            plt.figure()
+            plt.title(histogram_titles[j])
+            plt.hist(histogram, histtype = "step", range = histogram_ranges[j], bins = 100, lw = 2)
+            plt.yscale("log") if j != 2 else None
 
-        #     plt.xlabel("Signal / VEM")
+            plt.xlabel("Signal / VEM")
 
         plt.figure("Distribution of energies")        
         for e in [16.5, 17, 17.5, 18, 18.5, 19]: plt.axvline(e, c = "gray", ls = "--")
         plt.hist(energy_hist, range = (16, 19.5), bins = 7 * 10, histtype = "step")
         plt.xlabel("Energy / log( E / eV )")
 
+        plt.figure("Distribution of shower plane distances")
+        plt.hist(energy_hist, range = (0, 3000), bins = 7 * 10, histtype = "step")
+        plt.xlabel("Shower plane distance")
+
         plt.figure()
         plt.title("Distribution of priors")
         plt.axvline(self.prior, c = "gray", ls = "--", lw = "2", label = "required")
         plt.hist(priors, range = (0,1), bins = 50, histtype = "step", label = "returned", lw = 2)
 
-        # plt.figure()
-        # plt.title("Sliding window integral")
-        # plt.axvline(self.ignore_low_VEM, c = "gray", ls = "--", lw = 2, label = "low VEM cut")
-        # plt.hist(has_no_label_integral, bins = 500, histtype = "step", label = f"Background: n = {len(has_no_label_integral)}", range = (-1,20), ls = "--")
-        # plt.hist(has_label_integral, bins = 500, histtype = "step", label = f"Signal: n = {len(has_label_integral)}", range = (-1,20), ls = "--")
-        # plt.xlabel("Integrated signal / VEM")
-        # plt.yscale("log")
-        # plt.legend()
+        plt.figure()
+        plt.title("Sliding window integral")
+        plt.axvline(self.ignore_low_VEM, c = "gray", ls = "--", lw = 2, label = "low VEM cut")
+        plt.hist(has_no_label_integral, bins = 500, histtype = "step", label = f"Background: n = {len(has_no_label_integral)}", range = (-1,20), ls = "--")
+        plt.hist(has_label_integral, bins = 500, histtype = "step", label = f"Signal: n = {len(has_label_integral)}", range = (-1,20), ls = "--")
+        plt.xlabel("Integrated signal / VEM")
+        plt.yscale("log")
+        plt.legend()
 
-        # plt.figure()
-        # plt.title("Number of particles")
-        # plt.axvline(self.ignore_particles + 1, c = "gray", ls = "--", lw = 2, label = "low particle cut")
-        # plt.hist(has_no_label_particles, bins = 21, histtype = "step", label = f"Background: n = {len(has_no_label_particles)}", range = (-1,20), ls = "--")
-        # plt.hist(has_label_particles, bins = 21, histtype = "step", label = f"Signal: n = {len(has_label_particles)}", range = (-1,20), ls = "--")
-        # plt.xlabel("number of particles")
-        # plt.yscale("log")
-        # plt.legend()
+        plt.figure()
+        plt.title("Number of particles")
+        plt.axvline(self.ignore_particles + 1, c = "gray", ls = "--", lw = 2, label = "low particle cut")
+        plt.hist(has_no_label_particles, bins = 21, histtype = "step", label = f"Background: n = {len(has_no_label_particles)}", range = (-1,20), ls = "--")
+        plt.hist(has_label_particles, bins = 21, histtype = "step", label = f"Signal: n = {len(has_label_particles)}", range = (-1,20), ls = "--")
+        plt.xlabel("number of particles")
+        plt.yscale("log")
+        plt.legend()
 
         print(f"\n\nTotal time: {(perf_counter_ns() - start) * 1e-9 :.2f}s - {n_signals + n_backgrounds} traces")
         print(f"n_signal = {n_signals}, n_background = {n_backgrounds}")

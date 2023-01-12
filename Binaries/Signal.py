@@ -242,7 +242,9 @@ class Trace(Signal):
     def __plot__(self) -> None :
 
         x = range(self.length)
+        int_sig = np.mean([self.int_1.sum(), self.int_2.sum(), self.int_3.sum()])
 
+        # plt.title(f"Station #{self.StationID} - {int_sig:.2f} VEM")
         plt.plot(x, self.pmt_1, c = "green", label = f"PMT #1{', downsampled' if self.downsample else ''}", lw = 1)
         plt.plot(x, self.pmt_2, c = "orange", label = f"PMT #2{', downsampled' if self.downsample else ''}", lw = 1)
         plt.plot(x, self.pmt_3, c = "steelblue", label = f"PMT #3{', downsampled' if self.downsample else ''}", lw = 1)
@@ -292,7 +294,7 @@ class RandomTrace():
     def __init__(self, station : str = None, index : int = None) -> None : 
 
         ## (HOPEFULLY) TEMPORARILY FIXED TO NURIA/LO_QUI_DON DUE TO BAD FLUCTUATIONS IN OTHER STATIONS
-        self.station = random.choice(["nuria"]) if station is None else station.lower()
+        self.station = random.choice(["nuria", "lo_qui_don"]) if station is None else station.lower()
         self.index = index
 
         all_files = np.asarray(os.listdir(RandomTrace.baseline_dir + self.station)) # container for all baseline files
@@ -308,7 +310,7 @@ class RandomTrace():
             except IndexError:
                 raise RandomTraceError
 
-        print(f"[INFO] -- LOADING RANDOMS: {self.random_file}" + 20 * " ")
+        print(f"[INFO] -- LOADING {self.station.upper()}: {self.random_file}" + 20 * " ")
 
         these_traces = np.loadtxt(RandomTrace.baseline_dir + self.station + "/" + self.random_file)
 
