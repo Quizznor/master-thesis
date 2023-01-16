@@ -876,9 +876,9 @@ class HardwareClassifier(Classifier):
 
         # hierarchy doesn't (shouldn't?) matter
         for i in range(signal.shape[1]):
-            if pmt_1[i] >= threshold:
-                if pmt_2[i] >= threshold:
-                    if pmt_3[i] >= threshold:
+            if pmt_1[i] > threshold:
+                if pmt_2[i] > threshold:
+                    if pmt_3[i] > threshold:
                         return True
                     else: continue
                 else: continue

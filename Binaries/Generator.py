@@ -22,7 +22,8 @@ class EventGenerator():
         "17.5_18" : "/cr/tempdata01/filip/QGSJET-II/protons/17.5_18/",
         "18_18.5" : "/cr/tempdata01/filip/QGSJET-II/protons/18_18.5/",
         "18.5_19" : "/cr/tempdata01/filip/QGSJET-II/protons/18.5_19/",
-        "19_19.5" : "/cr/tempdata01/filip/QGSJET-II/protons/19_19.5/"
+        "19_19.5" : "/cr/tempdata01/filip/QGSJET-II/protons/19_19.5/",
+        "test"    : "/cr/users/filip/Simulation/TestShowers/"
     }
 
     def __new__(self, datasets : typing.Union[list, str], **kwargs : dict) -> typing.Union[tuple, "EventGenerator"] :

@@ -114,6 +114,14 @@ struct VectorWrapper
     return VectorWrapper(sum_of_both_vectors);
   }
 
+  // TODO figure out casting rule here?
+  // VectorWrapper operator *= (float factor)
+  // {
+  //   for (int i = 0; i < values.size(); i++) {this->vector[i] *= factor;}
+
+  //   return *this;
+  // }
+
   vector<float> get_trace(int start, int end)
   {
     const auto trace = std::vector<float>(values.begin() + start, values.begin() + end);
@@ -231,6 +239,25 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
           // loop over all PMTs
           for (unsigned int PMT = 1; PMT < 4; PMT++)
           {
+
+            // std::vector<UShort_t> AdcTrace;
+
+            // if (recStation->IsHighGainSaturated())
+            // {
+            //   AdcTrace = recStation->GetLowGainTrace(PMT);
+            //   const auto BaselineLG = (UShort_t)recStation->GetBaselineLG(PMT);
+            //   const auto DynAnRatio = recStation->GetDynodeAnodeRatio(PMT);
+            //   AdcTrace = AdcTrace - BaselineLG;
+
+            //   std::transform(AdcTrace.begin(), AdcTrace.end(), AdcTrace.begin(), std::bind(std::multiplies<UShort_t>(), std::placeholders::_1, DynAnRatio));
+            // }
+            // else
+            // {
+            //   AdcTrace = recStation->GetHighGainTrace(PMT);
+            //   const auto BaselineHG = (UShort_t)recStation->GetBaseline(PMT);
+            //   AdcTrace = AdcTrace - BaselineHG;
+            // }
+            
             // total trace container
             VectorWrapper TotalTrace(2048,0);
 
@@ -238,8 +265,7 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
             for (int component = ePhotonTrace; component <= eMuonTrace; component++)
             {
               const auto component_trace = recStation->GetPMTTraces((ETraceType)component, PMT);
-              const auto DynAnRatio = (recStation->IsHighGainSaturated()) ? component_trace.GetDynodeAnodeRatio() : 1;
-              auto CalibratedTrace = VectorWrapper( component_trace.GetVEMComponent() ) * DynAnRatio;
+              auto CalibratedTrace = VectorWrapper( component_trace.GetVEMComponent() );
 
               // make sure there exists a component of this type
               if (CalibratedTrace.values.size() != 0)
@@ -250,6 +276,9 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
               }
             }
 
+            // Scale up LG traces if HG is saturated
+            TotalTrace *= recStation->IsHighGainSaturated() ? recStation->GetDynodeAnodeRatio(PMT) : 1;
+
             // write all information to trace file
             traceFile << stationId << " " << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " " << nMuons << " " << nElectrons << " " << nPhotons << " ";
 
@@ -257,10 +286,10 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
             // this used to be converted to VEM
             const auto signal_start = recStation->GetSignalStartSlot();
             const auto signal_end = recStation->GetSignalEndSlot();
-            const auto trace_vector = TotalTrace.get_trace(signal_start, signal_end);
+            const auto trimmedAdcTrace = TotalTrace.get_trace(signal_start, signal_end)
 
             // ... and write to disk
-            for (const auto& bin : trace_vector)
+            for (const auto& bin : trimmedAdcTrace)
             {
               traceFile << " " << bin;
             }

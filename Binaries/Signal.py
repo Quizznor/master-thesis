@@ -8,6 +8,10 @@ class Signal():
 
     def __init__(self, pmt_data : np.ndarray, trace_length : int) -> None :
 
+        print(pmt_data.shape)
+
+        print(len(pmt_data[0]), len(pmt_data[1]), len(pmt_data[2]))
+
         assert len(pmt_data[0]) == len(pmt_data[1]) == len(pmt_data[2]), "PMTs have differing signal length"
 
         # group trace information first
@@ -19,6 +23,7 @@ class Signal():
         n_electrons = set(pmt_data[:,5])
         n_photons = set(pmt_data[:,6])
         pmt_data = pmt_data[:,7:]
+
 
         assert trace_length > len(pmt_data[0]), "signal size exceeds trace length"
 
@@ -33,6 +38,8 @@ class Signal():
         self.n_muons = int(next(iter(n_muons)))                                     # number of muons injected in trace
         self.n_electrons = int(next(iter(n_electrons)))                             # number of electrons injected in trace
         self.n_photons = int(next(iter(n_photons)))                                 # number of photons injected in trace
+
+        print(self.StationID)
 
         self.Signal = np.zeros((3, trace_length))
         self.signal_start = np.random.randint(0, trace_length - len(pmt_data[0]))
