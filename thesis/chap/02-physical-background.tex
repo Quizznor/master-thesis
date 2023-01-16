@@ -83,8 +83,8 @@ E(n) = E_0\;\left( 1 + \beta_\text{SNR} \right)^n.
 
 where $\alpha = \frac{\log(1 - p)}{\log(1 + \beta_\text{SNR})}$ in \autoref{eq:fermi-spectrum} is a spectral coefficient whose exact value will depend on the age 
 of the SNR ($\beta_\text{SNR}$ decreases with age), the injected particle (different primaries have different injection energies and ejection probabilities), as 
-well as many other factors that are often not known a priori. It can be observed that the expected spectrum is a power law in the ranges from injection energy to a
-cutoff at the highest energies, which arises due to the finite lifetime of SNRs.
+well as many other factors that are often not known a priori. It can however be observed that the expected spectrum is a power law in the ranges from injection energy 
+to a cutoff at the highest energies, which arises due to the finite lifetime of SNRs.
 
 Results from several studies (e.g. \cite{aab2015searches, hillas2005can, blasi2013origin}) hint that the presented first order Fermi acceleration mechanism is the 
 main source of galactic CRs, extrasolar particles that originate from within the milky way, with energies ranging up to orders 
@@ -184,8 +184,8 @@ imply a significant energy gain for a photon \cite{jones1965inverse}.
 Uncharged CRs are also frequently produced in nuclear interactions, such as e.g. deeply inelastic scattering of charged CRs with the ISM. This espically 
 contributes to the CR photon spectrum, as high energy $\pi^0$ are often byproducts of such scattering processes. The uncharged pions then decay into two photons. 
 Furthermore, neutrons or neutrinos can originate from interactions involving the weak force. When a proton converts to $p\rightarrow n+e^++\bar{\nu_e}$ during the 
-dacy of a UHECR ion, the resulting decay products positron, neutron and electron-antineutrino inherit the parents' energy, and are thus high energy cosmic rays as 
-well.
+dacy of a UHECR ion, the resulting decay products positron, neutron and electron-antineutrino inherit the parents' energy, and are thus high energy cosmic rays 
+themselves.
 
 \section{Propagation}
 \label{sec:cr-propagation}
@@ -229,8 +229,8 @@ via the below transport equation:
 	\item \textbf{Diffusion} $\nabla D_i \left( \nabla n_i \right)$ :
 
 	The random walk mentioned above is accounted for in the diffusion term, which takes a similar form to the Stokes-Einstein equation. The diffusion 
-	coefficient(s) $D_i$ in general take a tensor form due to anisotropic diffusion in different directions. Furthermore, $D_i$ is different for each particle 
-	type, as the deflecting EM-fields couple to the respective charges $q_i$, which need not be equal in principle.
+	coefficient(s) $D_i$ in the most general case take a tensor form due to anisotropic diffusion in different directions. Furthermore, $D_i$ is 
+	different for each particle type, as the deflecting EM-fields couple to the respective charges $q_i$, which need not be equal in principle.
 
 	\item \textbf{Energy loss} $\partial k_i(E)\,/\,\partial E$ :
 
@@ -294,9 +294,9 @@ below the visible disc \cite{searle1978compositions}. These halos are ignored he
 r_\text{esc.}(t) := 1 - \int\limits_{-H}^{H} \frac{n(z,t)}{n_0}\,\text{d}z
 \end{equation}
 
-It can be concluded that low energy CRs do not travel outside their host galaxy within reasonable timeframes. Meanwhile, \textbf{U}ltra \textbf{H}igh 
-\textbf{E}nergy CRs (UHECR, $E>10^{18}\,\text{eV}$) escape swiftly on ballistic trajectories and can (and often do) have an extragalactic origin, not last also due
-to the limited energies that CR sources in the milky way can provide (compare \autoref{sec:cr-acceleration}).
+It can be concluded that low energy CRs do not travel outside their host galaxy within reasonable timeframes. Meanwhile UHECRs with energies exceeding 
+$E>10^{18}\,\text{eV}$) escape swiftly on ballistic trajectories and can (and often do) have an extragalactic origin, not last also due to the limited energies 
+that CR sources in the milky way can provide (compare \autoref{sec:cr-acceleration}).
 
 This observation is consistent with a dipole in the \textbf{A}rrival \textbf{D}irection (AD) of UHECRs observed by the Pierre Auger observatory. The dipole points
 roughly in the opposite direction of the galactic core, marked with an asterisk in \autoref{fig:ad-anisotropy}.
@@ -307,17 +307,15 @@ roughly in the opposite direction of the galactic core, marked with an asterisk 
 In the last paragraph the (likely) extragalactic origin of UHECRs was discussed. Such particles must traverse millions of lightyears of extragalactic space before
 inducing a large air shower on earth. As the energy of these primaries increases above the \textbf{G}reisen-\textbf{Z}atsepin-\textbf{K}usmin threshold (GZK),
 their propagation through space is thought to be severely impeded. At energies above $\approx10^{20}\,\text{eV}$ the \textbf{C}osmic \textbf{M}icrowave
-\textbf{B}ackground (CMB) consisting of photons in the microwave rage are blueshifted to energies $E_\gamma > \SI{300}{\mega\electronvolt}$. A proton with the 
+\textbf{B}ackground (CMB) consisting of photons in the microwave range are blueshifted to $E_\gamma > \SI{300}{\mega\electronvolt}$. A proton with the 
 corresponding energy can thus absorb such CMB photons and convert to its' excited spin state, the $\Delta^+$-baryon. The $\Delta^+$-baryon decays nearly 
 instantanouely to (for example) its' ground state again, by radiating away a $\pi^0$ \cite{PDG} and losing energy in the process \cite{PDG}. 
 
-The mean free path of this interaction, also labelled GZK horizon is both energy- and primary-dependant (i.e. what kind of cosmic ray is considered). For 
-\SI{75}{\exa\electronvolt} protons, it is $\approx \SI{100}{\mega\parsec}$. Cosmic rays exceeding the GZK threshold should ergo not be observed from faraway 
-sources, and an overall reduction in flux at these energies should be recorded \cite{greisen1966end, zatsepin1966j}.
+The mean free path of this interaction, also labelled GZK horizon is both energy- and primary-dependant. For \SI{75}{\exa\electronvolt} protons, it is $\approx \SI{100}{\mega\parsec}$. Cosmic rays exceeding the GZK threshold should ergo not be observed from faraway sources, and an overall reduction in flux at these energies should be recorded \cite{greisen1966end, zatsepin1966j}.
 
 Indeed, results published by the Auger collaboration (see \autoref{sec:cr-energy-spectrum}) are consistent with this assumption. Whether or not the GZK-supression
-is the main cause for this hard spectrum at the highest energies remains unclear for now, but shall hopefully be answered with the ongoing AugerPrime upgrade of 
-Pierre Auger observatory. 
+is the main cause for this hard spectrum at the highest energies remains unclear for now, but might be answered with the ongoing AugerPrime upgrade of 
+the Pierre Auger observatory. 
 
 \section{Composition}
 \label{sec:cr-composition}
