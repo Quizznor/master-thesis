@@ -8,10 +8,6 @@ class Signal():
 
     def __init__(self, pmt_data : np.ndarray, trace_length : int) -> None :
 
-        print(pmt_data.shape)
-
-        print(len(pmt_data[0]), len(pmt_data[1]), len(pmt_data[2]))
-
         assert len(pmt_data[0]) == len(pmt_data[1]) == len(pmt_data[2]), "PMTs have differing signal length"
 
         # group trace information first
@@ -38,8 +34,6 @@ class Signal():
         self.n_muons = int(next(iter(n_muons)))                                     # number of muons injected in trace
         self.n_electrons = int(next(iter(n_electrons)))                             # number of electrons injected in trace
         self.n_photons = int(next(iter(n_photons)))                                 # number of photons injected in trace
-
-        print(self.StationID)
 
         self.Signal = np.zeros((3, trace_length))
         self.signal_start = np.random.randint(0, trace_length - len(pmt_data[0]))
@@ -251,7 +245,10 @@ class Trace(Signal):
         x = range(self.length)
         int_sig = np.mean([self.int_1.sum(), self.int_2.sum(), self.int_3.sum()])
 
-        # plt.title(f"Station #{self.StationID} - {int_sig:.2f} VEM")
+        try:
+            plt.title(f"Station #{self.StationID} - {int_sig:.2f} VEM")
+        except AttributeError: pass
+        
         plt.plot(x, self.pmt_1, c = "green", label = f"PMT #1{', downsampled' if self.downsample else ''}", lw = 1)
         plt.plot(x, self.pmt_2, c = "orange", label = f"PMT #2{', downsampled' if self.downsample else ''}", lw = 1)
         plt.plot(x, self.pmt_3, c = "steelblue", label = f"PMT #3{', downsampled' if self.downsample else ''}", lw = 1)

@@ -114,13 +114,15 @@ struct VectorWrapper
     return VectorWrapper(sum_of_both_vectors);
   }
 
-  // TODO figure out casting rule here?
-  // VectorWrapper operator *= (float factor)
-  // {
-  //   for (int i = 0; i < values.size(); i++) {this->vector[i] *= factor;}
+  VectorWrapper operator *= (float factor)
+  {
+    for (int i = 0; i < values.size(); i++) 
+    {
+      const auto float_bin = (float)this->values[i] * factor;
+    }
 
-  //   return *this;
-  // }
+    return *this;
+  }
 
   vector<float> get_trace(int start, int end)
   {
@@ -286,7 +288,7 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
             // this used to be converted to VEM
             const auto signal_start = recStation->GetSignalStartSlot();
             const auto signal_end = recStation->GetSignalEndSlot();
-            const auto trimmedAdcTrace = TotalTrace.get_trace(signal_start, signal_end)
+            const auto trimmedAdcTrace = TotalTrace.get_trace(signal_start, signal_end);
 
             // ... and write to disk
             for (const auto& bin : trimmedAdcTrace)
