@@ -3,11 +3,14 @@
 \chapter{Extensive air showers}
 \label{chapter:extensive-air-showers}
 
-Consider a high energy cosmic ray impinging on earth. The questions pertaining to where it might originate from and how it has gained so much kinetic energy have 
-been answered in the preceding \autoref{chap:physical-background}. In the following, the particle cascades resulting from the particle interacting in the upper
-atmosphere will be examined. This is done in a two-fold way. The underlaying principles will be explained via considering a particle carrying no SU$(3)$-color 
-charge in \autoref{sec:heitler-model}. The more general treatment for hadronic showers is then found in \autoref{sec:heitler-matthews-model}. As supplementary 
-information, the effect of different hadronic primaries is discussed in \autoref{sec:superposition-principle}.
+Extensive air showers describe the particle cascades that are the result of a high-energy cosmic ray interacting with the atmosphere of the earth. While the 
+microstate of a given air shower is inherently chaotic, macroscopic variables such as the number of particles in the cascade, its' multiplicity, allow conclusions
+on the primary cosmic ray.
+
+In this chapter the various processes which give raise to the jets of energetic particles are discussed. Because hadronic primaries that carry intrinsic 
+SU$(3)$-color charges are fundamentally different from leptonic ones which do not, this is done in a two-fold way. The funamental principles giving rise to 
+electromagnetic cascades are shown in \autoref{sec:heitler-model}. Supplementary information regarding hadronic showers is listed in 
+\autoref{sec:heitler-matthews-model}. Finally, the effect of differing hadronic primaries is considered in \autoref{sec:superposition-principle}.
 
 \section{Electromagnetic showers}
 \label{sec:heitler-model}
@@ -33,41 +36,41 @@ information, the effect of different hadronic primaries is discussed in \autoref
 \end{figure}
 
 The dominating interaction of $E > \SI{10}{\mega\electronvolt}$ photons in matter is $e^+e^-$ pair production, whereas for electrons/positrons the creation of a
-$\gamma$ via bremsstrahlung prevails at high energies. This is shown in \autoref{fig:ionization-losses}. Consequently, an entire cascade of electrons, positrons 
-and photons can emerge from a single primary particle, as realised by Heitler in \cite{heitler1984quantum}. 
+$\gamma$ via bremsstrahlung prevails at high energies. This is shown in \autoref{fig:ionization-losses}. Consequently, an entire cascade of $e^\pm$ and photons can
+emerge from a single primary particle, as realised by Heitler in \cite{heitler1984quantum}. 
 
 Of particular interest in these showers are, apart from the primary particles energy $E_0$ and arrival direction $(\Upphi, \theta)$, the atmospheric depth 
 $X_\text{max}$ at which it reaches its' maximum multiplicity, as well as the \textbf{L}ateral \textbf{D}istribution \textbf{F}unction (LDF), that parametrizes the 
 distribution of particles along the shower axis. An important variable that influences both values is the radiation length $X_0$. It represents the characteristic
 length at which an $e^\pm$ loses $1-\frac{1}{e}\approx63\%$ of its energy. It also corresponds to the mean free path of a photon in matter up to a factor $7 / 9$ 
-\cite{gupta2010calculation}. Neglecting said factor and assuming that new particles on average inherit half of the original energy, describing the multitude of 
+\cite{gupta2010calculation}. Neglecting said factor and assuming that new particles on average inherit half of the parent energy, describing the multitude of 
 particles contained in an electromagnetic shower becomes a counting exercise in the context of the Heitler-model.
 
 With each radiation length, the number of particles $N$ in the shower double, while the energy per particle $E_\text{pp}$ halves. After traversing an atmospheric 
-depth of $n\cdot X_\text{max}$, typically measured in \SI{}{\gram\per\centi\meter\squared}, they consequently read
+depth of $n\cdot X_\text{max}$, typically measured in units of \SI{}{\gram\per\centi\meter\squared}, they consequently read
 
 \begin{equation}
 \label{eq:heitler-parameters}
 N(n) = 2^n, \qquad E(n) = \frac{E_0}{2^n}.
 \end{equation}
 
-After some time, the energy of each individual particle $E_\text{PP}$ will have diminished by so much that other processes will dominate over bremsstrahlung and 
-pair production. This occurs at the critical energy $E_c$ below which the shower rapidly stops creating new particles and dies out as a result. It follows via 
-\autoref{eq:x-max} and \ref{eq:n-max} that both $X_\text{max}$ as well as $N_\text{max}$ increase with $E_0$. The multiplicity arising from 
-these assumptions alongside a stylized propagation of the thus created shower is represented in \autoref{fig:heitler-model}. 
+After sufficient interactions, the energy of each individual particle $E_\text{PP}$ will have degraded to such an extent that other processes are no longer 
+negligible compared to bremsstrahlung and pair production. This occurs at the critical energy $E_{c,\,\text{EM}}$ below which the shower rapidly stops creating new particles and
+dies out as a result. It follows via \autoref{eq:x-max} and \ref{eq:n-max} that both $X_\text{max}$ as well as $N_\text{max}$ increase with $E_0$. The multiplicity 
+arising from these assumptions alongside a stylized propagation of the thus created shower is represented in \autoref{fig:heitler-model}. 
 
 \begin{align*}
 E_\text{PP}\,(n_\text{max}) &\stackrel{!}{=} E_c \stackrel{\eqref{eq:heitler-parameters}}{=} \frac{E_0}{2^{n_\text{max}}}\\
-\Leftrightarrow \qquad \qquad n_\text{max} &= \left\lfloor \log_2 \left( \frac{E_0}{E_c} \right) \right\rfloor \\[7pt]
-\Rightarrow \qquad \qquad\!\! X_\text{max} &= n_\text{max}\cdot X_0 = \left\lfloor \log_2 \left( \frac{E_0}{E_c} \right) \right\rfloor. \numberthis\label{eq:x-max} \\
-\Rightarrow \qquad \qquad\!\! N_\text{max} &= 2^{n_\text{max}} = \left\lfloor \frac{E_0}{E_c} \right\rfloor. \numberthis\label{eq:n-max}
+\Leftrightarrow \qquad \qquad n_\text{max} &= \left\lfloor \log_2 \left( \frac{E_0}{E_{c,\,\text{EM}}} \right) \right\rfloor \\[7pt]
+\Rightarrow \qquad \qquad\!\! X_\text{max} &= n_\text{max}\cdot X_0 = \left\lfloor \log_2 \left( \frac{E_0}{E_{c,\,\text{EM}}} \right) \right\rfloor. \numberthis\label{eq:x-max} \\
+\Rightarrow \qquad \qquad\!\! N_\text{max} &= 2^{n_\text{max}} = \left\lfloor \frac{E_0}{E_{c,\,\text{EM}}} \right\rfloor. \numberthis\label{eq:n-max}
 \end{align*}
 
 \begin{figure}
 	\centering
 	\includegraphics[width=\textwidth]{./imgs/heitler_shower.png}
 	\caption{Shown on the left is the stylized propagation of an extensive air shower through the atmosphere according to the Heitler-model, quantized in units
-	of $X_0$. The energy of the primary particle is of order $2^8\cdot E_c$, which allows for 8 bifurcation steps, and $N_\text{max}=256$ shower particles. The
+	of $X_0$. The energy of the primary particle is of order $2^8\cdot E_{c,\,\text{EM}}$, which allows for 8 bifurcation steps, and $N_\text{max}=256$ shower particles. The
 	multiplicity of the shower after each step is shown in the right subplot.}
 	\label{fig:heitler-model}
 \end{figure}
@@ -92,8 +95,8 @@ $r_\text{M}\approx\SI{100}{\meter}$ for interactions that are relevant here, and
 Hadronic primaries will readly produce color-charged secondaries, as has been shown many times in particle accelerators. In order to model the development of 
 hadronic showers, the model discussed in \autoref{eq:heitler-parameters} thus needs to be adjusted. An example theory has been developed by Matthews in 2005. 
 Following the reasoning in \cite{matthews2005heitler}, after traversing an atmospheric depth corresponding to the hadronic interaction length, a proton creates on 
-average $N_\pi \approx 15$ pions, of which two thirds are charged, and one third is uncharged. Each newly created (charged) particle then repeats this process, 
-kicking off the shower cascade. The corresponding decay channels of the light $\pi$-mesons with the largest \textbf{B}ranching \textbf{R}atios (BR) are 
+average $N_\pi \approx 15$ pions, of which two thirds are charged, and one third is uncharged. The corresponding decay channels of the light $\pi$-mesons with the 
+largest \textbf{B}ranching \textbf{R}atios (BR) are 
 
 \begin{align*}
 	\pi^{+} &\rightarrow \upmu^{+} + \nu_\upmu \!\!\!  \qquad\qquad (\text{BR}\approx0.9999,\,\tau=\SI{2.6033e-8}{\second} \; \text{\cite{PDG}}), \\
@@ -102,14 +105,15 @@ kicking off the shower cascade. The corresponding decay channels of the light $\
 \end{align*}
 
 With a mean lifetime of just attoseconds, the $\pi^0$ decay instantly before being able to continue the cascade process. In this fashion, the uncharged particles 
-initiate a Heitler shower as discussed in \autoref{sec:heitler-model}, by providing high-energy photons. It follows that every hadronic shower has an electromagnetic 
-component. Moreover, assuming that the inherited energy from the parent particle is roughly uniformly distributed among its' children, one third of the remaining
-energy in the hadronic component is lost to the electromagnetic component per hadronic interaction length. 
+initiate a Heitler shower such as the one in \autoref{sec:heitler-model}, by providing high-energy photons. It follows that every hadronic shower has an 
+electromagnetic component. Moreover, assuming that the inherited energy from the parent particle is roughly uniformly distributed among its' children, one third of
+the remaining energy in the hadronic component is lost to the electromagnetic component per hadronic interaction length. 
+
+Meanwhile, the charged pions repeat the procedure of creating secondary mesons, kicking off the hadronic component of the shower in the process.
 
 Similar to the reasoning in \autoref{sec:heitler-model}, a primary of given energy initiates a shower of a specific multiplicity $N_\text{max}$. This is reached 
-after $n_\text{max}$ steps, where the energy per particle $E_\text{PP}(n_\text{max})$ is below the critical energy $E_c$ at which the mesons ionize rather than 
-continue the cascade. After this last step, the charged pions eventually decay into muons and neutrinos. The shower characteristics in the scope of the 
-Heitler-Matthews model that describe hadronic showers are thus given by
+after $n_\text{max}$ steps, where the energy per particle $E_\text{PP}(n_\text{max})$ is below the critical energy $E_{c,\,\text{had.}}$ at which the mesons ionize rather than 
+continue the cascade. After this last step, the charged pions eventually decay into muons and neutrinos. The shower characteristics are thus given by
 
 \begin{equation}
 N_\text{had}(n) = \left(\frac{2\,N_\pi}{3}\right)^n,\qquad E_\text{PP}(n) = \frac{E_0}{N_\pi^n},\qquad n_\text{max}=\left\lfloor\log_N\left(\frac{E_0}{E_{c,\,\text{had}}}\right)\right\rfloor,
@@ -132,11 +136,13 @@ LDF can be recovered as
 \rho_\upmu(N, t) = 18\,\left(\frac{N}{10^6 \cdot r}\right)^\frac{3}{4} \cdot \;\,\left(1 + \frac{r}{320}\right)^{-\frac{5}{2}}.
 \end{equation}
 
-While the above \autoref{eq:NKG-muons} drops of slower $\mathcal{O}(r^{-\frac{3}{2}})$ compared to the electromagnetic component ($\mathcal{O}(r^{-3})$), the
+While the above \autoref{eq:NKG-muons} drops off slower $\mathcal{O}(r^{-\frac{3}{2}})$ compared to the electromagnetic component ($\mathcal{O}(r^{-3})$), the
 immediate vicinity of the shower axis contains mostly photons and leptons from the EM subshower. Further out, the muonic component takes over. This is visualized
 in \autoref{fig:component-LDF}. Due to this reason, and the fact that muons can carry considerable amounts of energy faraway from the shower axis, the muonic 
 footprint of a shower often appears much more "patchy" compared to the EM portion. This knowledge is espically useful when distinguishing between hadron- and 
 photon-induced air showers (compare \cite{capistran2015new}).
+
+\TODO{Where did the better picture go??}
 
 \begin{figure}
 	\centering
@@ -146,6 +152,8 @@ photon-induced air showers (compare \cite{capistran2015new}).
 	images adopted with changes from \cite{CorsikaShower}.}
 	\label{fig:component-LDF}
 \end{figure}
+
+\TODO{STOPPED HERE WITH PROOFREADING}
 
 \section{Composite primaries}
 \label{sec:superposition-principle}
