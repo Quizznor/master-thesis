@@ -404,14 +404,14 @@ of a signal $S(\theta) = S\cdot A(\theta)$ and normalizing to a reference shower
 
 \begin{equation}
 \label{eq:constant-intensity-cut-1}
-f_\text{CIC} &= \frac{S_{1000}(\theta)}{S_{1000}(\theta_\text{ref})}=\frac{A(\theta)}{A(\theta_\text{ref})}.
+f_\text{CIC} = \frac{S_{1000}(\theta)}{S_{1000}(\theta_\text{ref})}=\frac{A(\theta)}{A(\theta_\text{ref})}.
 \end{equation}
 
 The reference angle is chosen as $\theta_\text{ref} = 38^\circ$, as this is the median inclination of detected events \TODO{cite}. It follows
 
 \begin{equation}
 \label{eq:constant-intensity-cut-2}
-S_{38} &= \frac{S_{1000}(\theta)}{f_\text{CIC}(\theta)}.
+S_{38} = \frac{S_{1000}(\theta)}{f_\text{CIC}(\theta)}.
 \end{equation}
 
 Further corrections are applied to $S_{38}$ in order to counteract influence of the local weather or geomagnetic effects \TODO{cite}. What remains is a shower 
@@ -419,14 +419,19 @@ parameter which has been sanitized as much as possible from any environmental fa
 as discussed in \autoref{chap:extensive-air-showers}.
 
 The approximate relation of $S_{38}(E)$ can be inferred from hybrid measurements, where the calorimetric energy as measured by the FD is connected to $S_{38}$.
-From such datasets, it follows the relation 
+From such datasets it follows the relation below, with the fit parameters for $A, B$ as determined in \cite{PhysRevD.102.062005}.
 
-\begin{equation}
-\label{eq:SD-energy}
-	E_\text{SD} = A \, (S_{38} / \Charge)^B
-\end{equation}
+\begin{align*}
+	\label{eq:SD-energy}
+	E_\text{SD} = A \, (S_{38} /\; \SI{}{\Charge})^B \numberthis
+\end{align*}
 
---
+\vspace{-2em}
+
+\begin{align*}
+	A &= \SI{1.86\pm0.03e17}{\electronvolt} \\
+	B &= 1.031\pm0.004 \\
+\end{align*}
 
 \subsection{Primary particle}
 \label{ssec:primary-particle}
