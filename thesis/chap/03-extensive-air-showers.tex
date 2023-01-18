@@ -153,26 +153,23 @@ photon-induced air showers (compare \cite{capistran2015new}).
 	\label{fig:component-LDF}
 \end{figure}
 
-\TODO{STOPPED HERE WITH PROOFREADING}
-
 \section{Composite primaries}
 \label{sec:superposition-principle}
 
 As is evident from the discussion in \autoref{chap:physical-background}, not only single protons (which are strictly speaking also composite) or elementary 
-particles like photons, electrons, etc. appear in the cosmic ray spectrum. Any and all kind of elements can and do appear as possible primaries, given that they
-are stable to weak decay and can be effectively accelerated near a CR source. The consequence of different primaries on resulting shower characteristics is subtle,
-but large enough such that it can be used for identification purposes.
+particles like photons, electrons, etc. appear in the cosmic ray spectrum. In theory, any somewhat stable particle is a possible primary. The consequence of 
+different primaries on resulting shower characteristics is subtle, but large enough such that it can be used for identification purposes.
 
 Assuming the constituents in a CR nucleus all coherently interact with an air molecule, one arrives at the superposition principle for extensive air showers. It 
 states that for a composite primary with $A = N + Z$ neutrons and protons, each constituent particle will initiate a shower with initial energy of 
-$E_0' = E_0\,/\,A$, where $E_0$ is the initial energy of the composite particle. It follows that air showers from heaver primaries occur at higher altitudes (lower 
-atmospheric depth $X$) and with higher particle counts.
+$E_0' = E_0\,/\,A$, where $E_0$ is the initial energy of the composite particle. For this scenario, $N_\text{max}$ and $n_\text{max}$ are known from the preceding
+sections. It follows that air showers from heaver primaries occur at higher altitudes (lower atmospheric depth $X$) and with higher particle counts.
 
 \begin{equation}
-N_{\text{max},\,A} = A \cdot N_{\text{max},\,1}, \qquad n_{\text{max},\,A} = \left\lfloor \log_N\left(\frac{E_0}{E_{c,\,\text{had}}}\right) - \log_N A \right\rfloor,
+N_{\text{max},\,A} = A \cdot N_{\text{max}}, \qquad n_{\text{max},\,A} = \left\lfloor \log_N\left(\frac{E_0}{E_{c,\,\text{had}}}\right) - \log_N A \right\rfloor,
 \end{equation}
 
-where $N_{\text{max},\,1}$ refers to a proton shower as established in \autoref{eq:n-max-matthews}.
+where $N_{\text{max},\,A}$, $n_{\text{max},\,A}$ refer to the resulting extensive air shower characteristics that are induced by a particle with mass number $A$.
 
 \section{Comments on validity}
 \label{sec:cr-shower-validity}
@@ -183,13 +180,13 @@ approximation of real world processes up to $X_\text{max}$.
 
 Of course, adding a stochastic component to the above assumptions (c.f. \cite{MartinShowerSim}) improves predictions. But even full-fledged Monte-Carlo simulation 
 software frameworks like GEANT4 \cite{agostinelli2003geant4} or CORSIKA \cite{heck1998corsika} show discrepancies between observed and predicted shower development
-when analysed in depth. An example of this is presented in \autoref{fig:model-validity}. 
+when analysed in depth. This is shown in \autoref{fig:model-validity}. 
 
 While shower-to-shower fluctuations can explain discrepancies to a degree, there also exist systematic differences between the simulated and observed extensive air
-showers. These are largely owed to imprecise knowledge of the underlaying physical processes. For example, hadronic interaction models (e.g. QGSJETII-04 shown in 
-\autoref{fig:validity-plot}) rely on extrapolation of measured cross sections in the \SI{}{\giga\electronvolt}-\SI{}{\tera\electronvolt} scales to the relevant 
-CR energies \cite{ostapchenko2006qgsjet}. While this is not an unfair assumption given the scale invariance of deep inelastic scattering \cite{fox1974early}, it is 
-clear, that the approach cannot accurately encompass all effects that may take place at high energies.
+showers. These are largely owed to imprecise knowledge of the underlaying physical processes. For example, hadronic interaction models (e.g. QGSJETII-04) rely on 
+extrapolation of measured cross sections in the \SI{}{\giga\electronvolt}-\SI{}{\tera\electronvolt} scales to the relevant CR energies \cite{ostapchenko2006qgsjet}. 
+While this is not an unfair assumption given the scale invariance of deep inelastic scattering \cite{fox1974early}, it is clear, that the approach cannot accurately 
+encompass all effects that may take place at the high energies present in atmospheric particle cascades.
 
 In conclusion, the particle cascades evolving from relativistic CRs impinging on earth are still not fully understood. Several simulation frameworks have been 
 developed, which each have their own shortcomings. It is therefore important to compare not only results from simulations using one framework to observations, but 
@@ -256,18 +253,18 @@ places an upper limit on their duty cycle.
 \subsubsection{In Scintillators}
 
 Conventional plastic scintillators have a light yield, that is $1000-10000$ times higher than that of air \cite{holl1988measurement}. Such scintillators therefore 
-pose an effective way of measuring a shower footprint on the ground. The Pierre Auger \textbf{S}urface \textbf{D}etector (SD) is equipped with scintillators. 
-Predecessors like KASCADE \cite{Kascade} have been using scintillation light to detect cosmic rays as well.
+pose an effective way of measuring a shower footprint on the ground. The Pierre Auger \textbf{S}urface \textbf{D}etector (SD) is equipped with scintillators during
+the ongoing AugerPrime upgrade. Predecessors like KASCADE \cite{Kascade} have been using scintillation light to detect cosmic rays as well.
 
 \subsection{Radio Emission}
 \label{ssec:radio-emission}
 
 Relativistic charged particles in the cascade are subject to deflections due to the geomagnetic field. This deflection is largest for $e^\pm$ due to their 
 comparably tiny masses. Albeit the deflection of a typical electron in the shower is miniscule and the subsequent emission of Bremsstrahlung tiny, coherence 
-effects along the entire shower front can greatly amplify the electric field strengths obtained from this effect \cite{schroeder2017radio}. This gives rise to radio
+effects along the entire shower front can greatly amplify the electric field strengths obtained from this effect \cite{aab2018observation}. This gives rise to radio
 signals emitted by the extensive air shower, which can in principle be detected via antennas.
 
 One challenge in constructing an efficient CR radio detector is the requirement for a radio-quiet environment, where a large enough 
 \textbf{S}ignal-to-\textbf{N}oise-\textbf{R}atio (SNR) permits analysis of measured data. This is the case for the AERA component of the Pierre Auger observatory,
-which has been in operation since \TODO{cite}. Its results have in part lead the proposal of a vast radio array, GRAND \TODO{cite}, which will have an enormous 
+which has been in operation since 2010 \cite{Aera}. Its results have in part lead the proposal of a vast radio array, GRAND \cite{Grand}, which will have an enormous 
 exposure to CR showers, if built.
