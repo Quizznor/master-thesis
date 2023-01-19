@@ -91,6 +91,7 @@ def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -
 
 def confidence_comparison(confidence_level, *args, **kwargs):
 
+    y_max = kwargs.get("ymax", 2500)
     labels = kwargs.get("labels", None)
     energy_labels = ["16_16.5", "16.5_17", "17_17.5", "17.5_18", "18_18.5", "18.5_19", "19_19.5"]
     theta_labels = [r"$0^\circ$", r"$26^\circ$", r"$38^\circ$", r"$49^\circ$", r"$60^\circ$", r"$90^\circ$"]
@@ -137,6 +138,8 @@ def confidence_comparison(confidence_level, *args, **kwargs):
 
         ax.legend(title = theta_labels[i] + r"$\leq$ $\theta$ < " + theta_labels[i + 1])
         ax.axhline(0, c = "gray", ls = ":", lw = 2)
+
+    plt.ylim(-100, y_max)
 
 
 

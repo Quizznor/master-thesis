@@ -60,6 +60,8 @@ class EventGenerator():
 
         '''
 
+        print(kwargs)
+
         # set all desired environmental variables
         split = kwargs.get("split", GLOBAL.split)
         seed = kwargs.get("seed", GLOBAL.seed)
@@ -265,6 +267,16 @@ class Generator(tf.keras.utils.Sequence):
 
         random.shuffle(self.files)
         self.__iteration_index = 0
+
+    # make a copy of this generator (same event files) with different keywords
+    def copy(self, **kwargs : dict) -> "Generator" :
+
+        print(kwargs)
+
+        NewGenerator = EventGenerator([], split = 1, **kwargs)
+        NewGenerator.files = self.files
+
+        return NewGenerator
 
     # check properties of the sliding window, prior, start/stop etc.
     def check_sliding_window(self, batch : int) -> None :

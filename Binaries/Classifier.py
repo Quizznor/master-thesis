@@ -354,9 +354,9 @@ class Classifier():
                     fit_params[e].append(popt)
                     fit_uncertainties[e].append(pcov)
 
-                    # if draw_plot:
-                    #     X = np.linspace(0, 3000, 100)
-                    #     plt.plot(X, station_hit_probability(X, *popt), c = c, lw = 2)
+                    if draw_plot:
+                        X = np.linspace(0, 3000, 100)
+                        plt.plot(X, station_hit_probability(X, *popt), c = c, lw = 2)
 
                 if draw_plot:
                     plt.xlabel("Shower plane distance / m")
