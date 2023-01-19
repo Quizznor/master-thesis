@@ -347,10 +347,10 @@ All reconstruction algorithms presented in the following subsections rely in one
 above the observatory. Hence the center of the shower footprint, the shower core, must be estimated at the beginning of the analysis chain. 
 
 Without any prior knowledge, a first guess as to where the shower core is located can be made by calculating the barycenter of all participating stations. In this 
-fashion, a weighted mean of all station locations is constructed weights equal to the square root of the corresponding signal strength \cite{SDReconstruction}.
+fashion, a weighted mean of all station locations is constructed with weights equal to the square root of the corresponding signal strength \cite{SDReconstruction}.
 
 The presented approach fails if only parts of the shower are contained within the SD event. This occurs espically at the edges of the SD array, or in the vicinity
-of faulty WCDs. A fiducial trigger, $N$T5 is employed to mitigate this problem. $N$T5 requires at least $N$ active stations around the SD detector that recorded 
+of faulty WCDs. A fiducial trigger, $N$T5, is employed to mitigate this problem. $N$T5 requires at least $N$ active stations around the SD detector that recorded 
 the largest signal \cite{abraham2010trigger}.
 
 \subsection{Arrival direction}
@@ -399,7 +399,7 @@ integrated signal $S$ (in units of \Qpeak) it received. From the so gathered lat
 This standardizes the comparison of results across many different events, even if a shower has only triggered few stations. \TODO{cite}
 
 Due to attenuation effects in the atmosphere $S_{1000}$ is a function of $\theta$. It has been shown in \cite{DarkoCIC} that by separating the $\theta$ dependence
-of a signal $S(\theta) = S\cdot A(\theta)$ and normalizing to a reference shower inclination, an unbiased estimator $S_{38}$ can be recovered via a 
+of a signal $S(\theta) = S\cdot A(\theta)$ and normalizing to a reference shower inclination, a reasonably unbiased estimator $S_{38}$ can be recovered via a 
 \text{C}onstant \text{I}ntensity \text{C}ut (CIC) as shown in \autoref{eq:constant-intensity-cut-1} and \autoref{eq:constant-intensity-cut-2}.
 
 \begin{equation}
@@ -436,3 +436,8 @@ From such datasets it follows the relation below, with the fit parameters for $A
 \subsection{Primary particle}
 \label{ssec:primary-particle}
 
+The determination of the primary particle, also referred to as the mass composition, relies on the systematic differences in air showers discussed in 
+\autoref{sec:superposition-principle}. Muons, due to their noninteracting nature at high energies are typically the first signal to arrive in a WCD from an air
+shower. Since high-mass primaries produce a higher fraction of muons this implies that the rise time, in which the integrated signal goes from $10\%$ to $50\%$ of
+the total received signal, is shorter in these showers. Consequent analysis over a statistically relevant dataset thus reveals the mass composition of the cosmic
+ray flux (compare \cite{letessier2014highlights}, \autoref{fig:cr-energy-spectrum})
