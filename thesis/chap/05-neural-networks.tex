@@ -5,7 +5,7 @@
 
 The idea of a \textbf{N}eural \textbf{N}etwork (NN) is to attempt to capture the human thinking process in machine code. For this purpose, a network architecture
 connects some input (e.g. a picture) to an output (e.g. digits 0-9). Much like in a human brain, the architecture consists of multiple smaller chunks, neurons 
-and layers, which connect in some way to form an emergent intelligence. 
+and layers, which connect in some way to form an emergent intelligent system. 
 
 As described, neural network do not yet hold the abilities to achieve their designated tasks, and can hardly be called intelligent. They need to be trained. 
 This is done by presenting an example input (called training data) to the network. The network output is compared to the desired output for the given input via 
@@ -13,17 +13,36 @@ some loss function. During training, the network attempts to minimize this loss 
 depend on the network architecture, which in turn is influenced by the type of data and kind of task the NN should accomplish.
 
 In the following several network architectures which are relevant for this work are detailed. The most simple option of a \textbf{D}ense NN (DNN) is given in 
-\autoref{sec:DNN} in order to introduce several key concepts. \textbf{C}onvolutional NNs (CNNs) used for image recognition are explained in \autoref{sec:CNN}. 
-Lastly \textbf{R}ecurrent NNs (RNNs) that find an application in time series analysis are shown in \autoref{sec:RNN}
+\autoref{sec:DNN} in order to introduce several key concepts. \textbf{C}onvolutional NNs (CNNs) used for example in image recognition are explained in 
+\autoref{sec:CNN}. Lastly \textbf{R}ecurrent NNs (RNNs) that find an application in time series analysis are shown in \autoref{sec:RNN}
 
 \section{Dense neural network}
 \label{sec:DNN}
 
-Dense neural networks are subdivided into layers, which themselve consist of individual neurons.
+Dense neural networks are subdivided into layers, which themselve consist of individual neurons. Each neuron conglomerates information from a previous layer 
+according to some weights $w_{jk}$ and a bias $b_j$ and propagates it through some nonlinear activation function $\sigma^{(i)}$. That is, the propagation of 
+an input to the output layer through intermediate, hidden layers $\mathcal{L}^{(i)}$ can be described with the below matrix form:
+
+\begin{equation}
+\label{eq:dnn-propagation}
+\mathcal{L}_j^{\,(i)} = \sum\limits_{k = 0}^{n^{(i-1)}} \sigma^{(i)}\left( w_{jk} \mathcal{L}_j^{\,(i-1)} + b_j\right).
+\end{equation}
+
+In \autoref{eq:dnn-propagation} $\mathcal{L}_j^{\,(i)}$ is the value of neuron $j$ in layer $i$, and $n^{(i)}$ is a reference to the number of neurons in 
+layer $i$. The activation function achieves two important goals. First, it limits the numerical value neurons can have. This ensures numerical stability
+during training, and is typically achieved by choosing a sigmoidal activation function. Secondly, the nonlinearity of the activation function ensures that 
+the propagation function of the entire network cannot mathematically be reduced to a single layer, as this disallows the network to learn nonlinearly 
+separable patterns \cite{russell2010artificial}. 
+
+Important to note is the fact that the usage of one densely connected layer does not restrict the network architecture to consist solely of such layers. 
+In fact, the network architectures discussed here and in the following section can all be used interchangably. This is a common practice in model building
+\cite{szegedy2015going, krizhevsky2017imagenet}.
 
 
 \section{Convolutional neural network}
 \label{sec:CNN}
+
+
 
 \section{Recurrent neural network}
 \label{sec:RNN}
