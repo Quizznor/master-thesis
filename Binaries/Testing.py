@@ -3,6 +3,7 @@ from .Signal import *
 from .Generator import *
 from .Classifier import *
 
+# let a classifier predict labels of a given dataset, save predictions in save_dir
 def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -> float :
 
     from .Classifier import Ensemble
@@ -88,7 +89,7 @@ def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -
             make_dataset(instance, Dataset, save_dir)
             Dataset.__reset__()
 
-
+# plot the estimated confidence range of provided classifiers
 def confidence_comparison(confidence_level, *args, **kwargs):
 
     y_max = kwargs.get("ymax", 2500)
@@ -140,180 +141,3 @@ def confidence_comparison(confidence_level, *args, **kwargs):
         ax.axhline(0, c = "gray", ls = ":", lw = 2)
 
     plt.ylim(-100, y_max)
-
-
-
-'''
-# trigger efficiency over signal
-def signal_efficiency(save_path : str, **kwargs) -> None : 
-
-    save_file = \
-        {
-            "TP" : f"/cr/data01/filip/ROC_curves/{save_path}/true_positives.csv",
-            "TN" : f"/cr/data01/filip/ROC_curves/{save_path}/true_negatives.csv",
-            "FP" : f"/cr/data01/filip/ROC_curves/{save_path}/false_positives.csv",
-            "FN" : f"/cr/data01/filip/ROC_curves/{save_path}/false_negatives.csv"
-        }
-
-    TP_sig, FN_sig = [np.loadtxt(save_file[p], usecols = 0) for p in ["TP","FN"]]
-
-    hits, misses = TP_sig, FN_sig
-    min_bin = min( TP_sig + FN_sig )
-    max_bin = max( TP_sig + FN_sig )
-    
-    bins = np.geomspace(min_bin, max_bin, 60)
-
-    hits_histogrammed, _ = np.histogram(hits, bins = bins)
-    misses_histogrammed, sig = np.histogram(misses, bins = bins)
-
-    for i, (x, o) in enumerate(zip(hits_histogrammed, misses_histogrammed)):
-
-        if x == 0 and o == 0:
-            continue
-        else:
-            accuracy = x / (x+o)
-            accuracy_err = 1/(x+o)**2 * np.sqrt(x * o**2 + o * x**2 + 2 * x*o)     
-
-        plt.errorbar((sig[:-1] + sig[:1])[i], accuracy, yerr = accuracy_err, capsize = 5, marker = "o", c = kwargs.get("c", "steelblue"), ls = kwargs.get("ls", "solid"))
-
-    plt.rcParams.update({'font.size': 22})
-    plt.scatter([],[], label = kwargs.get("label","Classifier performance"), c = kwargs.get("c", "steelblue"), ls = kwargs.get("ls", "solid"))
-    plt.xscale("log")
-
-
-# sensitivity over shower plane distance
-def spd_efficiency(save_path : str, **kwargs) -> None : 
-
-    save_file = \
-        {
-            "TP" : f"/cr/data01/filip/ROC_curves/{save_path}/true_positives.csv",
-            "TN" : f"/cr/data01/filip/ROC_curves/{save_path}/true_negatives.csv",
-            "FP" : f"/cr/data01/filip/ROC_curves/{save_path}/false_positives.csv",
-            "FN" : f"/cr/data01/filip/ROC_curves/{save_path}/false_negatives.csv"
-        }
-
-    TP_SPD, FN_SPD = [np.loadtxt(save_file[p], usecols = 3) for p in ["TP", "FN"]]
-
-    hits, misses = TP_SPD, FN_SPD
-    min_bin = min( TP_SPD + FN_SPD )
-    max_bin = max( TP_SPD + FN_SPD )
-    
-    bins = np.linspace(min_bin, max_bin, 60)
-
-    hits_histogrammed, _ = np.histogram(hits, bins = bins)
-    misses_histogrammed, sig = np.histogram(misses, bins = bins)
-
-    for i, (x, o) in enumerate(zip(hits_histogrammed, misses_histogrammed)):
-
-        if x == 0 and o == 0:
-            continue
-        else:
-            accuracy = x / (x+o)
-            accuracy_err = 1/(x+o)**2 * np.sqrt(x * o**2 + o * x**2 + 2 * x*o)     
-    
-        plt.errorbar((sig[:-1] + sig[:1])[i], accuracy, yerr = accuracy_err, capsize = 5, marker = "o", c = kwargs.get("c", "steelblue"))
-
-    plt.rcParams.update({'font.size': 22})
-    plt.scatter([],[], label = kwargs.get("label","Classifier performance"), c = kwargs.get("c", "steelblue"))
-    plt.xlabel("Shower plane distance / m")
-    plt.ylabel("Efficiency")
-
-
-# accuracy over energy
-def energy_accuracy(save_path : dict, **kwargs) -> None :
-
-    save_file = \
-        {
-            "TP" : f"/cr/data01/filip/ROC_curves/{save_path}/true_positives.csv",
-            "TN" : f"/cr/data01/filip/ROC_curves/{save_path}/true_negatives.csv",
-            "FP" : f"/cr/data01/filip/ROC_curves/{save_path}/false_positives.csv",
-            "FN" : f"/cr/data01/filip/ROC_curves/{save_path}/false_negatives.csv"
-        }
-
-    TP_energy, FN_energy = [np.loadtxt(save_file[p], usecols = 2) for p in ["TP", "FN"]]
-
-    hits, misses = TP_energy, FN_energy
-    min_bin = min( TP_energy + FN_energy )
-    max_bin = max( TP_energy + FN_energy )
-    
-    bins = np.geomspace(min_bin, max_bin, 60)
-
-    hits_histogrammed, _ = np.histogram(hits, bins = bins)
-    misses_histogrammed, sig = np.histogram(misses, bins = bins)
-
-    for i, (x, o) in enumerate(zip(hits_histogrammed, misses_histogrammed)):
-
-        if x == 0 and o == 0:
-            continue
-        else:
-            accuracy = x / (x+o)
-            accuracy_err = 1/(x+o)**2 * np.sqrt(x * o**2 + o * x**2 + 2 * x*o)     
-            
-        plt.errorbar((sig[:-1] + sig[:1])[i], accuracy, yerr = accuracy_err, capsize = 5, marker = "o", c = kwargs.get("c", "steelblue"))
-
-    plt.rcParams.update({'font.size': 22})
-    plt.scatter([],[], label = kwargs.get("label","Classifier performance"), c = kwargs.get("c", "steelblue"))
-    plt.xlabel("Shower energy / eV")
-    plt.ylabel("Accuracy")
-    plt.xscale("log")
-
-
-# signal bin / background bin heatmap
-# TODO rework
-def bin_comparison(save_path : str, **kwargs) -> None :
-
-    save_file = \
-        {
-            "TP" : f"/cr/data01/filip/ROC_curves/{save_path}/true_positives.csv",
-            "TN" : f"/cr/data01/filip/ROC_curves/{save_path}/true_negatives.csv",
-            "FP" : f"/cr/data01/filip/ROC_curves/{save_path}/false_positives.csv",
-            "FN" : f"/cr/data01/filip/ROC_curves/{save_path}/false_negatives.csv"
-        }
-
-    TP_n_sig, FN_n_sig = [np.loadtxt(save_file[p], usecols = 2) for p in ["TP", "FN"]]
-    TP_n_bkg, FN_n_bkg = [np.loadtxt(save_file[p], usecols = 1) for p in ["TP", "FN"]]
-
-    hits_sig = TP_n_sig
-    hits_bkg = TP_n_bkg
-    misses_sig = FN_n_sig
-    misses_bkg = FN_n_bkg
-
-    # apparently theres no signal bigger than 66 bins
-    n_max_backgrounds = 66
-
-    xx, yy = np.meshgrid(range(121), range(n_max_backgrounds + 1))
-    data = np.zeros_like(xx)
-
-    for sig, bkg in zip(hits_sig, hits_bkg):
-        if bkg > n_max_backgrounds:
-            continue
-        else : data[bkg][sig] += 1
-
-    for sig, bkg in zip(misses_sig, misses_bkg):
-        if bkg > n_max_backgrounds:
-            continue
-        else : data[bkg][sig] -= 1
-
-    data = data.astype("float")
-    data[data == 0] = np.nan
-
-    plt.rcParams.update({'font.size': 22})
-    plt.figure()
-    plt.title(kwargs.get("label",""))
-    img = plt.imshow(np.arctan(data), extent = (0, 120, 0, 68), cmap = "coolwarm", interpolation = "antialiased", origin = "lower")
-    cbar = plt.colorbar(img)
-    cbar.set_label(r"surplus misses $\leftrightarrow$ surplus hits", labelpad=20)
-    cbar.set_ticks([])
-
-    plt.xlabel("# signal bins")
-    plt.ylabel("# background bins")
-
-# spd efficiency w.r.t energy
-def spd_energy(save_path : str, **kwargs) -> None :
-
-
-# # TODO !!!!
-# class EnsembleTesting(Ensemble):
-
-#     def __init__(self, Classifier : str) -> None : pass
-'''

@@ -60,8 +60,6 @@ class EventGenerator():
 
         '''
 
-        print(kwargs)
-
         # set all desired environmental variables
         split = kwargs.get("split", GLOBAL.split)
         seed = kwargs.get("seed", GLOBAL.seed)
@@ -270,8 +268,6 @@ class Generator(tf.keras.utils.Sequence):
 
     # make a copy of this generator (same event files) with different keywords
     def copy(self, **kwargs : dict) -> "Generator" :
-
-        print(kwargs)
 
         NewGenerator = EventGenerator([], split = 1, **kwargs)
         NewGenerator.files = self.files
