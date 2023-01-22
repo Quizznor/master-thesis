@@ -23,7 +23,7 @@ class EventGenerator():
         "18_18.5" : "/cr/tempdata01/filip/QGSJET-II/protons/18_18.5/",
         "18.5_19" : "/cr/tempdata01/filip/QGSJET-II/protons/18.5_19/",
         "19_19.5" : "/cr/tempdata01/filip/QGSJET-II/protons/19_19.5/",
-        "test"    : "/cr/users/filip/Simulation/TestShowers/"
+        # "test"    : "/cr/users/filip/Simulation/TestShowers/"
     }
 
     def __new__(self, datasets : typing.Union[list, str], **kwargs : dict) -> typing.Union[tuple, "EventGenerator"] :
@@ -78,8 +78,8 @@ class EventGenerator():
 
         ignore_low_VEM = kwargs.get("ignore_low_vem", GLOBAL.ignore_low_VEM)
         ignore_particles = kwargs.get("ignore_particles", GLOBAL.ignore_particles)
-        sliding_window_length = kwargs.get("window", GLOBAL.window)
-        sliding_window_step = kwargs.get("step", GLOBAL.step)
+        sliding_window_length = kwargs.get("window_length", GLOBAL.window)
+        sliding_window_step = kwargs.get("window_step", GLOBAL.step)
         keep_scale = kwargs.get("keep_scale", GLOBAL.keep_scale)
 
         trace_options = [q_peak, q_charge, n_bins, baseline_std, baseline_mean, n_injected, downsampling, real_background, random_index, station, keep_scale]
@@ -221,7 +221,7 @@ class Generator(tf.keras.utils.Sequence):
         else:
             return np.array(traces), np.array(labels), np.array(metadata_per_batch, dtype = object)
 
-    # calculate a sliding window range conforming (in most cases at least) to a given prior
+    # calculate a sliding window range conforming (in all cases at least) to a given prior
     def __sliding_window__(self, VEMTrace : Trace, override_prior : bool = False) -> range :
 
         try:

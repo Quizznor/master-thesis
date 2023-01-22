@@ -287,6 +287,8 @@ class Classifier():
 
             for e, (hits_by_energy, misses_by_energy) in enumerate(zip(hits_sorted, miss_sorted)):
 
+                if e != 6: continue
+
                 if draw_plot:
                     fig = plt.figure()
                     plt.xlim(0, 3000)
@@ -297,24 +299,34 @@ class Classifier():
 
                 for t, (hits_by_theta, miss_by_theta) in enumerate(zip(hits_by_energy, misses_by_energy)):
 
+                    if t != 0: continue
+
+
                     # spd_bins = np.linspace(min(min(hits_by_theta), min(miss_by_theta)),
                     #                        max(max(hits_by_theta), max(miss_by_theta)), 20)
 
                     p50, scale = fitparams[e * 5 + t]
                     ldf = lambda x : station_hit_probability(x, 1, p50, scale)
 
-                    spd_bins = list(np.geomspace(1, 1500, kwargs.get("n_bins", 30)))
-                    spd_bins += list(np.arange(1500 + np.diff(spd_bins)[-1], 3000, np.diff(spd_bins)[-1]))
+                    spd_bins = np.linspace(1, 3000, kwargs.get("n_bins", 30))
+                    # spd_bins = list(np.geomspace(1, 1500, kwargs.get("n_bins", 30)))
+                    # spd_bins += list(np.arange(1500 + np.diff(spd_bins)[-1], 3000, np.diff(spd_bins)[-1]))
                     c = colormap(t / len(hits_by_energy))
 
                     x_hist, sig = np.histogram(hits_by_theta, bins = spd_bins)
                     o_hist, sig = np.histogram(miss_by_theta, bins = spd_bins)
                     x_val, y_val, y_err = [], [], []
 
+                    _sum = 0
+
                     # draw individual patches
                     for i, (x, o) in enumerate(zip(x_hist, o_hist)):
 
+                        print(x/(x + o), x, o)
+
                         if x == o == 0: continue
+
+                        _sum += o
 
                         # determine x
                         left_edge_x, right_edge_x = sig[i], sig[i + 1]
@@ -333,30 +345,31 @@ class Classifier():
 
                         coordinates = [[left_edge_x, top_left_y], [right_edge_x, top_right_y], [right_edge_x, bottom_right_y], [left_edge_x, bottom_left_y]]
 
-                        draw_plot and plt.gca().add_patch(Polygon(coordinates, closed = True, color = c, alpha = 0.1, lw = 0))
+                        draw_plot and plt.errorbar(center_x, center_y, color = c, marker = "s", markersize = int(2 * np.log(x+o)), ls = ":")
+                        # draw_plot and plt.gca().add_patch(Polygon(coordinates, closed = True, color = c, alpha = 0.1, lw = 0))
 
-                    draw_plot and plt.errorbar(x_val, y_val, color = c, marker = "s", markersize = 5, ls = ":")
+                    print(_sum)
 
-                    # perform efficiency fit
-                    try:
-                        popt, pcov = curve_fit(station_hit_probability, x_val, y_val, 
-                                                              p0 = [y_val[0], p50, scale],
-                                                              bounds = ([0, 0, 0], [1, np.inf, np.inf]),
-                                                              sigma = y_err,
-                                                              absolute_sigma = True)
-                    except ValueError:
-                        popt, pcov = curve_fit(station_hit_probability, x_val, y_val, 
-                                                              p0 = [y_val[0], p50, scale],
-                                                              bounds = ([0, 0, 0], [1, np.inf, np.inf]),
-                                                              maxfev = 10000)
+                    # # perform efficiency fit
+                    # try:
+                    #     popt, pcov = curve_fit(station_hit_probability, x_val, y_val, 
+                    #                                           p0 = [y_val[0], p50, scale],
+                    #                                           bounds = ([0, 0, 0], [1, np.inf, np.inf]),
+                    #                                           sigma = y_err,
+                    #                                           absolute_sigma = True)
+                    # except ValueError:
+                    #     popt, pcov = curve_fit(station_hit_probability, x_val, y_val, 
+                    #                                           p0 = [y_val[0], p50, scale],
+                    #                                           bounds = ([0, 0, 0], [1, np.inf, np.inf]),
+                    #                                           maxfev = 10000)
 
 
-                    fit_params[e].append(popt)
-                    fit_uncertainties[e].append(pcov)
+                    # fit_params[e].append(popt)
+                    # fit_uncertainties[e].append(pcov)
 
-                    if draw_plot:
-                        X = np.linspace(0, 3000, 100)
-                        plt.plot(X, station_hit_probability(X, *popt), c = c, lw = 2)
+                    # if draw_plot:
+                    #     X = np.linspace(0, 3000, 100)
+                    #     plt.plot(X, station_hit_probability(X, *popt), c = c, lw = 2)
 
                 if draw_plot:
                     plt.xlabel("Shower plane distance / m")
@@ -583,11 +596,26 @@ class NNClassifier(Classifier):
             self.add_conv2d(model, filters = 1, kernel_size = 3, strides = 3)
             self.add_output(model, units = 2, activation = "softmax")
 
+        # 252 parameters
+        def __one_layer_downsampling_equal__(self, model) -> None :
+
+            self.add_input(model, shape = (3, 360, 1))
+            self.add_conv2d(model, filters = 502, kernel_size = 3, strides = 3)
+            self.add_output(model, units = 2, activation = "softmax")
+
 
         # 55 parameters
         def __two_layer_conv2d__(self, model) -> None :
 
             self.add_input(model, shape = (3, 120, 1))
+            self.add_conv2d(model, filters = 1, kernel_size = 3, strides = 3)
+            self.add_conv1d(model, filters = 1, kernel_size = 2, strides = 2)
+            self.add_output(model, units = 2, activation = "softmax")
+
+        # 300 parameters
+        def __two_layer_downsampling_equal__(self, model) -> None :
+
+            self.add_input(model, shape = (3, 360, 1))
             self.add_conv2d(model, filters = 1, kernel_size = 3, strides = 3)
             self.add_conv1d(model, filters = 1, kernel_size = 2, strides = 2)
             self.add_output(model, units = 2, activation = "softmax")
@@ -615,6 +643,8 @@ class NNClassifier(Classifier):
 
     models = \
         {
+            "one_layer_downsampling_equal" : Architectures.__one_layer_downsampling_equal__,
+            "two_layer_downsampling_equal" : Architectures.__two_layer_downsampling_equal__,
             "normed_one_layer_conv2d" : Architectures.__normed_one_layer_conv2d__,
             "one_layer_conv2d" : Architectures.__one_layer_conv2d__,
             "two_layer_conv2d" : Architectures.__two_layer_conv2d__,

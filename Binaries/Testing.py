@@ -8,7 +8,7 @@ def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -
 
     from .Classifier import Ensemble
     
-    Dataset.__reset__()
+    Dataset.__reset__()                 # make sure we're not iterating over an empty set
 
     if not isinstance(Classifier, Ensemble):
 
@@ -96,7 +96,7 @@ def confidence_comparison(confidence_level, *args, **kwargs):
     labels = kwargs.get("labels", None)
     energy_labels = ["16_16.5", "16.5_17", "17_17.5", "17.5_18", "18_18.5", "18.5_19", "19_19.5"]
     theta_labels = [r"$0^\circ$", r"$26^\circ$", r"$38^\circ$", r"$49^\circ$", r"$60^\circ$", r"$90^\circ$"]
-    colors = ["steelblue", "orange", "green"]
+    colors = ["steelblue", "orange", "green", "maroon", "lime", "indigo", "slategray"]
 
     try:
         if labels and len(labels) != len(args): raise ValueError
