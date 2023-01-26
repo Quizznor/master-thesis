@@ -42,9 +42,39 @@ In fact, the network architectures discussed here and in the following section c
 \section{Convolutional neural network}
 \label{sec:CNN}
 
-Convolutional neural networks introduce convolutional layers, which aggregate information from nearby input values. Nearby in this refers for example to 
-proximate pixels in a 2D image, or neighbouring voxels in a 3D scan. Even succesive inputs in a 1-dimensional time series can be convoluted. In general, the
-working principle of a convolutional layer can be extended to an arbitrary input shape and size. 
+Convolutional neural networks introduce convolutional layers, which aggregate information from nearby input values. Nearby in this case referring for example 
+to proximate pixels in a 2D image, or neighbouring voxels in a 3D scan. Even succesive inputs in a 1-dimensional time series can be convoluted. In general, 
+the working principle of a convolutional layer can be extended to an arbitrary input shape and size, but will be representatively explained here for a 
+two-dimensional, image-like input.
+
+The convolution in a single layer is done by one or several filters, matrices, that are scalar-multiplied to subchunks of the input data. An example 
+visualization is offered in \autoref{fig:convolution}. In the demonstration, a mock filter designed like
+
+\begin{equation*}
+\mathcal{F} = 
+\begin{pmatrix}
++1 & -1 \\
+-1 & +1 \\
+\end{pmatrix}
+\end{equation*}
+
+is swept across the entire image area. During the iteration, areas of the image that resemble the filter will result in a large (relative to the input data)
+positive scalar value.
+
+In this fashion, an image can be efficiently scanned for specific patterns (lines, edges, etc.) with just few parameters. Namely, these are the numerical
+values in the filter matrices, which can be optimized during training. The resulting output of a single layer containing different filters can interatively 
+be propagated into subsequent convolutional layers (searching for curves, corners, etc.) until full-scale image detection of complex structures becomes possible.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.9\textwidth]{imgs/convolution.png}
+	\caption{asdasd \label{fig:convolution}}
+\end{figure}
 
 \section{Recurrent neural network}
 \label{sec:RNN}
+
+Recurrent neural networks not only propagate an input value through their architecture, but also encode the current state of the network during 
+
+\section{Other architectures}
+\label{sec:NN-other}
