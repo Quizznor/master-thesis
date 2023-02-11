@@ -1,10 +1,13 @@
 from dataclasses import dataclass
 import matplotlib.pyplot as plt
 import matplotlib.cm as cmap
-from matplotlib.patches import Rectangle
+from matplotlib.patches import Polygon
 from matplotlib.colors import BoundaryNorm
 from matplotlib.colorbar import ColorbarBase
-
+from scipy.optimize import curve_fit
+import seaborn as sns
+import numpy as np
+import warnings
 
 class EmptyFileError(Exception): pass
 class SlidingWindowError(Exception): pass
@@ -12,6 +15,9 @@ class EarlyStoppingError(Exception): pass
 class SignalError(Exception): pass
 class RandomTraceError(Exception): pass
 class ElectronicsError(Exception): pass
+
+def station_hit_probability(x, efficiency, p50, scale):
+    return efficiency * (1 - 1 / (1 + np.exp(-scale * (x - p50))))
 
 @dataclass
 class GLOBAL():
@@ -30,6 +36,7 @@ class GLOBAL():
     random_index                = None                                          # this file is used first when creating randoms
     force_inject                = None                                          # whether or not to force injection of muons
     station                     = None                                          # what station to use for random traces
+    keep_scale                  = False                                         # whether to overwrite vem peak with random trace peak
 
     # trace_opts                  = [q_peak, q_charge, length, sigma, mu, n_injected, downsampling]
 
@@ -45,9 +52,9 @@ class GLOBAL():
     ignore_particles            = 0                                             # label traces with n < ignore_particles as bg
     window                      = 120                                           # Length (in bins) of the sliding window
     step                        = 10                                            # Sliding window analysis step size (in bins)
-    early_stopping_patience     = 10000                                         # number of batches for early stopping patience
+    early_stopping_patience     = 7500                                          # number of batches for early stopping patience
     n_production_traces         = int(1e6)                                      # how many random traces to look at for predictions
     n_ensembles                 = 10                                            # how many networks of same architecture to train
 
 plt.rcParams.update({'font.size': 22})
-# plt.rcParams['figure.figsize'] = [20, 10]
+plt.rcParams['figure.figsize'] = [30, 15]

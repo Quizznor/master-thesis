@@ -1,4 +1,3 @@
-import numpy as np
 import random
 import os
 
@@ -20,6 +19,7 @@ class Signal():
         n_electrons = set(pmt_data[:,5])
         n_photons = set(pmt_data[:,6])
         pmt_data = pmt_data[:,7:]
+
 
         assert trace_length > len(pmt_data[0]), "signal size exceeds trace length"
 
@@ -109,17 +109,21 @@ class Trace(Signal):
 
         return np.random.poisson( GLOBAL.background_frequency * GLOBAL.single_bin_duration * self.length )
 
-    # extract pmt data plus label for a given trace window 
-    def get_trace_window(self, window : tuple, skip_integral : bool = False, skip_metadata : bool = True) -> tuple : 
+    # extract pmt data plus label for a given trace window
+    def get_trace_window(self, window : tuple, skip_metadata : bool = True) -> tuple : 
 
         start, stop = window
 
         pmt_1, pmt_2, pmt_3 = self.pmt_1[start : stop], self.pmt_2[start : stop], self.pmt_3[start : stop]
-        label = self.calculate_signal_overlap(window)
-        metadata = np.array([label, self.Energy, self.SPDistance, self.Zenith]) if not skip_metadata and self.has_signal else [label, None, None, None]
-        integral = None if skip_integral else self.integrate(window)
+        n_sig = self.calculate_signal_overlap(window)
+        integral = self.integrate(window)
 
-        return np.array([pmt_1, pmt_2, pmt_3]), label, integral, metadata        
+        if skip_metadata or not self.has_signal:
+            metadata = np.array([integral, None       ,None            , None       ])
+        else:
+            metadata = np.array([integral, self.SPDistance, self.Energy, self.Zenith])
+
+        return np.array([pmt_1, pmt_2, pmt_3]), n_sig, metadata        
 
     # calculate number of bins of signal in sliding window
     def calculate_signal_overlap(self, window : tuple) -> int :
@@ -243,7 +247,12 @@ class Trace(Signal):
     def __plot__(self) -> None :
 
         x = range(self.length)
+        int_sig = np.mean([self.int_1.sum(), self.int_2.sum(), self.int_3.sum()])
 
+        try:
+            plt.title(f"Station #{self.StationID} - {int_sig:.2f} VEM")
+        except AttributeError: pass
+        
         plt.plot(x, self.pmt_1, c = "green", label = f"PMT #1{', downsampled' if self.downsample else ''}", lw = 1)
         plt.plot(x, self.pmt_2, c = "orange", label = f"PMT #2{', downsampled' if self.downsample else ''}", lw = 1)
         plt.plot(x, self.pmt_3, c = "steelblue", label = f"PMT #3{', downsampled' if self.downsample else ''}", lw = 1)
@@ -293,7 +302,7 @@ class RandomTrace():
     def __init__(self, station : str = None, index : int = None) -> None : 
 
         ## (HOPEFULLY) TEMPORARILY FIXED TO NURIA/LO_QUI_DON DUE TO BAD FLUCTUATIONS IN OTHER STATIONS
-        self.station = random.choice(["nuria"]) if station is None else station.lower()
+        self.station = random.choice(["nuria", "lo_qui_don"]) if station is None else station.lower()
         self.index = index
 
         all_files = np.asarray(os.listdir(RandomTrace.baseline_dir + self.station)) # container for all baseline files
@@ -309,7 +318,7 @@ class RandomTrace():
             except IndexError:
                 raise RandomTraceError
 
-        print(f"[INFO] -- LOADING RANDOMS: {self.random_file}" + 20 * " ")
+        print(f"\n[INFO] -- LOADING {self.station.upper()}: {self.random_file}" + 20 * " ", end = "\r")
 
         these_traces = np.loadtxt(RandomTrace.baseline_dir + self.station + "/" + self.random_file)
 

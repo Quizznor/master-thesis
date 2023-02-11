@@ -130,10 +130,10 @@ class Classifier():
                     "FN" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/false_negatives.csv"
                 }
 
-                TP = np.loadtxt(save_files['TP'])
-                FP = np.loadtxt(save_files['FP'])
-                TN = np.loadtxt(save_files['TN'])
-                FN = np.loadtxt(save_files['FN'])
+                TP = np.loadtxt(save_files['TP'], usecols = usecols[0])
+                FP = np.loadtxt(save_files['FP'], usecols = usecols[1])
+                TN = np.loadtxt(save_files['TN'], usecols = usecols[2])
+                FN = np.loadtxt(save_files['FN'], usecols = usecols[3])
 
             except OSError:
 
@@ -144,11 +144,11 @@ class Classifier():
                     "FP" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/false_positives.csv",
                     "FN" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/false_negatives.csv"
                 }
-                
-                TP = np.loadtxt(save_files['TP'])
-                FP = np.loadtxt(save_files['FP'])
-                TN = np.loadtxt(save_files['TN'])
-                FN = np.loadtxt(save_files['FN'])
+
+                TP = np.loadtxt(save_files['TP'], usecols = usecols[0])
+                FP = np.loadtxt(save_files['FP'], usecols = usecols[1])
+                TN = np.loadtxt(save_files['TN'], usecols = usecols[2])
+                FN = np.loadtxt(save_files['FN'], usecols = usecols[3])
 
             tp, fp = len(TP), len(FP)
             tn, fn = len(TN), len(FN)
@@ -255,61 +255,249 @@ class Classifier():
             plt.plot([0,1],[0.5,0.5,], ls = "--", c = "gray")
 
         # plot the classifiers efficiency at a given SPD and energy
-        # TODO: Incorporate LDF / probability that station gets signal!!
         def spd_energy_efficiency(self, dataset : str, **kwargs) -> None : 
 
-            TP, FP, TN, FN = self.load_and_print_performance(dataset, usecols = [(2, 3), 0, 0, (2, 3)])
-            colormap = cmap.get_cmap("jet")
+            warnings.simplefilter("ignore", RuntimeWarning)
+            draw_plot = not kwargs.get("quiet", False)
 
-            TP_E, TP_SPD = TP[:, 0], TP[:, 1]
-            FN_E, FN_SPD = FN[:, 0], FN[:, 1]
+            # Prediction structure: [ integral, n_signal, energy, SPD, Theta]
+            TP, FP, TN, FN = self.load_and_print_performance(dataset, usecols = [(2, 3, 4), 0, 0, (2, 3, 4)])
+            fitparams = np.loadtxt("/cr/tempdata01/filip/QGSJET-II/LDF/fitparams.csv", usecols = [4,5])
+            colormap = cmap.get_cmap("plasma")
 
-            fig = plt.figure()
+            theta_bins = [26, 38, 49, 60]
+            energy_bins = [10**16.5, 1e17, 10**17.5, 1e18, 10**18.5, 1e19]
+            miss_sorted = [[ [] for t in range(len(theta_bins) + 1) ] for e in range(len(energy_bins) + 1)]
+            hits_sorted = [[ [] for t in range(len(theta_bins) + 1) ] for e in range(len(energy_bins) + 1)]
+            e_labels = [r"$16$", r"$16.5$", r"$17$", r"$17.5$", r"$18$", r"$18.5$", r"$19$", r"$19.5$"]
+            fit_params = [[] for e in range(len(energy_bins) + 1)]
+            fit_uncertainties = [[] for e in range(len(energy_bins) + 1)]
 
-            # Group predictions by energy first
-            for e, energy in enumerate(EventGenerator.libraries.keys()):
+            # sort predictions into bins of theta and energy
+            for source, target in zip([TP, FN], [hits_sorted, miss_sorted]):
 
-                low, high = [float(x) for x in energy.split("_")]
-                c = colormap(e / len(EventGenerator.libraries.keys()))
-                x = np.where(np.logical_and( TP_E >= 10 ** low, TP_E < 10 ** high))
-                o = np.where(np.logical_and( FN_E >= 10 ** low, FN_E < 10 ** high))
+                E, SPD, T = source[:, 0], source[:, 1], source[:, 2]
 
-                x, o = TP_SPD[x], FN_SPD[o]
-                bins = np.linspace(min(min(x), min(o)), max(max(x), max(o)), kwargs.get("n", 18))
+                # sort misses / hits w.r.t zenith and primary energy
+                theta_indices = np.digitize(T, theta_bins)
+                energy_indices = np.digitize(E, energy_bins)
 
-                x_hist, sig = np.histogram(x, bins = bins)
-                o_hist, sig = np.histogram(o, bins = bins)
+                for e, t, spd in zip(energy_indices, theta_indices, SPD):
+                    target[e][t].append(spd)
 
-                x_val, y_val = [], []
+            for e, (hits_by_energy, misses_by_energy) in enumerate(zip(hits_sorted, miss_sorted)):
 
-                for i, (x, o) in enumerate(zip(x_hist, o_hist)):
+                if e != 6: continue
 
-                    if x == 0 and o == 0:
-                        continue
-                    else:
-                        distance = sig[i]
-                        width = sig[i + 1] - sig[i]
+                if draw_plot:
+
+                    fig = plt.figure()
+                    plt.xlim(0, 3000)
+                    plt.ylim(-0.05, 1.05)
+                    plt.plot([], [], ls = ":", c = "k", label = "Simulated")
+                    plt.plot([], [], ls = "solid", c = "k", label = "Extrapolation")
+                    plt.legend(loc = "upper right", title = e_labels[e] + r" $\leq$ log($E$ / eV) < " + e_labels[e + 1], title_fontsize = 19)
+
+                for t, (hits_by_theta, miss_by_theta) in enumerate(zip(hits_by_energy, misses_by_energy)):
+
+                    # if t != 0: continue
+
+                    # print(len(hits_by_theta), len(miss_by_theta))
+
+                    # spd_bins = np.linspace(min(min(hits_by_theta), min(miss_by_theta)),
+                    #                        max(max(hits_by_theta), max(miss_by_theta)), 20)
+
+                    p50, scale = fitparams[e * 5 + t]
+                    ldf = lambda x : station_hit_probability(x, 1, p50, scale)
+
+                    # spd_bins = np.linspace(1, 10000, kwargs.get("n_bins", 30))
+                    spd_bins = list(np.geomspace(10, 1500, kwargs.get("n_bins", 30)))
+                    spd_bins += list(np.arange(1500 + np.diff(spd_bins)[-1], 3000, np.diff(spd_bins)[-1]))
+                    c = colormap(t / len(hits_by_energy))
+
+                    x_hist, sig = np.histogram(hits_by_theta, bins = spd_bins)
+                    o_hist, sig = np.histogram(miss_by_theta, bins = spd_bins)
+                    x_val, y_val, y_err = [], [], []
+
+                    # draw individual patches
+                    for i, (x, o) in enumerate(zip(x_hist, o_hist)):
+
+                        # print(x/(x + o), x, o)
+
+                        if x == o == 0: continue
+
+                        # determine x
+                        left_edge_x, right_edge_x = sig[i], sig[i + 1]
+                        center_x = 0.5 * (left_edge_x + right_edge_x)
+                        x_val.append(center_x)
+
+                        # determine y
+                        center_y = x / (x + o)
                         height = 1/(x+o)**2 * np.sqrt(x * o**2 + o * x**2 + 2 * x*o)
-                        elevation = (x / (x+o)) - height/2
+                        ldf_left, ldf_right, ldf_center = ldf(left_edge_x), ldf(right_edge_x), ldf(center_x)
+                        top_left_y, bottom_left_y = (center_y + height) * ldf_left, (center_y - height) * ldf_left
+                        top_right_y, bottom_right_y = (center_y + height) * ldf_right, (center_y - height) * ldf_right
+                        center_y *= ldf_center
+                        y_val.append(center_y)
+                        y_err.append(height / 2)
 
-                        x_val.append( 0.5 * (sig[1:] + sig[:-1])[i])
-                        y_val.append( elevation + height/2 )
+                        coordinates = [[left_edge_x, top_left_y], [right_edge_x, top_right_y], [right_edge_x, bottom_right_y], [left_edge_x, bottom_left_y]]
 
-                        plt.gca().add_patch(Rectangle((distance, elevation), width, height, color = c, alpha = 0.6, lw = 0))
+                        draw_plot and plt.errorbar(center_x, center_y, color = c, marker = "s", markersize = int(2 * np.log(x+o)), ls = ":")
+                        # draw_plot and plt.gca().add_patch(Polygon(coordinates, closed = True, color = c, alpha = 0.1, lw = 0))
 
-                plt.scatter(x_val,y_val, color = c, marker = "s")
+                    # # perform efficiency fit
+                    # try:
+                    #     popt, pcov = curve_fit(station_hit_probability, x_val, y_val, 
+                    #                                           p0 = [y_val[0], p50, scale],
+                    #                                           bounds = ([0, 0, 0], [1, np.inf, np.inf]),
+                    #                                           sigma = y_err,
+                    #                                           absolute_sigma = True)
+                    # except ValueError:
+                    #     popt, pcov = curve_fit(station_hit_probability, x_val, y_val, 
+                    #                                           p0 = [y_val[0], p50, scale],
+                    #                                           bounds = ([0, 0, 0], [1, np.inf, np.inf]),
+                    #                                           maxfev = 10000)
 
-            plt.ylim(0, 1.05)
-            plt.xlabel("Shower plane distance / m")
-            plt.ylabel("Trigger efficiency | Signal")
 
-            bounds = [float(e.split("_")[0]) for e in EventGenerator.libraries.keys()] + [19.5]
-            norm = BoundaryNorm(bounds, colormap.N)
+                    # fit_params[e].append(popt)
+                    # fit_uncertainties[e].append(pcov)
 
-            # create a second axes for the colorbar
-            ax2 = fig.add_axes([0.95, 0.1, 0.03, 0.8])
-            # cb = ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"log$_{10}(E)$")
-            ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"log$_{10}(E)$")
+                    # if draw_plot:
+                    #     X = np.linspace(0, 3000, 100)
+                    #     plt.plot(X, station_hit_probability(X, *popt), c = c, lw = 2)
+
+                if draw_plot:
+                    plt.xlabel("Shower plane distance / m")
+                    plt.ylabel("Trigger efficiency")
+
+                    norm = BoundaryNorm([0] + theta_bins + [90], colormap.N)
+                    ax2 = fig.add_axes([0.95, 0.1, 0.01, 0.8])
+                    ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"Zenith angle")
+
+            if isinstance(self, NNClassifier): save_dir = f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/fit_params.csv"
+            elif isinstance(self, HardwareClassifier): save_dir = f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/fit_params.csv"
+
+            with open(save_dir, "w") as file:
+                for energy in fit_params:
+                    np.savetxt(file, energy)
+
+            warnings.simplefilter("default", RuntimeWarning)
+
+            return np.array(fit_params), np.array(fit_uncertainties)
+            
+        # relate single station efficiency function to T3 efficiency
+        def do_t3_simulation(self, dataset : str, n_points : int = 1e5) -> None :
+
+            if isinstance(n_points, float): n_points = int(n_points)
+
+            if isinstance(self, NNClassifier):
+                fitparams = np.loadtxt(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/fit_params.csv")
+            else:
+                fitparams = np.loadtxt(f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/fit_params.csv")
+            plt.rcParams["figure.figsize"] = [25, 18]
+            plt.rcParams["font.size"] = 22
+            colormap = cmap.get_cmap("plasma")
+            fig, ax = plt.subplots()
+
+            # set up plot
+            ax.text( 635, -55, "T3 detected", fontsize = 22)
+            ax.text(1395, 775, "T3 missed", fontsize = 22)
+            symmetry_line = lambda x : 1500 - x
+            X = np.linspace(700, 1550, 100)
+            ax.scatter([0, 1500, 750, 2250], [0, 0, 750, 750], s = 100, c = "k")
+            ax.plot(X, symmetry_line(X), ls = "solid", c = "k", zorder = 0, lw = 2)
+            ax.add_patch(Polygon([[0,0], [1500, 0], [750, 750]], closed = True, color = "green", alpha = 0.1, lw = 0))
+            ax.add_patch(Polygon([[750, 750], [1500, 0], [2250, 750]], closed = True, color = "red", alpha = 0.1, lw = 0))
+
+            # create shower cores in target area
+            theta_bins = [0, 26, 38, 49, 60, 90]
+            ys = np.random.uniform(0, 750, n_points)
+            xs = np.random.uniform(0, 1500, n_points) + ys
+            reflect = [ ys[i] > symmetry_line(xs[i]) for i in range(len(xs))]
+            xs[reflect] = -xs[reflect] + 2250
+            ys[reflect] = -ys[reflect] + 750
+
+            # do the T3 simulation
+            t3_hits, t3_misses = np.zeros((7, 5)), np.zeros((7, 5))
+            x_container, y_container = [[[] for t in range(5)] for e in range(7)], [[[] for t in range(5)] for e in range(7)]
+            stations = [[0, 0, 0], [1500, 0, 0], [750, 750, 0]]
+
+            for step_count, (x, y) in enumerate(zip(xs, ys)):
+
+                print(f"Enumerating showers: {step_count + 1}/{len(xs)} ~ {(step_count + 1)/len(xs) * 1e2:.2f}%", end = "\r")
+
+                energy_and_theta = np.random.randint(0, len(fitparams))
+                energy, t = energy_and_theta // 5, energy_and_theta % 5
+                fit_function = lambda spd : station_hit_probability(x, *fitparams[energy_and_theta])
+
+                # choose theta, phi at random, calculate shower_plane_distance
+                theta = np.radians(np.random.uniform(theta_bins[t], theta_bins[t + 1]))
+                phi = np.random.uniform(0, 2 * np.pi)
+                sp_distances = []
+                
+                for station in stations:
+
+                    core_position = np.array([x, y, 0])
+                    core_origin = np.sin(theta) * np.array([np.cos(phi), np.sin(phi), 1/np.tan(theta)]) + core_position
+
+                    shower_axis = core_position - core_origin
+                    dot_norm = np.dot(shower_axis, shower_axis)
+                    perpendicular_norm = np.dot(station - core_origin, shower_axis) / dot_norm
+                    sp_distances.append( np.linalg.norm(perpendicular_norm * shower_axis + (core_origin - station)))
+
+                # #  In case of paranoia regarding distance calculation break comment
+                # ax.add_patch(plt.Circle((0, 0), sp_distances[0], color='b', fill=False))
+                # ax.add_patch(plt.Circle((1500, 0), sp_distances[1], color='b', fill=False))
+                # ax.add_patch(plt.Circle((750, 750), sp_distances[2], color='b', fill=False))
+
+                trigger_probabilities = [fit_function(distance) for distance in sp_distances]
+                dice_roll = np.random.uniform(0, 1, 3)
+
+                if np.all(dice_roll < trigger_probabilities):
+                    t3_hits[energy][t] += 1
+                    # plt.scatter(x, y, c = "k")
+                else:
+                    x, y = 2250 - x, 750 - y
+                    t3_misses[energy][t] += 1
+                    # plt.scatter(x, y, c = "r")
+
+                x_container[energy][t].append(x)
+                y_container[energy][t].append(y)
+
+            size_bins = [30, 50, 70, 90, 110, 160, 200]
+            e_labels = [r"$16$", r"$16.5$", r"$17$", r"$17.5$", r"$18$", r"$18.5$", r"$19$", r"$19.5$"]
+
+            for e, (x_energy, y_energy) in enumerate(zip(x_container, y_container)):
+                for t, (x, y) in enumerate(zip(x_energy, y_energy)):
+
+                    c = colormap(t / len(x_energy))
+                    s = size_bins[e]
+
+                    ax.scatter(x[::100], y[::100], color = c, s = s, marker = "x")
+
+            for e, bin in enumerate(size_bins):
+                ax.scatter([],[], c = "k", s = bin, label = e_labels[e] + r" $\leq$ log($E$ / eV) < " + e_labels[e + 1], marker = "x")
+
+            ax.set_aspect('equal')
+            ax.legend(fontsize = 18)
+            plt.xlabel("Easting / m")
+            plt.ylabel("Northing / m")
+
+            norm = BoundaryNorm(theta_bins, colormap.N)
+            ax2 = fig.add_axes([0.91, 0.3, 0.01, 0.4])
+            ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"Zenith angle")
+
+            plt.figure()
+
+            e_labels = EventGenerator.libraries.keys()
+            t_labels = ["0_26", "26_38", "38_49", "49_60", "60_90"]
+
+            sns.heatmap(t3_hits / (t3_hits + t3_misses) * 1e2, annot = True, fmt = ".1f", cbar_kws = {"label" : "T3 efficiency / %"})
+            plt.xticks(ticks = 0.5 + np.arange(0, 5, 1), labels = t_labels)
+            plt.yticks(ticks = 0.5 + np.arange(0, 7, 1), labels = e_labels)
+            plt.xlabel("Zenith range")
+            plt.ylabel("Energy range")
 
         @staticmethod
         def __header__() -> None : 
@@ -404,11 +592,26 @@ class NNClassifier(Classifier):
             self.add_conv2d(model, filters = 1, kernel_size = 3, strides = 3)
             self.add_output(model, units = 2, activation = "softmax")
 
+        # 252 parameters
+        def __one_layer_downsampling_equal__(self, model) -> None :
+
+            self.add_input(model, shape = (3, 360, 1))
+            self.add_conv2d(model, filters = 502, kernel_size = 3, strides = 3)
+            self.add_output(model, units = 2, activation = "softmax")
+
 
         # 55 parameters
         def __two_layer_conv2d__(self, model) -> None :
 
             self.add_input(model, shape = (3, 120, 1))
+            self.add_conv2d(model, filters = 1, kernel_size = 3, strides = 3)
+            self.add_conv1d(model, filters = 1, kernel_size = 2, strides = 2)
+            self.add_output(model, units = 2, activation = "softmax")
+
+        # 300 parameters
+        def __two_layer_downsampling_equal__(self, model) -> None :
+
+            self.add_input(model, shape = (3, 360, 1))
             self.add_conv2d(model, filters = 1, kernel_size = 3, strides = 3)
             self.add_conv1d(model, filters = 1, kernel_size = 2, strides = 2)
             self.add_output(model, units = 2, activation = "softmax")
@@ -436,6 +639,8 @@ class NNClassifier(Classifier):
 
     models = \
         {
+            "one_layer_downsampling_equal" : Architectures.__one_layer_downsampling_equal__,
+            "two_layer_downsampling_equal" : Architectures.__two_layer_downsampling_equal__,
             "normed_one_layer_conv2d" : Architectures.__normed_one_layer_conv2d__,
             "one_layer_conv2d" : Architectures.__one_layer_conv2d__,
             "two_layer_conv2d" : Architectures.__two_layer_conv2d__,
@@ -464,7 +669,7 @@ class NNClassifier(Classifier):
             except OSError:
                 choice = input(f"\nSelect epoch from {os.listdir('/cr/data01/filip/models/' + name)}\n Model: ")
                 self.model = tf.keras.models.load_model("/cr/data01/filip/models/" + name + choice)
-                self.epochs = int(choice[-1])
+                self.epochs = int(choice.split("_")[-1])
         else:
 
             self.model = tf.keras.Sequential()
@@ -697,9 +902,9 @@ class HardwareClassifier(Classifier):
 
         # hierarchy doesn't (shouldn't?) matter
         for i in range(signal.shape[1]):
-            if pmt_1[i] >= threshold:
-                if pmt_2[i] >= threshold:
-                    if pmt_3[i] >= threshold:
+            if pmt_1[i] > threshold:
+                if pmt_2[i] > threshold:
+                    if pmt_3[i] > threshold:
                         return True
                     else: continue
                 else: continue

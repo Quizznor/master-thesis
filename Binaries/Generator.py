@@ -22,7 +22,8 @@ class EventGenerator():
         "17.5_18" : "/cr/tempdata01/filip/QGSJET-II/protons/17.5_18/",
         "18_18.5" : "/cr/tempdata01/filip/QGSJET-II/protons/18_18.5/",
         "18.5_19" : "/cr/tempdata01/filip/QGSJET-II/protons/18.5_19/",
-        "19_19.5" : "/cr/tempdata01/filip/QGSJET-II/protons/19_19.5/"
+        "19_19.5" : "/cr/tempdata01/filip/QGSJET-II/protons/19_19.5/",
+        # "test"    : "/cr/users/filip/Simulation/TestShowers/"
     }
 
     def __new__(self, datasets : typing.Union[list, str], **kwargs : dict) -> typing.Union[tuple, "EventGenerator"] :
@@ -77,10 +78,11 @@ class EventGenerator():
 
         ignore_low_VEM = kwargs.get("ignore_low_vem", GLOBAL.ignore_low_VEM)
         ignore_particles = kwargs.get("ignore_particles", GLOBAL.ignore_particles)
-        sliding_window_length = kwargs.get("window", GLOBAL.window)
-        sliding_window_step = kwargs.get("step", GLOBAL.step)
+        sliding_window_length = kwargs.get("window_length", GLOBAL.window)
+        sliding_window_step = kwargs.get("window_step", GLOBAL.step)
+        keep_scale = kwargs.get("keep_scale", GLOBAL.keep_scale)
 
-        trace_options = [q_peak, q_charge, n_bins, baseline_std, baseline_mean, n_injected, downsampling, real_background, random_index, station]
+        trace_options = [q_peak, q_charge, n_bins, baseline_std, baseline_mean, n_injected, downsampling, real_background, random_index, station, keep_scale]
         classifier_options = [ignore_low_VEM, ignore_particles, sliding_window_length, sliding_window_step, prior]
         
         # set RNG seed if desired
@@ -130,14 +132,15 @@ class Generator(tf.keras.utils.Sequence):
         self.window_length, self.window_step = classifier_options[2], classifier_options[3]
         self.prior = classifier_options[-1]
 
-        # trace_options = [q_peak, q_charge, n_bins, baseline_std, baseline_mean, n_injected, downsampling, real_background, random_index, station]
-        #                       0,        1,      2,            3,             4,          5,            6,               7,            8,       9,
+        # trace_options = [q_peak, q_charge, n_bins, baseline_std, baseline_mean, n_injected, downsampling, real_background, random_index, station, keep_scale]
+        #                       0,        1,      2,            3,             4,          5,            6,               7,            8,       9,         10
         
         self.q_peak, self.q_charge = trace_options[0], trace_options[1]
         self.length, self.n_injected = trace_options[2], trace_options[5]
         self.sigma, self.mu, self.downsampling = trace_options[3], trace_options[4], trace_options[6]
         self.use_real_background, self.random_index = trace_options[7], trace_options[8]
         self.files, self.station = signal_files, trace_options[9]
+        self.keep_scale = trace_options[10]
 
         if self.use_real_background and self.n_injected is None: self.n_injected = 0
 
@@ -153,7 +156,8 @@ class Generator(tf.keras.utils.Sequence):
         return len(self.files)
 
     # generator method to create data on runtime
-    def __getitem__(self, index : int, full_trace : bool = False, skip_integral : bool = False, skip_metadata : bool = True) -> tuple[np.ndarray] :
+    # returns traces, labels, [ {integral, energy, SPDistance, Zenith} , ...]
+    def __getitem__(self, index : int, full_trace : bool = False, skip_metadata : bool = True) -> tuple[np.ndarray] :
 
         labels, traces = [], []
         metadata_per_batch = []
@@ -165,10 +169,11 @@ class Generator(tf.keras.utils.Sequence):
             self.q_peak, self.q_charge, baseline = self.RandomTraceBuffer.get()     # load INT baseline trace
             # baseline += np.random.uniform(0, 1, size = (3, self.length))            # convert it to FLOAT now
             # baseline += np.random.uniform(1, 2, size = (3, self.length))            # for testing purposes
-            for k in [0, 1, 2]: baseline[k] += np.random.uniform(1, 2)              # for testing purposes
+            # for k in [0, 1, 2]: baseline[k] += np.random.uniform(1, 2)              # for testing purposes
 
-            self.trace_options[0] = self.q_peak                                     # adjust q_peak for random traces
-            self.trace_options[1] = self.q_charge                                   # adjust q_charge for random traces
+            if not self.keep_scale:
+                self.trace_options[0] = self.q_peak                                  # adjust q_peak for random traces
+                self.trace_options[1] = self.q_charge                                # adjust q_charge for random traces
 
         # try to raise a valid trace (i.e. with signal)...
         try:
@@ -183,14 +188,14 @@ class Generator(tf.keras.utils.Sequence):
 
                 if full_trace:
                     traces.append(VEMTrace)
+
                 else:
                     for index in self.__sliding_window__(VEMTrace):
-                        pmt_data, n_sig, integral, metadata = VEMTrace.get_trace_window((index, index + self.window_length), skip_integral, skip_metadata)
-                        metadata_per_batch.append([integral, metadata])
-
+                        pmt_data, n_sig, metadata = VEMTrace.get_trace_window((index, index + self.window_length), skip_metadata)
+                        metadata_per_batch.append(metadata)
 
                         # mislabel low energy 
-                        if self.ignore_low_VEM: n_sig = 0 if integral < self.ignore_low_VEM else n_sig
+                        if self.ignore_low_VEM: n_sig = 0 if metadata[0] < self.ignore_low_VEM else n_sig
 
                         # mislabel few particles
                         if self.ignore_particles: 
@@ -208,16 +213,17 @@ class Generator(tf.keras.utils.Sequence):
                 traces.append(VEMTrace)
             else:
                 for index in self.__sliding_window__(VEMTrace, override_prior = True):
-                    pmt_data, n_sig, integral, metadata = VEMTrace.get_trace_window((index, index + self.window_length), skip_integral, skip_metadata)
+                    pmt_data, n_sig, metadata = VEMTrace.get_trace_window((index, index + self.window_length), skip_metadata)
                     traces.append(pmt_data), labels.append(EventGenerator.labels[0])
-                    metadata_per_batch.append([integral, metadata])
+                    metadata_per_batch.append(metadata)
 
         if skip_metadata:
             return np.array(traces), np.array(labels)
         else:
-            return np.array(traces), np.array(labels), metadata_per_batch
+            return np.array(traces), np.array(labels), np.array(metadata_per_batch, dtype = object)
 
-    # calculate a sliding window range conforming (in most cases at least) to a given prior
+
+    # calculate a sliding window range conforming (in all cases at least) to a given prior
     def __sliding_window__(self, VEMTrace : Trace, override_prior : bool = False) -> range :
 
         try:
@@ -251,7 +257,7 @@ class Generator(tf.keras.utils.Sequence):
 
         while self.__iteration_index < self.__len__():
 
-            yield self.__getitem__(self.__iteration_index, full_trace, skip_integral = False, skip_metadata = False)
+            yield self.__getitem__(self.__iteration_index, full_trace, skip_metadata = False)
             self.__iteration_index += 1
 
         return StopIteration
@@ -261,6 +267,14 @@ class Generator(tf.keras.utils.Sequence):
 
         random.shuffle(self.files)
         self.__iteration_index = 0
+
+    # make a copy of this generator (same event files) with different keywords
+    def copy(self, **kwargs : dict) -> "Generator" :
+
+        NewGenerator = EventGenerator([], split = 1, **kwargs)
+        NewGenerator.files = self.files
+
+        return NewGenerator
 
     # check properties of the sliding window, prior, start/stop etc.
     def check_sliding_window(self, batch : int) -> None :
@@ -284,75 +298,138 @@ class Generator(tf.keras.utils.Sequence):
         print(f"\nGiven prior: {self.prior} <-> {n_sigs / (n_sigs + n_bkgs)} this prior")    
 
     # run some diagnostics to make sure dataset is in order
-    def unit_test(self, n_traces : int = None, full_traces : bool = True) -> None :
+    def unit_test(self, n_traces : int = None) -> None :
+
+        if n_traces is None: n_traces = self.__len__() * (GLOBAL.n_bins - 10) * 5
 
         start = perf_counter_ns()
+        mean_per_step_us = np.inf
+        n_traces_looked_at = 0
 
-        background_hist, signal_hist, baseline_hist, priors = [], [], [], []
-        n_signals, n_backgrounds, n_injected, n_p, n_n = 0, 0, 0, 0, 0
-        has_label_integral, has_no_label_integral = [], []
-        has_label_particles, has_no_label_particles = [], []
-        energy_hist = []
+        sig_max_hist, bg_max_hist = [], []
 
-        if n_traces is None: n_traces = self.__len__()
+        # helper variables for results
+        all_energies, all_zeniths = [], []
+
+        # For loop iterates over the whole dataset, return type/format looks like:
+        # traces, labels, [ {Integral, SPDistance, Energy, Zenith} , ...]
+        try:
+            for batch, (traces, labels, metadata) in enumerate(self):
+
+                print(f"{100 * (n_traces_looked_at/n_traces):.2f}% - {mean_per_step_us:.2f}us/trace, ETA = {(n_traces - n_traces_looked_at) * mean_per_step_us * 1e-6:.0f}s", end = 10 * " " + "\r")
+
+                Energy, Zenith = metadata[0, 2:]
+                trace_informations = metadata[:, :2]
+
+                all_energies.append(Energy), all_zeniths.append(Zenith)
+
+                for trace, label, event_info in zip(traces, labels, trace_informations):
+
+                    elapsed = perf_counter_ns() - start
+                    mean_per_step_us = elapsed / (n_traces_looked_at + 1) * 1e-3
+
+                    n_traces_looked_at += 1
+
+                    # analysis code on trace level
+                    if not np.argmax(label):
+                        bg_max_hist.append(np.max(trace))
+                    else:
+                        sig_max_hist.append(np.max(trace))
+
+
+
+                    if n_traces_looked_at == n_traces: raise StopIteration
         
-        if full_traces:
-            for batch in range(int(n_traces)):
+        except StopIteration:
+            print(f"-- {batch + 1} EVENTS; SUMMARY -------" + 10 * " ")
+            print(f"E range: {np.log10(min(all_energies)):.2f} < log(E) < {np.log10(max(all_energies)):.2f}")
+            print(f"θ range: {min(all_zeniths):.2f}° <  θ  <  {max(all_zeniths):.2f}°")
 
-                elapsed = perf_counter_ns() - start
-                mean_per_step_ms = elapsed / (batch + 1) * 1e-6
 
-                traces, _ = self.__getitem__(batch, full_trace = full_traces)
+        # Energy, Zenith 2d Histogram
+        plt.figure()
+        plt.xscale("log")
+        plt.hist2d(all_energies, all_zeniths, bins = (40, 50))
 
-                print(f"{100 * (batch/n_traces):.2f}% - {mean_per_step_ms:.2f}ms/batch, ETA = {(n_traces - batch) * mean_per_step_ms * 1e-3:.0f}s {traces[0]}", end ="\r")
+        # label vs n_particles
+
+        # Trace characteristica
+        plt.figure()
+        plt.hist(sig_max_hist, color = "orange", histtype = "step", lw = 3, label = "Signal", bins = np.geomspace(0.1, 1e6, 100), density = True)
+        plt.hist(bg_max_hist, color = "steelblue", histtype = "step", lw = 3, label = "Background", bins = 100, range = (-1, 3))
+
+        plt.ylim(0, 500)
+        plt.legend()
+        plt.xscale("log")
+        plt.show()
+
+
+        # background_hist, signal_hist, baseline_hist, priors = [], [], [], []
+        # n_signals, n_backgrounds, n_injected, n_p, n_n = 0, 0, 0, 0, 0
+        # has_label_integral, has_no_label_integral = [], []
+        # has_label_particles, has_no_label_particles = [], []
+        # energy_hist, spd_hist = [], []
+
+        # if n_traces is None: n_traces = self.__len__()
+        
+        # if full_traces:
+        #     for batch in range(int(n_traces)):
+
+        #         elapsed = perf_counter_ns() - start
+        #         mean_per_step_ms = elapsed / (batch + 1) * 1e-6
+
+        #         traces, _ = self.__getitem__(batch, full_trace = full_traces)
+
+        #         print(f"{100 * (batch/n_traces):.2f}% - {mean_per_step_ms:.2f}ms/batch, ETA = {(n_traces - batch) * mean_per_step_ms * 1e-3:.0f}s {traces[0]}", end ="\r")
                 
-                for trace in traces:
+        #         for trace in traces:
 
-                    n_particles = 0
+        #             n_particles = 0
 
-                    if trace.has_accidentals: 
-                        background_hist.append(np.max(trace.Injected))
-                        n_injected += len(trace.injections_start)
+        #             if trace.has_accidentals: 
+        #                 background_hist.append(np.max(trace.Injected))
+        #                 n_injected += len(trace.injections_start)
                     
-                    if trace.has_signal: 
+        #             if trace.has_signal: 
 
-                        try:
-                            n_particles = trace.n_muons + trace.n_electrons + trace.n_photons
-                            signal_length = trace.signal_end - trace.signal_start
-                            sliding_window = self.__sliding_window__(trace)
-                            window_length = (sliding_window[-1] - sliding_window[0]) - 2 * self.window_length
-                            priors.append(signal_length / window_length)
+        #                 try:
+        #                     n_particles = trace.n_muons + trace.n_electrons + trace.n_photons
+        #                     signal_length = trace.signal_end - trace.signal_start
+        #                     sliding_window = self.__sliding_window__(trace)
+        #                     window_length = (sliding_window[-1] - sliding_window[0]) - 2 * self.window_length
+        #                     priors.append(signal_length / window_length)
 
-                        except ZeroDivisionError: priors.append(1)
+        #                 except ZeroDivisionError: priors.append(1)
 
-                        signal_hist.append(np.max(trace.Signal))
-                        energy_hist.append(np.log10(trace.Energy))
+        #                 signal_hist.append(np.max(trace.Signal))
+        #                 energy_hist.append(np.log10(trace.Energy))
+        #                 spd_hist.append(trace.SPDistance)
 
-                        n_signals += 1
+        #                 n_signals += 1
 
-                    else: n_backgrounds += 1
+        #             else: n_backgrounds += 1
 
-                    baseline_hist.append(np.mean(trace.Baseline))
+        #             baseline_hist.append(np.mean(trace.Baseline))
 
-                    # for index in self.__sliding_window__(trace):
+        #             for index in self.__sliding_window__(trace):
 
-                    #     i, f = index, index + self.window_length
-                    #     _, n_sig, integral, _ = trace.get_trace_window((i, f))
+        #                 i, f = index, index + self.window_length
+        #                 _, n_sig, integral, _ = trace.get_trace_window((i, f))
 
-                    #     if self.ignore_low_VEM: n_sig = 0 if integral < self.ignore_low_VEM else n_sig
-                    #     if self.ignore_particles: 
-                    #         n_sig = 0 if self.ignore_particles >= n_particles else n_sig
+        #                 if self.ignore_low_VEM: n_sig = 0 if integral < self.ignore_low_VEM else n_sig
+        #                 if self.ignore_particles: 
+        #                     n_sig = 0 if self.ignore_particles >= n_particles else n_sig
 
-                    #     if n_sig: 
-                    #         has_label_integral.append(integral)
-                    #         has_label_particles.append(n_particles)
-                    #         n_p += 1
-                    #     else: 
-                    #         n_particles = n_particles if self.ignore_particles >= n_particles else 0
-                    #         integral = integral if integral < self.ignore_low_VEM else 0
-                    #         has_no_label_integral.append(integral)
-                    #         has_no_label_particles.append(n_particles)
-                    #         n_n += 1
+        #                 if n_sig: 
+        #                     has_label_integral.append(integral)
+        #                     has_label_particles.append(n_particles)
+        #                     n_p += 1
+        #                 else: 
+        #                     n_particles = n_particles if self.ignore_particles >= n_particles else 0
+        #                     integral = integral if integral < self.ignore_low_VEM else 0
+        #                     has_no_label_integral.append(integral)
+        #                     has_no_label_particles.append(n_particles)
+        #                     n_n += 1
 
         # histogram_ranges = [(0.01,3), None, None]
         # histogram_titles = ["Injected Background peak", "Signal peak", "Baseline"]
@@ -365,15 +442,19 @@ class Generator(tf.keras.utils.Sequence):
 
         #     plt.xlabel("Signal / VEM")
 
-        plt.figure("Distribution of energies")        
-        for e in [16.5, 17, 17.5, 18, 18.5, 19]: plt.axvline(e, c = "gray", ls = "--")
-        plt.hist(energy_hist, range = (16, 19.5), bins = 7 * 10, histtype = "step")
-        plt.xlabel("Energy / log( E / eV )")
+        # plt.figure("Distribution of energies")        
+        # for e in [16.5, 17, 17.5, 18, 18.5, 19]: plt.axvline(e, c = "gray", ls = "--")
+        # plt.hist(energy_hist, range = (16, 19.5), bins = 7 * 10, histtype = "step")
+        # plt.xlabel("Energy / log( E / eV )")
 
-        plt.figure()
-        plt.title("Distribution of priors")
-        plt.axvline(self.prior, c = "gray", ls = "--", lw = "2", label = "required")
-        plt.hist(priors, range = (0,1), bins = 50, histtype = "step", label = "returned", lw = 2)
+        # plt.figure("Distribution of shower plane distances")
+        # plt.hist(energy_hist, range = (0, 3000), bins = 7 * 10, histtype = "step")
+        # plt.xlabel("Shower plane distance")
+
+        # plt.figure()
+        # plt.title("Distribution of priors")
+        # plt.axvline(self.prior, c = "gray", ls = "--", lw = "2", label = "required")
+        # plt.hist(priors, range = (0,1), bins = 50, histtype = "step", label = "returned", lw = 2)
 
         # plt.figure()
         # plt.title("Sliding window integral")
@@ -393,10 +474,10 @@ class Generator(tf.keras.utils.Sequence):
         # plt.yscale("log")
         # plt.legend()
 
-        print(f"\n\nTotal time: {(perf_counter_ns() - start) * 1e-9 :.2f}s - {n_signals + n_backgrounds} traces")
-        print(f"n_signal = {n_signals}, n_background = {n_backgrounds}")
-        # print(f"n_classified = {n_p}, n_ignored = {n_n}")
-        print(f"n_injected = {n_injected} -> {n_injected / (self.length * (n_signals + n_backgrounds) * GLOBAL.single_bin_duration):.2f} Hz background")
-        print("")
+        # print(f"\n\nTotal time: {(perf_counter_ns() - start) * 1e-9 :.2f}s - {n_signals + n_backgrounds} traces")
+        # print(f"n_signal = {n_signals}, n_background = {n_backgrounds}")
+        # # print(f"n_classified = {n_p}, n_ignored = {n_n}")
+        # print(f"n_injected = {n_injected} -> {n_injected / (self.length * (n_signals + n_backgrounds) * GLOBAL.single_bin_duration):.2f} Hz background")
+        # print("")
 
-        plt.show()
+        # plt.show()

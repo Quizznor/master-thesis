@@ -1,5 +1,5 @@
-JobBatchName    = create_training_data_19_19.5
-Executable      = /cr/users/filip/Simulation/RunSimulation/production/run_simulation_19_19.5.py 
+JobBatchName    = create_training_data_17_17.5
+Executable      = /cr/users/filip/Simulation/RunSimulation/run_simulation.py 
 
 # error           = /cr/users/filip/Simulation/condor/errors-$(Process).err
 # output          = /cr/users/filip/Simulation/condor/output-$(Process).log

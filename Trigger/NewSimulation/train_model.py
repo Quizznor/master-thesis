@@ -1,24 +1,15 @@
 from Binaries import *
 
-AllEvents = EventGenerator("all", real_background = False, prior = 1e-5, ignore_particles = 1)
-AllEvents[-1].unit_test()
+vem_peak_scaled = np.array([180.23, 182.52, 169.56]) / 1.115                         # 11.5% surplus
 
-# # _ = input("\nPress ENTER to continue")
+ParticleCut = EventGenerator("all", real_background = True, station = "Nuria", 
+                            vem_peak = vem_peak_scaled, keep_scale = True, 
+                            window_length = 360)
+# NoCutValidationData = ParticleCut[-1].copy(real_background = True, station = "Nuria", vem_peak = vem_peak_scaled, keep_scale = True)
 
-# Network = NNClassifier("baseline_low_prior_1_particle", "one_layer_conv2d")
-# Network.train(AllEvents, 10)
-# Network2 = NNClassifier("minimal_conv2d_1_particle")
-# Network3 = NNClassifier("minimal_conv2d_2_particle")
-# Hardware = HardwareClassifier()
+NetworkOneLayer = NNClassifier("360_input_one_layer_vem_peak_scaled", "one_layer_downsampling_equal")
+NetworkTwoLayer = NNClassifier("360_input_two_layer_vem_peak_scaled", "two_layer_downsampling_equal")
+NetworkOneLayer.train(ParticleCut, 5)
+NetworkTwoLayer.train(ParticleCut, 5)
 
-# AllEventsNoCut = EventGenerator("all", real_background = True)
-# make_dataset(Network, AllEventsNoCut[-1], "validation_data_all_particles")
-
-# Network2 = NNClassifier("minimal_conv2d_baseline")
-# Hardware = HardwareClassifier()
-# Hardware.ROC("validation_data")
-# Network.ROC("validation_data")
-# Network2.ROC("validation_data")
-# Network2.ROC("validation_data_all_particles")
-# Network3.ROC("validation_data")
-# Network3.ROC("validation_data_all_particles")
+# make_dataset(ParticleCutNetwork, NoCutValidationData, "no_cut_validation_data")
