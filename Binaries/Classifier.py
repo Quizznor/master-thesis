@@ -281,7 +281,7 @@ class Classifier():
                 # sort misses / hits w.r.t zenith and primary energy
                 theta_indices = np.digitize(T, theta_bins)
                 energy_indices = np.digitize(E, energy_bins)
-                
+
                 for e, t, spd in zip(energy_indices, theta_indices, SPD):
                     target[e][t].append(spd)
 
@@ -290,6 +290,7 @@ class Classifier():
                 if e != 6: continue
 
                 if draw_plot:
+
                     fig = plt.figure()
                     plt.xlim(0, 3000)
                     plt.ylim(-0.05, 1.05)
@@ -299,8 +300,9 @@ class Classifier():
 
                 for t, (hits_by_theta, miss_by_theta) in enumerate(zip(hits_by_energy, misses_by_energy)):
 
-                    if t != 0: continue
+                    # if t != 0: continue
 
+                    # print(len(hits_by_theta), len(miss_by_theta))
 
                     # spd_bins = np.linspace(min(min(hits_by_theta), min(miss_by_theta)),
                     #                        max(max(hits_by_theta), max(miss_by_theta)), 20)
@@ -308,25 +310,21 @@ class Classifier():
                     p50, scale = fitparams[e * 5 + t]
                     ldf = lambda x : station_hit_probability(x, 1, p50, scale)
 
-                    spd_bins = np.linspace(1, 3000, kwargs.get("n_bins", 30))
-                    # spd_bins = list(np.geomspace(1, 1500, kwargs.get("n_bins", 30)))
-                    # spd_bins += list(np.arange(1500 + np.diff(spd_bins)[-1], 3000, np.diff(spd_bins)[-1]))
+                    # spd_bins = np.linspace(1, 10000, kwargs.get("n_bins", 30))
+                    spd_bins = list(np.geomspace(10, 1500, kwargs.get("n_bins", 30)))
+                    spd_bins += list(np.arange(1500 + np.diff(spd_bins)[-1], 3000, np.diff(spd_bins)[-1]))
                     c = colormap(t / len(hits_by_energy))
 
                     x_hist, sig = np.histogram(hits_by_theta, bins = spd_bins)
                     o_hist, sig = np.histogram(miss_by_theta, bins = spd_bins)
                     x_val, y_val, y_err = [], [], []
 
-                    _sum = 0
-
                     # draw individual patches
                     for i, (x, o) in enumerate(zip(x_hist, o_hist)):
 
-                        print(x/(x + o), x, o)
+                        # print(x/(x + o), x, o)
 
                         if x == o == 0: continue
-
-                        _sum += o
 
                         # determine x
                         left_edge_x, right_edge_x = sig[i], sig[i + 1]
@@ -347,8 +345,6 @@ class Classifier():
 
                         draw_plot and plt.errorbar(center_x, center_y, color = c, marker = "s", markersize = int(2 * np.log(x+o)), ls = ":")
                         # draw_plot and plt.gca().add_patch(Polygon(coordinates, closed = True, color = c, alpha = 0.1, lw = 0))
-
-                    print(_sum)
 
                     # # perform efficiency fit
                     # try:

@@ -307,9 +307,94 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
   }
 }
 
+void DoLtpCalculation(fs::path pathToAdst)
+{
+  // const auto csvTraceFile = pathToAdst.parent_path()/ pathToAdst.filename().replace_extension("csv"); // for testing
+  const auto energyRange = pathToAdst.string().substr(39, 7);
+  const std::string csvLtpFileMisses = "/cr/tempdata01/filip/QGSJET-II/lateral_trigger_probability_" + energyRange + "/misses.csv";
+  const std::string csvLtpFileHits = "/cr/tempdata01/filip/QGSJET-II/lateral_trigger_probability_" + energyRange + "/hits.csv";
+
+  // (2) start main loop
+  RecEventFile     recEventFile(pathToAdst.string());
+  RecEvent*        recEvent = nullptr;
+
+  // will be assigned by root
+  recEventFile.SetBuffers(&recEvent);
+
+  for (unsigned int i = 0; i < recEventFile.GetNEvents(); ++i) 
+  {
+    // skip if event reconstruction failed
+    if (recEventFile.ReadEvent(i) != RecEventFile::eSuccess){continue;}
+
+    // allocate memory for data
+    const SDEvent& sdEvent = recEvent->GetSDEvent();                              // contains the traces
+    const GenShower& genShower = recEvent->GetGenShower();                        // contains the shower
+    DetectorGeometry detectorGeometry = DetectorGeometry();                       // contains SPDistance
+    recEventFile.ReadDetectorGeometry(detectorGeometry);
+
+    // create csv file streams
+    ofstream ltpFileMisses(csvLtpFileMisses, std::ios_base::app);
+    ofstream ltpFileHits(csvLtpFileHits, std::ios_base::app);
+
+    // binaries of the generated shower
+    // const auto SPD = detectorGeometry.GetStationAxisDistance(Id, Axis, Core);  // in m
+    const auto showerZenith = genShower.GetZenith() * (180 / 3.141593);           // in °
+    const auto showerEnergy = genShower.GetEnergy();                              // in eV
+    const auto showerAxis = genShower.GetAxisSiteCS();
+    const auto showerCore = genShower.GetCoreSiteCS();  
+
+    // get id of all stations that participated in trigger
+    // get no. of particles that received any particles
+    std::vector<int> recreatedStationIds;
+    std::vector<int> simulatedStationIds;
+
+    for (const auto& recStation : sdEvent.GetStationVector()){recreatedStationIds.push_back(recStation.GetId());}
+    for (const auto& genStation : sdEvent.GetSimStationVector()){simulatedStationIds.push_back(genStation.GetId());}
+
+    Detector detector = Detector();
+
+    // loop over all considered Stations
+    for (const auto& consideredStationId : consideredStations)
+    {
+
+      const auto genIndex = std::find(simulatedStationIds.begin(), simulatedStationIds.end(), consideredStationId);
+
+      // calculate shower plane distance for considered station
+      const auto showerPlaneDistance = detectorGeometry.GetStationAxisDistance(consideredStationId, showerAxis, showerCore);
+
+      // const auto genIndex = std::find(simulatedStationIds.begin(), simulatedStationIds.end(), consideredStationId);
+      const auto stationId = simulatedStationIds[genIndex - simulatedStationIds.begin()];
+      const auto genStation = sdEvent.GetSimStationById(stationId);
+
+      const auto nMuons = genStation->GetNumberOfMuons();
+      const auto nElectrons = genStation->GetNumberOfElectrons();
+      const auto nPhotons = genStation->GetNumberOfPhotons();
+
+      if (std::find(recreatedStationIds.begin(), recreatedStationIds.end(), consideredStationId) != recreatedStationIds.end())
+      {
+        // station participated in the trigger
+        //    -> add station metadata to LtpFileHits
+
+        ltpFileHits << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " " << nMuons << " " << nElectrons << " " << nPhotons << std::endl;
+      }
+      else
+      {
+        // station did not participate in the trigger
+        //    --> add station metadata to LtpFileMisses
+        ltpFileMisses << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " " << nMuons << " " << nElectrons << " " << nPhotons << std::endl;
+      }
+    }
+
+    ltpFileHits.close();
+    ltpFileMisses.close();
+  }
+
+
+}
+
 int main(int argc, char** argv) 
 {
-  std::cout << std::endl;
   ExtractDataFromAdstFiles(argv[1]);
+  // DoLtpCalculation(argv[1]);
   return 0;
 }
