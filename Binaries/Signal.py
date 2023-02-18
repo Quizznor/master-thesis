@@ -253,9 +253,9 @@ class Trace(Signal):
             plt.title(f"Station #{self.StationID} - {int_sig:.2f} VEM")
         except AttributeError: pass
         
-        plt.plot(x, self.pmt_1, c = "green", label = f"PMT #1{', downsampled' if self.downsample else ''}", lw = 1)
+        plt.plot(x, self.pmt_1, c = "steelblue", label = f"PMT #1{', downsampled' if self.downsample else ''}", lw = 1)
         plt.plot(x, self.pmt_2, c = "orange", label = f"PMT #2{', downsampled' if self.downsample else ''}", lw = 1)
-        plt.plot(x, self.pmt_3, c = "steelblue", label = f"PMT #3{', downsampled' if self.downsample else ''}", lw = 1)
+        plt.plot(x, self.pmt_3, c = "green", label = f"PMT #3{', downsampled' if self.downsample else ''}", lw = 1)
 
         if self.has_signal:
             plt.axvline(self.signal_start, ls = "--", c = "red", lw = 2)

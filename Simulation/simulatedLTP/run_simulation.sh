@@ -29,4 +29,4 @@ fi
 /cr/users/filip/Simulation/simulatedLTP/AdstComponentExtractor "$3/root_files/$4.root"
 
 # Delete root file
-rm -rf "$3/root_files/$4.root"
+# rm -rf "$3/root_files/$4.root"

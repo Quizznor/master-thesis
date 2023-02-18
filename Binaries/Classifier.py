@@ -287,7 +287,7 @@ class Classifier():
 
             for e, (hits_by_energy, misses_by_energy) in enumerate(zip(hits_sorted, miss_sorted)):
 
-                if e != 6: continue
+                # if e != 6: continue
 
                 if draw_plot:
 
@@ -311,7 +311,7 @@ class Classifier():
                     ldf = lambda x : station_hit_probability(x, 1, p50, scale)
 
                     # spd_bins = np.linspace(1, 10000, kwargs.get("n_bins", 30))
-                    spd_bins = list(np.geomspace(10, 1500, kwargs.get("n_bins", 30)))
+                    spd_bins = list(np.geomspace(10, 1500, kwargs.get("n_bins", 20)))
                     spd_bins += list(np.arange(1500 + np.diff(spd_bins)[-1], 3000, np.diff(spd_bins)[-1]))
                     c = colormap(t / len(hits_by_energy))
 
@@ -337,7 +337,7 @@ class Classifier():
                         ldf_left, ldf_right, ldf_center = ldf(left_edge_x), ldf(right_edge_x), ldf(center_x)
                         top_left_y, bottom_left_y = (center_y + height) * ldf_left, (center_y - height) * ldf_left
                         top_right_y, bottom_right_y = (center_y + height) * ldf_right, (center_y - height) * ldf_right
-                        center_y *= ldf_center
+                        # center_y *= ldf_center
                         y_val.append(center_y)
                         y_err.append(height / 2)
 
@@ -346,26 +346,26 @@ class Classifier():
                         draw_plot and plt.errorbar(center_x, center_y, color = c, marker = "s", markersize = int(2 * np.log(x+o)), ls = ":")
                         # draw_plot and plt.gca().add_patch(Polygon(coordinates, closed = True, color = c, alpha = 0.1, lw = 0))
 
-                    # # perform efficiency fit
-                    # try:
-                    #     popt, pcov = curve_fit(station_hit_probability, x_val, y_val, 
-                    #                                           p0 = [y_val[0], p50, scale],
-                    #                                           bounds = ([0, 0, 0], [1, np.inf, np.inf]),
-                    #                                           sigma = y_err,
-                    #                                           absolute_sigma = True)
-                    # except ValueError:
-                    #     popt, pcov = curve_fit(station_hit_probability, x_val, y_val, 
-                    #                                           p0 = [y_val[0], p50, scale],
-                    #                                           bounds = ([0, 0, 0], [1, np.inf, np.inf]),
-                    #                                           maxfev = 10000)
+                    # perform efficiency fit
+                    try:
+                        popt, pcov = curve_fit(station_hit_probability, x_val, y_val, 
+                                                              p0 = [y_val[0], p50, scale],
+                                                              bounds = ([0, 0, 0], [1, np.inf, np.inf]),
+                                                              sigma = y_err,
+                                                              absolute_sigma = True)
+                    except ValueError:
+                        popt, pcov = curve_fit(station_hit_probability, x_val, y_val, 
+                                                              p0 = [y_val[0], p50, scale],
+                                                              bounds = ([0, 0, 0], [1, np.inf, np.inf]),
+                                                              maxfev = 10000)
 
 
-                    # fit_params[e].append(popt)
-                    # fit_uncertainties[e].append(pcov)
+                    fit_params[e].append(popt)
+                    fit_uncertainties[e].append(pcov)
 
-                    # if draw_plot:
-                    #     X = np.linspace(0, 3000, 100)
-                    #     plt.plot(X, station_hit_probability(X, *popt), c = c, lw = 2)
+                    if draw_plot:
+                        X = np.linspace(0, 3000, 100)
+                        plt.plot(X, station_hit_probability(X, *popt), c = c, lw = 2)
 
                 if draw_plot:
                     plt.xlabel("Shower plane distance / m")
@@ -506,6 +506,8 @@ class Classifier():
             header_was_called = True
 
             print("\nDATASET".ljust(72) + "TP      FP      TN      FN     sum")
+
+    else: pass
     
     # Performance visualizers #######################################################################
 
@@ -690,10 +692,14 @@ class NNClassifier(Classifier):
         TrainingSet, ValidationSet = Datasets
 
         try:
-            for i in range(self.epochs, epochs):
-                print(f"Epoch {i + 1}/{epochs}")
-                self.history = self.model.fit(TrainingSet, validation_data = ValidationSet, epochs = 1, callbacks = self.callbacks)
-                self.epochs += 1
+
+            # for i in range(self.epochs, epochs):
+            #     print(f"Epoch {i + 1}/{epochs}")
+            #     self.history = self.model.fit(TrainingSet, validation_data = ValidationSet, epochs = 1, callbacks = self.callbacks)
+            #     self.epochs += 1
+
+            self.history = self.model.fit(TrainingSet, validation_data = ValidationSet, epochs = epochs - self.epochs, callbacks = self.callbacks)
+
         except EarlyStoppingError: 
             self.epochs = "converged"
             training_status = "early"

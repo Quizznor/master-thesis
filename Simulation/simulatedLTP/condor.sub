@@ -17,7 +17,7 @@ Requirements	= (OpSysName == "Ubuntu" && OpSysMajorVer == 22  && TARGET.Machine 
 transfer_input_files  = ../AugerOffline/userAugerOffline, ../simulatedLTP/ModuleSequence_trigger_normal.xml, ../AugerOffline/EventFileReader.xml, ../AugerOffline/EventFileExporter.xml, ../AugerOffline/EventGenerator.xml, ../AugerOffline/CustomStationList.xml
 
 # queue from seq 0 4998 |
-queue 5200
+queue 1
 
 # PRAGUE LIBRARIES
 # 15_15.5 log E = 4999 Files

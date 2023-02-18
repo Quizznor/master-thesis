@@ -197,9 +197,9 @@ class Generator(tf.keras.utils.Sequence):
                         # mislabel low energy 
                         if self.ignore_low_VEM: n_sig = 0 if metadata[0] < self.ignore_low_VEM else n_sig
 
-                        # mislabel few particles
-                        if self.ignore_particles: 
-                            n_sig = 0 if self.ignore_particles >= (VEMTrace.n_muons + VEMTrace.n_electrons + VEMTrace.n_photons) else n_sig 
+                        # # mislabel few particles
+                        # if self.ignore_particles: 
+                        #     n_sig = 0 if self.ignore_particles >= (VEMTrace.n_muons + VEMTrace.n_electrons + VEMTrace.n_photons) else n_sig 
 
                         traces.append(pmt_data), labels.append(EventGenerator.labels[1 if n_sig else 0])
 
@@ -335,8 +335,6 @@ class Generator(tf.keras.utils.Sequence):
                         bg_max_hist.append(np.max(trace))
                     else:
                         sig_max_hist.append(np.max(trace))
-
-
 
                     if n_traces_looked_at == n_traces: raise StopIteration
         
