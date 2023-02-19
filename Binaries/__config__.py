@@ -8,6 +8,7 @@ from scipy.optimize import curve_fit
 import seaborn as sns
 import numpy as np
 import warnings
+import typing
 
 class EmptyFileError(Exception): pass
 class SlidingWindowError(Exception): pass
@@ -29,16 +30,14 @@ class GLOBAL():
     # Trace details, can be overwritten in __new__ of EventGenerator
     background_frequency        = 4665                                          # frequency of accidental injections / Hz
     single_bin_duration         = 8.3e-9                                        # time length of a single bin, in s                                               
-    n_bins                      = 2048                                          # 1 Bin = 8.3 ns, 2048 Bins = ~17. µs
-    baseline_std                = 2                                             # two ADC counts, NOT converted here!
-    baseline_mean               = 0                                             # gaussian mean of the actual baseline
+    trace_length                = 2048                                          # 1 Bin = 8.3 ns, 2048 Bins = ~17. µs
     real_background             = False                                         # use random traces instead of gaussian baseline
     random_index                = None                                          # this file is used first when creating randoms
     force_inject                = None                                          # whether or not to force injection of muons
     station                     = None                                          # what station to use for random traces
-    keep_scale                  = False                                         # whether to overwrite vem peak with random trace peak
-
-    # trace_opts                  = [q_peak, q_charge, length, sigma, mu, n_injected, downsampling]
+    
+    baseline_mean               = 0                                             # gaussian mean of the actual baseline
+    baseline_std                = 2                                             # two ADC counts, NOT converted here!
 
     # Generator details, can be overwritten in __new__ of EventGenerator
     split                       = 0.8                                           # Ratio of the training / validation events

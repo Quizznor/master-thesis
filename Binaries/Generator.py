@@ -1,6 +1,5 @@
 from time import perf_counter_ns
 import tensorflow as tf
-import typing
 
 from .__config__ import *
 from .Signal import *
@@ -10,8 +9,15 @@ class EventGenerator():
 
     labels = \
     {
-        0: tf.keras.utils.to_categorical(0, 2, dtype = int),                              # Background
-        1: tf.keras.utils.to_categorical(1, 2, dtype = int)                               # Signal
+        # easier access to Background label
+        0: tf.keras.utils.to_categorical(0, 2, dtype = int),
+        "BKG": tf.keras.utils.to_categorical(0, 2, dtype = int),
+        "bkg": tf.keras.utils.to_categorical(0, 2, dtype = int), 
+
+        # easier access to Signal label
+        1: tf.keras.utils.to_categorical(1, 2, dtype = int),
+        "SIG": tf.keras.utils.to_categorical(1, 2, dtype = int),
+        "sig": tf.keras.utils.to_categorical(1, 2, dtype = int)
     }
 
     libraries = \
@@ -60,30 +66,14 @@ class EventGenerator():
 
         '''
 
-        # set all desired environmental variables
+        # set top-level environmental variables
         split = kwargs.get("split", GLOBAL.split)
         seed = kwargs.get("seed", GLOBAL.seed)
-        prior = kwargs.get("prior", GLOBAL.prior)
 
-        q_peak = kwargs.get("q_peak", [GLOBAL.q_peak for i in range(3)])
-        q_charge = kwargs.get("q_charge", [GLOBAL.q_charge for i in range(3)])
-        n_bins = kwargs.get("n_bins", GLOBAL.n_bins)
-        baseline_std = kwargs.get("sigma", GLOBAL.baseline_std)
-        baseline_mean = kwargs.get("mu", GLOBAL.baseline_mean)
-        real_background = kwargs.get("real_background", GLOBAL.real_background)
-        random_index = kwargs.get("random_index", GLOBAL.random_index)
-        n_injected = kwargs.get("force_inject", GLOBAL.force_inject )
-        downsampling = kwargs.get("apply_downsampling", GLOBAL.downsampling)
-        station = kwargs.get("station", GLOBAL.station)
-
-        ignore_low_VEM = kwargs.get("ignore_low_vem", GLOBAL.ignore_low_VEM)
-        ignore_particles = kwargs.get("ignore_particles", GLOBAL.ignore_particles)
-        sliding_window_length = kwargs.get("window_length", GLOBAL.window)
-        sliding_window_step = kwargs.get("window_step", GLOBAL.step)
-        keep_scale = kwargs.get("keep_scale", GLOBAL.keep_scale)
-
-        trace_options = [q_peak, q_charge, n_bins, baseline_std, baseline_mean, n_injected, downsampling, real_background, random_index, station, keep_scale]
-        classifier_options = [ignore_low_VEM, ignore_particles, sliding_window_length, sliding_window_step, prior]
+        # both kwargs not needed anymore, throw them away
+        for kwarg in ["split", "seed"]:
+            try: del kwargs[kwarg]
+            except KeyError: pass                                      
         
         # set RNG seed if desired
         if seed:
@@ -106,16 +96,19 @@ class EventGenerator():
         
         random.shuffle(all_files)
 
-        # slit files into training and testing set (if needed)
+        # split files into training and testing set (if needed)
         if split in [0,1]:
-            return Generator(all_files, trace_options, classifier_options)
+            kwargs["for_training"] = False
+            return Generator(all_files, **kwargs)
         else:
+            
             split_files_at_index = int(split * len(all_files))
             training_files = all_files[0:split_files_at_index]
             validation_files = all_files[split_files_at_index:-1]
 
-            TrainingSet = Generator(training_files, trace_options, classifier_options)
-            TestingSet = Generator(validation_files, trace_options, classifier_options)
+            kwargs["for_training"] = True
+            TrainingSet = Generator(training_files, **kwargs)
+            TestingSet = Generator(validation_files, **kwargs)
 
             return TrainingSet, TestingSet 
 
@@ -123,104 +116,202 @@ class EventGenerator():
 # See this website for help on a working example: shorturl.at/fFI09
 class Generator(tf.keras.utils.Sequence):
 
-    def __init__(self, signal_files : list, trace_options : list, classifier_options : list) :
+    def __init__(self, signal_files : list, **kwargs : dict) :
 
-        # classifier_options = [ignore_low_VEM, ignore_particles, sliding_window_length, sliding_window_step, prior]
-        #                                    0,                1,                     2,                   3,     4,
-
-        self.ignore_low_VEM, self.ignore_particles = classifier_options[0], classifier_options[1]
-        self.window_length, self.window_step = classifier_options[2], classifier_options[3]
-        self.prior = classifier_options[-1]
-
-        # trace_options = [q_peak, q_charge, n_bins, baseline_std, baseline_mean, n_injected, downsampling, real_background, random_index, station, keep_scale]
-        #                       0,        1,      2,            3,             4,          5,            6,               7,            8,       9,         10
+        r'''
+        :Keyword arguments:
         
-        self.q_peak, self.q_charge = trace_options[0], trace_options[1]
-        self.length, self.n_injected = trace_options[2], trace_options[5]
-        self.sigma, self.mu, self.downsampling = trace_options[3], trace_options[4], trace_options[6]
-        self.use_real_background, self.random_index = trace_options[7], trace_options[8]
-        self.files, self.station = signal_files, trace_options[9]
-        self.keep_scale = trace_options[10]
+        __:Generator options:_______________________________________________________
 
-        if self.use_real_background and self.n_injected is None: self.n_injected = 0
+        * *prior* (``float``) -- p(signal), p(background) = 1 - prior
+        * *sliding_window_length* (``int``) -- length of the sliding window
+        * *sliding_window_step* (``int``) -- stepsize for the sliding window
+        * *real_background* (``bool``) -- use real background from random traces
+        * *random_index* (``int``) -- which file to use first in random traces
+        * *force_inject* (``int``) -- inject <force_inject> background particles
+        * *for_training* (``bool``) -- return labelled batches if *True* 
 
-        self.trace_options = [self.q_peak, self.q_charge, self.length, self.sigma, self.mu, self.n_injected, self.downsampling]
+        __:VEM traces:______________________________________________________________
 
-        self.__iteration_index = 0
+        * *apply_downsampling* (``bool``) -- make UUB traces resembel UB traces
+        * *q_peak* (``float``) -- ADC to VEM conversion factor, for UB <-> UUB
+        * *q_charge* (``float``) -- Conversion factor for the integral trace
+        * *n_bins* (``int``) -- generate a baseline with <trace_length> bins
+
+        __:Classifier:______________________________________________________________
+
+        * *ignore_low_vem* (``float``) -- intentionally mislabel low VEM_charge signals
+        * *ignore_particles* (``int``) -- intentionally mislabel few-particle signals
+
+        '''
+        
+        self.for_training = kwargs.get("for_training")
+        self.files = signal_files
+
+        # Trace building options
+        self.trace_length = kwargs.get("trace_length", GLOBAL.trace_length)
+        self.trace_options = \
+        {
+            "apply_downsampling" : kwargs.get("apply_downsampling", GLOBAL.downsampling),
+            "force_inject"       : kwargs.get("force_inject", GLOBAL.force_inject),
+            "window_length"      : kwargs.get("window_length", GLOBAL.window),
+            "window_step"        : kwargs.get("window_step", GLOBAL.step),
+            "trace_length"       : self.trace_length
+        }    
+
+        # Generator options
+        self.use_real_background = kwargs.get("real_background", GLOBAL.real_background)
+        random_index = kwargs.get("random_index", GLOBAL.random_index)
+        station = kwargs.get("station", GLOBAL.station)
+        self.prior = kwargs.get("prior", GLOBAL.prior)
+
+        # Classifier options
+        self.ignore_low_VEM = kwargs.get("ignore_low_vem", GLOBAL.ignore_low_VEM)
+        self.ignore_particles = kwargs.get("ignore_particles", GLOBAL.ignore_particles)
 
         if self.use_real_background:
-            self.RandomTraceBuffer = RandomTrace(station = self.station, index = self.random_index)
+            self.RandomTraceBuffer = RandomTrace(station = station, index = random_index)
+
+        if self.use_real_background and self.force_inject is None: self.force_inject = 0
+
 
     # number of batches in generator
     def __len__(self) -> int : 
         return len(self.files)
 
-    # generator method to create data on runtime
-    # returns traces, labels, [ {integral, energy, SPDistance, Zenith} , ...]
-    def __getitem__(self, index : int, full_trace : bool = False, skip_metadata : bool = True) -> tuple[np.ndarray] :
+    # generator method to create data on runtime during e.g. training or other analysis
+    def __getitem__(self, index : int) -> typing.Union[tuple[np.ndarray], np.ndarray] :
 
-        labels, traces = [], []
-        metadata_per_batch = []
+        r'''
+        * *for_training = True* -- used for trace diagnostics, full traces that stem from the same shower, returns: *Traces*
+        * *for_training = False* -- should ONLY be used during training, returns labelled batches, returns *(Traces, Labels)*
+        '''
+        
+        # used for trace diagnostics, return full traces that stem from the same shower!
+        stations = SignalBatch(self.files[index]) if self.prior != 0 else []                                # load this shower file in memory
+        full_traces, traces, labels = [], [], []                                                            # reserve space for return values
 
-        # Construct either gaussian or random trace baseline
-        if not self.use_real_background: 
-            baseline = Baseline(self.mu, self.sigma, self.length)
-        else:
-            self.q_peak, self.q_charge, baseline = self.RandomTraceBuffer.get()     # load INT baseline trace
-            # baseline += np.random.uniform(0, 1, size = (3, self.length))            # convert it to FLOAT now
-            # baseline += np.random.uniform(1, 2, size = (3, self.length))            # for testing purposes
-            # for k in [0, 1, 2]: baseline[k] += np.random.uniform(1, 2)              # for testing purposes
+        for station in stations:
 
-            if not self.keep_scale:
-                self.trace_options[0] = self.q_peak                                  # adjust q_peak for random traces
-                self.trace_options[1] = self.q_charge                                # adjust q_charge for random traces
+            # create the baseline component for this trace
+            if self.use_real_background: q_peak, q_charge, baseline = self.RandomTraceBuffer.get()          # load random trace baseline
+            else: 
+                baseline = Baseline(GLOBAL.baseline_mean, GLOBAL.baseline_std, self.trace_length)           # create mock gauss. baseline
+                q_charge = [GLOBAL.q_charge for _ in range(3)]
+                q_peak = [GLOBAL.q_peak for _ in range(3)]
 
-        # try to raise a valid trace (i.e. with signal)...
-        try:
+            # create injections at this step as well?
+            # TODO ...
 
-            if self.prior == 0: raise EmptyFileError
-            else: event_file = self.files[index]
+            self.trace_options["q_charge"] = q_charge
+            self.trace_options["q_peak"] = q_peak
 
-            for station in SignalBatch(event_file):
-                
-                # Add together baseline + signal and inject accidental muons
-                VEMTrace = Trace(self.trace_options, baseline, station)                
+            VEMTrace = Trace(baseline, station, self.trace_options)                                         # create the trace
+            full_traces.append(VEMTrace)
 
-                if full_trace:
-                    traces.append(VEMTrace)
-
-                else:
-                    for index in self.__sliding_window__(VEMTrace):
-                        pmt_data, n_sig, metadata = VEMTrace.get_trace_window((index, index + self.window_length), skip_metadata)
-                        metadata_per_batch.append(metadata)
-
-                        # mislabel low energy 
-                        if self.ignore_low_VEM: n_sig = 0 if metadata[0] < self.ignore_low_VEM else n_sig
-
-                        # mislabel few particles
-                        if self.ignore_particles: 
-                            n_sig = 0 if self.ignore_particles >= (VEMTrace.n_muons + VEMTrace.n_electrons + VEMTrace.n_photons) else n_sig 
-
-                        traces.append(pmt_data), labels.append(EventGenerator.labels[1 if n_sig else 0])
-
-
-        # ... raise a mock background trace if this fails for various reasons
-        except EmptyFileError:
-
-            VEMTrace = Trace(self.trace_options, baseline)
-
-            if full_trace:
-                traces.append(VEMTrace)
+            if not self.for_training: continue
             else:
-                for index in self.__sliding_window__(VEMTrace, override_prior = True):
-                    pmt_data, n_sig, metadata = VEMTrace.get_trace_window((index, index + self.window_length), skip_metadata)
-                    traces.append(pmt_data), labels.append(EventGenerator.labels[0])
-                    metadata_per_batch.append(metadata)
 
-        if skip_metadata:
-            return np.array(traces), np.array(labels)
+                # add signal data to training batch
+                for window in VEMTrace:
+                    traces.append(window), labels.append(EventGenerator.labels["SIG"])
+
+                # add n_sig * prior background events
+                raise NotImplementedError
+                # TODO
+
+
+
+        if self.prior != 0:
+            # should ONLY be used during training, need to return labelled trace windows 
+            # where population of SIG and BKG conform to the prior set in __init__    
+            if self.for_training:
+                return np.array(traces), np.array(labels)
+            # in all other cases returning the full trace is better for analysis purposes
+            else: return full_traces
+        
+        # Training with prior = 0 is stupid, hence assume self.for_training = False
+        # returns 1 Background trace in __getitem__ if prior is set to zero by user
         else:
-            return np.array(traces), np.array(labels), np.array(metadata_per_batch, dtype = object)
+
+            if self.use_real_background: q_peak, q_charge, baseline = self.RandomTraceBuffer.get()          # load random trace baseline
+            else: 
+                baseline = Baseline(GLOBAL.baseline_mean, GLOBAL.baseline_std, self.trace_length)           # create mock gauss. baseline
+                q_charge = [GLOBAL.q_charge for _ in range(3)]
+                q_peak = [GLOBAL.q_peak for _ in range(3)]
+
+            # create injections at this step as well?
+            # TODO ...
+
+            self.trace_options["q_charge"] = q_charge
+            self.trace_options["q_peak"] = q_peak
+
+            # convert this to an np.ndarray to keep continuity of return type
+            return np.array([Trace(baseline, None, self.trace_options)])
+
+
+
+        # labels, traces = [], []
+
+        # # Construct either gaussian or random trace baseline
+        # if not self.use_real_background: 
+        #     baseline = Baseline(self.mu, self.sigma, self.length)
+        # else:
+        #     self.q_peak, self.q_charge, baseline = self.RandomTraceBuffer.get()     # load INT baseline trace
+        #     # baseline += np.random.uniform(0, 1, size = (3, self.length))            # convert it to FLOAT now
+        #     # baseline += np.random.uniform(1, 2, size = (3, self.length))            # for testing purposes
+        #     # for k in [0, 1, 2]: baseline[k] += np.random.uniform(1, 2)              # for testing purposes
+
+        #     if not self.keep_scale:
+        #         self.trace_options[0] = self.q_peak                                  # adjust q_peak for random traces
+        #         self.trace_options[1] = self.q_charge                                # adjust q_charge for random traces
+
+        # # try to raise a valid trace (i.e. with signal)...
+        # try:
+
+        #     if self.prior == 0: raise EmptyFileError
+        #     else: event_file = self.files[index]
+
+        #     for station in SignalBatch(event_file):
+                
+        #         # Add together baseline + signal and inject accidental muons
+        #         VEMTrace = Trace(self.trace_options, baseline, station)                
+
+        #         if full_trace:
+        #             traces.append(VEMTrace)
+
+        #         else:
+        #             for index in self.__sliding_window__(VEMTrace):
+        #                 pmt_data, n_sig, metadata = VEMTrace.get_trace_window((index, index + self.window_length), skip_metadata)
+        #                 metadata_per_batch.append(metadata)
+
+        #                 # mislabel low energy 
+        #                 if self.ignore_low_VEM: n_sig = 0 if metadata[0] < self.ignore_low_VEM else n_sig
+
+        #                 # mislabel few particles
+        #                 if self.ignore_particles: 
+        #                     n_sig = 0 if self.ignore_particles >= (VEMTrace.n_muons + VEMTrace.n_electrons + VEMTrace.n_photons) else n_sig 
+
+        #                 traces.append(pmt_data), labels.append(EventGenerator.labels[1 if n_sig else 0])
+
+
+        # # ... raise a mock background trace if this fails for various reasons
+        # except EmptyFileError:
+
+        #     VEMTrace = Trace(self.trace_options, baseline)
+
+        #     if full_trace:
+        #         traces.append(VEMTrace)
+        #     else:
+        #         for index in self.__sliding_window__(VEMTrace, override_prior = True):
+        #             pmt_data, n_sig, metadata = VEMTrace.get_trace_window((index, index + self.window_length), skip_metadata)
+        #             traces.append(pmt_data), labels.append(EventGenerator.labels[0])
+        #             metadata_per_batch.append(metadata)
+
+        # if skip_metadata:
+        #     return np.array(traces), np.array(labels)
+        # else:
+        #     return np.array(traces), np.array(labels), np.array(metadata_per_batch, dtype = object)
 
 
     # calculate a sliding window range conforming (in all cases at least) to a given prior

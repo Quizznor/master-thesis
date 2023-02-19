@@ -20,7 +20,6 @@ class Signal():
         n_photons = set(pmt_data[:,6])
         pmt_data = pmt_data[:,7:]
 
-
         assert trace_length > len(pmt_data[0]), "signal size exceeds trace length"
 
         # assert that metadata looks the same for all three PMTs
@@ -46,84 +45,54 @@ class Signal():
 # container for the combined trace
 class Trace(Signal):
 
-    def __init__(self, trace_options : list, baseline_data : np.ndarray, signal_data : tuple = None) :
+    def __init__(self, baseline_data : np.ndarray, signal_data : tuple, trace_options : dict) :
 
-        self.q_peak = trace_options[0]
-        self.q_charge = trace_options[1]
-        self.length = trace_options[2]
-        self.sigma = trace_options[3]
-        self.mu = trace_options[4]
+        self.window_length = trace_options["window_length"]
+        self.window_step = trace_options["window_step"]
+        self.downsampled = trace_options["apply_downsampling"]
+        self.trace_length = trace_options["trace_length"]
+        self.q_charge = trace_options["q_charge"]
+        self.q_peak = trace_options["q_peak"]
 
-        if trace_options[5] is not None:
-            self.inject = trace_options[5]
-        else: self.inject = self.poisson()
+        # determine number of accidental injections and build their component
+        self.injected = trace_options["force_inject"] if trace_options["force_inject"] is not None else self.poisson()
 
-        self.downsample = trace_options[6]
-
-        if signal_data is not None: 
-            super().__init__(signal_data, self.length)
-            self.has_signal = True
-        else:
-            self.Signal = None
-            self.has_signal = False
-
-        if self.inject:
-            self.injections_start, self.injections_end, self.Injected = InjectedBackground(self.inject, self.length)
+        if self.injected:
+            self.injections_start, self.injections_end, self.Injected = InjectedBackground(self.injected, self.trace_length)
             self.has_accidentals = True
         else: 
             self.Injected = None
             self.has_accidentals = False
 
+        # build Signal component
+        if signal_data is not None: 
+            super().__init__(signal_data, self.trace_length)
+            self.__iteration_index = max(self.signal_start - self.window_length + np.random.randint(1, 10), 0)
+            self.has_signal = True
+        else:
+            self.Signal = None
+            self.__iteration_index = 0
+            self.has_signal = False
+
+        # build Baseline component
         self.Baseline = baseline_data
 
-        if self.has_accidentals and self.has_signal:
-            self.pmt_1, self.pmt_2, self.pmt_3 = self.convert_to_VEM( self.Baseline, self.Signal, self.Injected, mode = "peak" )
-            self.int_1, self.int_2, self.int_3 = self.convert_to_VEM( self.Baseline, self.Signal, self.Injected, mode = "charge" )
+        # whether or not to apply downsampling
+        if trace_options["apply_downsampling"]:
+            self.downsampled = True
+        else: self.downsampled = False
 
-        elif self.has_accidentals and not self.has_signal:
-            self.pmt_1, self.pmt_2, self.pmt_3 = self.convert_to_VEM( self.Baseline, self.Injected, mode = "peak" )
-            self.int_1, self.int_2, self.int_3 = self.convert_to_VEM( self.Baseline, self.Injected, mode = "charge" )
+        # build the VEM trace and integral
+        # self.build_integral_trace()
+        self.convert_to_VEM()
         
-        elif self.has_signal and not self.has_accidentals:
-            self.pmt_1, self.pmt_2, self.pmt_3 = self.convert_to_VEM( self.Baseline, self.Signal, mode = "peak" )
-            self.int_1, self.int_2, self.int_3 = self.convert_to_VEM( self.Baseline, self.Signal, mode = "charge" )
-        
-        else: 
-            self.pmt_1, self.pmt_2, self.pmt_3 = self.convert_to_VEM( self.Baseline, mode = "peak" )
-            self.int_1, self.int_2, self.int_3 = self.convert_to_VEM( self.Baseline, mode = "charge" )
+    # extract pmt data for a given trace window
+    def get_trace_window(self, start_bin : int) -> np.ndarray : 
 
-        if self.downsample:
-            
-            if self.has_signal:
-                self.signal_start = self.signal_start // 3
-                self.signal_end = self.signal_end // 3
+        stop_bin = start_bin + self.window_length
+        pmt_1, pmt_2, pmt_3 = self.pmt_1[start_bin : stop_bin], self.pmt_2[start_bin : stop_bin], self.pmt_3[start_bin : stop_bin]
 
-            if self.has_accidentals:
-                self.injections_start = [start // 3 for start in self.injections_start ]
-                self.injections_end = [end // 3 for end in self.injections_end ]
-
-            self.length = GLOBAL.n_bins // 3
-
-    # poissonian for background injection
-    def poisson(self) -> int :
-
-        return np.random.poisson( GLOBAL.background_frequency * GLOBAL.single_bin_duration * self.length )
-
-    # extract pmt data plus label for a given trace window
-    def get_trace_window(self, window : tuple, skip_metadata : bool = True) -> tuple : 
-
-        start, stop = window
-
-        pmt_1, pmt_2, pmt_3 = self.pmt_1[start : stop], self.pmt_2[start : stop], self.pmt_3[start : stop]
-        n_sig = self.calculate_signal_overlap(window)
-        integral = self.integrate(window)
-
-        if skip_metadata or not self.has_signal:
-            metadata = np.array([integral, None       ,None            , None       ])
-        else:
-            metadata = np.array([integral, self.SPDistance, self.Energy, self.Zenith])
-
-        return np.array([pmt_1, pmt_2, pmt_3]), n_sig, metadata        
+        return np.array([pmt_1, pmt_2, pmt_3])
 
     # calculate number of bins of signal in sliding window
     def calculate_signal_overlap(self, window : tuple) -> int :
@@ -132,51 +101,61 @@ class Trace(Signal):
             return len(range(max(window[0], self.signal_start), min(window[-1], self.signal_end)))
         else: return 0
 
-    # return the mean of integrated PMT signals (VEM_charge) for a given window
-    def integrate(self, window : np.ndarray) -> float : 
+    # convert from ADC counts to VEM_charge
+    def build_integral_trace() -> None :
 
-        start, stop = window
+        # TODO...
 
-        return np.mean(np.sum([self.int_1[start : stop], self.int_2[start : stop], self.int_3[start : stop]], axis = 1))
+        raise NotImplementedError
 
-    # convert from ADC counts to VEM 
-    def convert_to_VEM(self, *args, mode : str) -> np.ndarray :
-
-        args = list(args)
-        ADC_to_VEM = self.q_peak if mode == "peak" else self.q_charge
-        simulated = GLOBAL.q_peak if mode == "peak" else GLOBAL.q_charge
-        factor = simulated / np.array(ADC_to_VEM)
+    # convert from ADC counts to VEM_peak 
+    def convert_to_VEM(self) -> None :
 
         # Signal + Injections ALWAYS have simulated q_peak/q_area 
         # Background has simulated q_peak/q_area if NOT random traces
         # otherwise set to values defined in RandomTrace class (l281)
-        baseline = args.pop(0)
-        signal = np.zeros_like(baseline)
 
-        # Add particles from simulation
-        for component in args:
-            for i, pmt in enumerate(component):
-                signal[i] += pmt
+        # # maybe ignore VEM_charge ??
+        # simulation_q_charge = np.array([GLOBAL.q_charge for _ in range(3)])
+        # baseline_q_charge = np.array(self.q_charge)
 
-        # Add noise from random traces / background model
-        for i, background_pmt in enumerate(baseline):
-            signal[i] += background_pmt * factor[i]
+        simulation_q_peak = np.array([GLOBAL.q_peak for _ in range(3)])
+        baseline_q_peak = np.array(self.q_peak)
 
-        if self.downsample: 
-            signal = self.apply_downsampling(signal)
+        # convert Baseline from "real" q_peak/charge to simulated
+        conversion_factor = simulation_q_peak/baseline_q_peak
+        self.Baseline = np.array([pmt * conversion_factor[i] for i, pmt in enumerate(self.Baseline)])
 
-        for i, pmt in enumerate(signal):
-            signal[i] = np.floor(pmt) / simulated
+        self.pmt_1, self.pmt_2, self.pmt_3 = np.zeros((3, 2048) )
 
-        return signal
+        for component in [self.Baseline, self.Injected, self.Signal]:
+            if component is None: continue
+
+            self.pmt_1 += component[0]
+            self.pmt_2 += component[1]
+            self.pmt_3 += component[2]
+
+        if self.downsampled:
+            self.pmt_1 = np.floor(self.apply_downsampling(self.pmt_1)) / simulation_q_peak[0]
+            self.pmt_2 = np.floor(self.apply_downsampling(self.pmt_2)) / simulation_q_peak[1]
+            self.pmt_3 = np.floor(self.apply_downsampling(self.pmt_3)) / simulation_q_peak[2]
+
+            if self.has_signal:
+                self.signal_start = int(self.signal_start / 3)
+                self.signal_end = int(self.signal_end / 3)
+            
+            if self.has_accidentals:
+                self.injections_start = [int(start / 3) for start in self.injections_start ]
+                self.injections_end = [int(end / 3) for end in self.injections_end ]
+
+            self.trace_length = self.trace_length // 3
 
     @staticmethod
-    def apply_downsampling(trace : np.ndarray) -> np.ndarray :
+    def apply_downsampling(pmt) -> np.ndarray :
 
         # ensure downsampling works as intended
         # cuts away (at most) the last two bins
-        if trace.shape[-1] % 3 != 0:
-            trace = np.array([pmt[0 : -(trace.shape[-1] % 3)] for pmt in trace])
+        if len(pmt) % 3 != 0: pmt = pmt[0 : -(len(pmt) % 3)]
 
         # see /cr/data01/filip/offline/trunk/Framework/SDetector/UUBDownsampleFilter.h for more information
         kFirCoefficients = [ 5, 0, 12, 22, 0, -61, -96, 0, 256, 551, 681, 551, 256, 0, -96, -61, 0, 22, 12, 0, 5 ]
@@ -184,35 +163,58 @@ class Trace(Signal):
         kFirNormalizationBitShift = 11
         # kADCsaturation = 4095                             # bit shift not really needed
 
-        n_bins_uub      = np.shape(trace)[1]                # original trace length
-        n_bins_ub       = int(n_bins_uub / 3)               # downsampled trace length
-        sampled_trace   = np.zeros((3, n_bins_ub))          # downsampled trace container
+        n_bins_uub      = (len(pmt) // 3) * 3               # original trace length
+        n_bins_ub       = n_bins_uub // 3                   # downsampled trace length
+        sampled_trace   = np.zeros(n_bins_ub)               # downsampled trace container
 
         temp = np.zeros(n_bins_uub + len(kFirCoefficients))
 
-        for i_pmt, pmt in enumerate(trace):
+        temp[0 : buffer_length] = pmt[:: -1][-buffer_length - 1 : -1]
+        temp[-buffer_length - 1: -1] = pmt[:: -1][0 : buffer_length]
+        temp[buffer_length : -buffer_length - 1] = pmt
 
-            temp[0 : buffer_length] = pmt[:: -1][-buffer_length - 1 : -1]
-            temp[-buffer_length - 1: -1] = pmt[:: -1][0 : buffer_length]
-            temp[buffer_length : -buffer_length - 1] = pmt
-
-            # perform downsampling
-            for j, coeff in enumerate(kFirCoefficients):
-                sampled_trace[i_pmt] += [temp[k + j] * coeff for k in range(0, n_bins_uub, 3)]
+        # perform downsampling
+        for j, coeff in enumerate(kFirCoefficients):
+            sampled_trace += [temp[k + j] * coeff for k in range(0, n_bins_uub, 3)]
 
         # clipping and bitshifting
-        for i, pmt in enumerate(sampled_trace):
-            for j, adc in enumerate(pmt):
-                sampled_trace[i,j] = np.clip(int(adc) >> kFirNormalizationBitShift, a_min = -20, a_max = None)              # why clip necessary, why huge negative values?
-                # sampled_trace[i,j] = int(adc) >> kFirNormalizationBitShift
+        sampled_trace = [int(adc) >> kFirNormalizationBitShift for adc in sampled_trace]
+
+        # # clipping and bitshifting
+        # for j, adc in enumerate(sampled_trace):
+        #     # sampled_trace[i,j] = np.clip(int(adc) >> kFirNormalizationBitShift, a_min = -20, a_max = None)              # why clip necessary, why huge negative values?
+        #     sampled_trace[j] = int(adc) >> kFirNormalizationBitShift
 
         return sampled_trace
+
+    # poissonian for background injection
+    def poisson(self) -> int :
+        return np.random.poisson( GLOBAL.background_frequency * GLOBAL.single_bin_duration * self.trace_length )
+
+    # # return the mean of integrated PMT signals (VEM_charge) for a given window
+        # def integrate(self, start, stop) -> float :
+        #     return np.mean(np.sum([self.int_1[start : stop], self.int_2[start : stop], self.int_3[start : stop]], axis = 1))
+
+    # make this class an iterable
+    def __iter__(self) -> typing.Union[tuple, StopIteration] : 
+
+        while True:
+            
+            # only iterate over Signal region
+            if self.has_signal:
+                if self.__iteration_index > self.signal_end: return StopIteration
+            
+            # iterate over everything in Background trace
+            if self.__iteration_index + self.window_length > self.trace_length: return StopIteration
+            
+            yield self.get_trace_window(self.__iteration_index)
+            self.__iteration_index += self.window_step
 
     # wrapper for pretty printing
     def __repr__(self) -> str :
 
-        reduce_by = 10 if self.downsample else 30
-        trace = list(" " * (self.length // reduce_by))
+        reduce_by = 10 if self.downsampled else 30
+        trace = list(" " * (self.trace_length // reduce_by))
 
         # indicate background
         if self.has_accidentals:
@@ -246,16 +248,16 @@ class Trace(Signal):
     # wrapper for plotting a trace
     def __plot__(self) -> None :
 
-        x = range(self.length)
-        int_sig = np.mean([self.int_1.sum(), self.int_2.sum(), self.int_3.sum()])
+        x = range(self.trace_length)
+        # int_sig = np.mean([self.int_1.sum(), self.int_2.sum(), self.int_3.sum()])
 
-        try:
-            plt.title(f"Station #{self.StationID} - {int_sig:.2f} VEM")
-        except AttributeError: pass
+        # try:
+        #     plt.title(f"Station #{self.StationID} - {int_sig:.2f} VEM")
+        # except AttributeError: pass
         
-        plt.plot(x, self.pmt_1, c = "green", label = f"PMT #1{', downsampled' if self.downsample else ''}", lw = 1)
-        plt.plot(x, self.pmt_2, c = "orange", label = f"PMT #2{', downsampled' if self.downsample else ''}", lw = 1)
-        plt.plot(x, self.pmt_3, c = "steelblue", label = f"PMT #3{', downsampled' if self.downsample else ''}", lw = 1)
+        plt.plot(x, self.pmt_1, c = "green", label = f"PMT #1{', downsampled' if self.downsampled else ''}", lw = 1)
+        plt.plot(x, self.pmt_2, c = "orange", label = f"PMT #2{', downsampled' if self.downsampled else ''}", lw = 1)
+        plt.plot(x, self.pmt_3, c = "steelblue", label = f"PMT #3{', downsampled' if self.downsampled else ''}", lw = 1)
 
         if self.has_signal:
             plt.axvline(self.signal_start, ls = "--", c = "red", lw = 2)
@@ -266,9 +268,9 @@ class Trace(Signal):
                 plt.axvline(start, ls = "--", c = "gray")
                 plt.axvline(stop, ls = "--", c = "gray")
 
-        plt.xlim(0, self.length)
+        plt.xlim(0, self.trace_length)
         plt.ylabel("Signal strength / VEM")
-        plt.xlabel("Bin / 25 ns" if self.downsample else "Bin / 8.3 ns")
+        plt.xlabel("Bin / 25 ns" if self.downsampled else "Bin / 8.3 ns")
         plt.legend()
         plt.show()
 
@@ -276,21 +278,22 @@ class Trace(Signal):
 # container for reading signal files
 class SignalBatch():
 
-    def __new__(self, trace_file : str) -> tuple:
+    def __new__(self, trace_file : str) -> np.ndarray :
 
-        if not os.path.getsize(trace_file): raise EmptyFileError
+        print(f"\n[INFO] -- READING {'/'.join(trace_file.split('/')[-3:])}" + 20 * " ", end = "\r")
 
         with open(trace_file, "r") as file:
-                signal = [np.array([float(x) for x in line.split()]) for line in file.readlines()]
+                signal = [[float(x) for x in line.split()] for line in file.readlines()]
 
-        for station in range(0, len(signal), 3):
-            yield np.array([signal[station], signal[station + 1], signal[station + 2]]) 
+        return [np.array([signal[i], signal[i + 1], signal[i + 2]]) for i in range(0, len(signal), 3)]
+
 
 # container for gaussian baseline
 class Baseline():
 
-    def __new__(self, mu : float, sigma : float, length : int) -> np.ndarray :
+    def __new__(self, mu : float, sigma : float, length : int) -> tuple[float, float, np.ndarray] :
         return np.random.normal(mu, sigma, (3, length))
+
 
 # container for random traces
 class RandomTrace():
@@ -346,7 +349,7 @@ class RandomTrace():
 
 
     # get random traces for a single stations
-    def get(self) -> np.ndarray : 
+    def get(self) -> tuple[float, float, np.ndarray] : 
         
         try:                                                                        # update pointer after loading
             self.__current_traces += 1
@@ -361,6 +364,7 @@ class RandomTrace():
                 self.__init__(station = self.station)
 
             return self.get()
+
 
 # container for injected muons
 class InjectedBackground():
