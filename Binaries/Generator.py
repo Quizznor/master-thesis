@@ -1,4 +1,3 @@
-from time import perf_counter_ns
 import tensorflow as tf
 
 from .__config__ import *
@@ -6,19 +5,6 @@ from .Signal import *
 
 # Wrapper for the Generator class
 class EventGenerator():
-
-    labels = \
-    {
-        # easier access to Background label
-        0: tf.keras.utils.to_categorical(0, 2, dtype = int),
-        "BKG": tf.keras.utils.to_categorical(0, 2, dtype = int),
-        "bkg": tf.keras.utils.to_categorical(0, 2, dtype = int), 
-
-        # easier access to Signal label
-        1: tf.keras.utils.to_categorical(1, 2, dtype = int),
-        "SIG": tf.keras.utils.to_categorical(1, 2, dtype = int),
-        "sig": tf.keras.utils.to_categorical(1, 2, dtype = int)
-    }
 
     libraries = \
     {
@@ -112,9 +98,23 @@ class EventGenerator():
 
             return TrainingSet, TestingSet 
 
+
 # Actual generator class that generates training data on the fly
 # See this website for help on a working example: shorturl.at/fFI09
 class Generator(tf.keras.utils.Sequence):
+
+    labels = \
+    {
+        # easier access to Background label
+        0: tf.keras.utils.to_categorical(0, 2, dtype = int),
+        "BKG": tf.keras.utils.to_categorical(0, 2, dtype = int),
+        "bkg": tf.keras.utils.to_categorical(0, 2, dtype = int), 
+
+        # easier access to Signal label
+        1: tf.keras.utils.to_categorical(1, 2, dtype = int),
+        "SIG": tf.keras.utils.to_categorical(1, 2, dtype = int),
+        "sig": tf.keras.utils.to_categorical(1, 2, dtype = int)
+    }
 
     def __init__(self, signal_files : list, **kwargs : dict) :
 
@@ -145,35 +145,37 @@ class Generator(tf.keras.utils.Sequence):
 
         '''
         
-        self.for_training = kwargs.get("for_training")
-        self.files = signal_files
+        self.all_kwargs = kwargs                                                                            # for copy functionality
+        self.for_training = kwargs.get("for_training")                                                      # return traces AND labels
+        self.files = signal_files                                                                           # all signal files in lib
+        self.__iteration_index = 0                                                                          # to support iteration
 
         # Trace building options
         self.trace_length = kwargs.get("trace_length", GLOBAL.trace_length)
+        self.force_inject = kwargs.get("force_inject", GLOBAL.force_inject)
         self.trace_options = \
         {
             "apply_downsampling" : kwargs.get("apply_downsampling", GLOBAL.downsampling),
-            "force_inject"       : kwargs.get("force_inject", GLOBAL.force_inject),
             "window_length"      : kwargs.get("window_length", GLOBAL.window),
             "window_step"        : kwargs.get("window_step", GLOBAL.step),
+            "force_inject"       : self.force_inject,
             "trace_length"       : self.trace_length
         }    
 
         # Generator options
-        self.use_real_background = kwargs.get("real_background", GLOBAL.real_background)
-        random_index = kwargs.get("random_index", GLOBAL.random_index)
-        station = kwargs.get("station", GLOBAL.station)
-        self.prior = kwargs.get("prior", GLOBAL.prior)
+        self.use_real_background = kwargs.get("real_background", GLOBAL.real_background)                    # use random trace baselines
+        random_index = kwargs.get("random_index", GLOBAL.random_index)                                      # start at this random file
+        station = kwargs.get("station", GLOBAL.station)                                                     # use this random station
+        self.prior = kwargs.get("prior", GLOBAL.prior)                                                      # probability of signal traces
 
         # Classifier options
-        self.ignore_low_VEM = kwargs.get("ignore_low_vem", GLOBAL.ignore_low_VEM)
-        self.ignore_particles = kwargs.get("ignore_particles", GLOBAL.ignore_particles)
+        self.ignore_low_VEM = kwargs.get("ignore_low_vem", GLOBAL.ignore_low_VEM)                           # integrated signal cut threshold
+        self.ignore_particles = kwargs.get("ignore_particles", GLOBAL.ignore_particles)                     # particle in tank cut threshold
 
         if self.use_real_background:
             self.RandomTraceBuffer = RandomTrace(station = station, index = random_index)
 
         if self.use_real_background and self.force_inject is None: self.force_inject = 0
-
 
     # number of batches in generator
     def __len__(self) -> int : 
@@ -214,19 +216,42 @@ class Generator(tf.keras.utils.Sequence):
 
                 # add signal data to training batch
                 for window in VEMTrace:
-                    traces.append(window), labels.append(EventGenerator.labels["SIG"])
+                    traces.append(window), labels.append(Generator.labels["SIG"])
 
-                # add n_sig * prior background events
-                raise NotImplementedError
-                # TODO
+                # add background events according to prior
+                n_sig = len(traces)
+                n_bkg = n_sig * ( (1 - self.prior) / self.prior )
 
+                while len(traces) < n_sig + n_bkg:
+                    
+                    # build baseline component for this background trace instance
+                    if self.use_real_background: q_peak, q_charge, baseline = self.RandomTraceBuffer.get()
+                    else: 
+                        baseline = Baseline(GLOBAL.baseline_mean, GLOBAL.baseline_std, self.trace_length)
+                        q_charge = [GLOBAL.q_charge for _ in range(3)]
+                        q_peak = [GLOBAL.q_peak for _ in range(3)]
 
+                    # create injections at this step as well?
+                    # TODO ...
+
+                    self.trace_options["q_charge"] = q_charge
+                    self.trace_options["q_peak"] = q_peak
+
+                    BackgroundTrace = Trace(baseline, None, self.trace_options)
+
+                    for window in BackgroundTrace:
+                        traces.append(window), labels.append(Generator.labels["BKG"])
+                        if len(traces) == n_sig + n_bkg: break
+
+                # shuffle traces / labels
+                p = np.random.permutation(len(traces))
+                traces, labels = np.array(traces)[p], np.array(labels)[p]
 
         if self.prior != 0:
             # should ONLY be used during training, need to return labelled trace windows 
             # where population of SIG and BKG conform to the prior set in __init__    
             if self.for_training:
-                return np.array(traces), np.array(labels)
+                return traces, labels
             # in all other cases returning the full trace is better for analysis purposes
             else: return full_traces
         
@@ -249,106 +274,12 @@ class Generator(tf.keras.utils.Sequence):
             # convert this to an np.ndarray to keep continuity of return type
             return np.array([Trace(baseline, None, self.trace_options)])
 
-
-
-        # labels, traces = [], []
-
-        # # Construct either gaussian or random trace baseline
-        # if not self.use_real_background: 
-        #     baseline = Baseline(self.mu, self.sigma, self.length)
-        # else:
-        #     self.q_peak, self.q_charge, baseline = self.RandomTraceBuffer.get()     # load INT baseline trace
-        #     # baseline += np.random.uniform(0, 1, size = (3, self.length))            # convert it to FLOAT now
-        #     # baseline += np.random.uniform(1, 2, size = (3, self.length))            # for testing purposes
-        #     # for k in [0, 1, 2]: baseline[k] += np.random.uniform(1, 2)              # for testing purposes
-
-        #     if not self.keep_scale:
-        #         self.trace_options[0] = self.q_peak                                  # adjust q_peak for random traces
-        #         self.trace_options[1] = self.q_charge                                # adjust q_charge for random traces
-
-        # # try to raise a valid trace (i.e. with signal)...
-        # try:
-
-        #     if self.prior == 0: raise EmptyFileError
-        #     else: event_file = self.files[index]
-
-        #     for station in SignalBatch(event_file):
-                
-        #         # Add together baseline + signal and inject accidental muons
-        #         VEMTrace = Trace(self.trace_options, baseline, station)                
-
-        #         if full_trace:
-        #             traces.append(VEMTrace)
-
-        #         else:
-        #             for index in self.__sliding_window__(VEMTrace):
-        #                 pmt_data, n_sig, metadata = VEMTrace.get_trace_window((index, index + self.window_length), skip_metadata)
-        #                 metadata_per_batch.append(metadata)
-
-        #                 # mislabel low energy 
-        #                 if self.ignore_low_VEM: n_sig = 0 if metadata[0] < self.ignore_low_VEM else n_sig
-
-        #                 # mislabel few particles
-        #                 if self.ignore_particles: 
-        #                     n_sig = 0 if self.ignore_particles >= (VEMTrace.n_muons + VEMTrace.n_electrons + VEMTrace.n_photons) else n_sig 
-
-        #                 traces.append(pmt_data), labels.append(EventGenerator.labels[1 if n_sig else 0])
-
-
-        # # ... raise a mock background trace if this fails for various reasons
-        # except EmptyFileError:
-
-        #     VEMTrace = Trace(self.trace_options, baseline)
-
-        #     if full_trace:
-        #         traces.append(VEMTrace)
-        #     else:
-        #         for index in self.__sliding_window__(VEMTrace, override_prior = True):
-        #             pmt_data, n_sig, metadata = VEMTrace.get_trace_window((index, index + self.window_length), skip_metadata)
-        #             traces.append(pmt_data), labels.append(EventGenerator.labels[0])
-        #             metadata_per_batch.append(metadata)
-
-        # if skip_metadata:
-        #     return np.array(traces), np.array(labels)
-        # else:
-        #     return np.array(traces), np.array(labels), np.array(metadata_per_batch, dtype = object)
-
-
-    # calculate a sliding window range conforming (in all cases at least) to a given prior
-    def __sliding_window__(self, VEMTrace : Trace, override_prior : bool = False) -> range :
-
-        try:
-            if override_prior or not VEMTrace.has_signal: raise SlidingWindowError
-
-            # calculate the size of the sliding window needed for a given prior
-            signal_length = VEMTrace.signal_end - VEMTrace.signal_start
-            
-            # sliding in/out adds additional steps with signal, account for this
-            length = int(signal_length/self.prior) + 2 * self.window_length
-
-            # return the whole trace if signal is too large for desired prior
-            if length + self.window_length > VEMTrace.length: raise SlidingWindowError
-
-            # calculate the exact position of the sliding window range
-            # set the sliding window such that the trace is at the end
-            stop = min(VEMTrace.signal_end, VEMTrace.length - self.window_length)
-            start = stop - length
-
-            # move window to account for over/undershoot of trace window
-            if start < 0: start, stop = start - start, stop - start
-
-        # return the whole trace if anything in the previous steps failed
-        except SlidingWindowError:
-            start, stop = 0, VEMTrace.length - self.window_length
-
-        return range(start, stop, self.window_step)
-
     # make this class iterable, yields (traces), (labels) iteratively
-    def __iter__(self, full_trace : bool = False) -> typing.Generator[tuple, None, StopIteration] : 
+    def __iter__(self) -> typing.Generator[tuple[np.ndarray], np.ndarray, StopIteration] : 
 
         while self.__iteration_index < self.__len__():
 
-            yield self.__getitem__(self.__iteration_index, full_trace, skip_metadata = False)
+            yield self.__getitem__(self.__iteration_index)
             self.__iteration_index += 1
 
         return StopIteration
@@ -362,97 +293,164 @@ class Generator(tf.keras.utils.Sequence):
     # make a copy of this generator (same event files) with different keywords
     def copy(self, **kwargs : dict) -> "Generator" :
 
-        NewGenerator = EventGenerator([], split = 1, **kwargs)
-        NewGenerator.files = self.files
+        new_kwargs = self.all_kwargs
+        for kwarg in kwargs:
+            new_kwargs[kwarg] = kwargs[kwarg]
+
+        NewGenerator = Generator(self.files, **new_kwargs)
 
         return NewGenerator
 
-    # check properties of the sliding window, prior, start/stop etc.
-    def check_sliding_window(self, batch : int) -> None :
-
-        print(f"Sliding window for first trace in {self.files[batch]}:")
-        print("-------------------------")
-
-        traces, _ = self.__getitem__(batch, full_trace = True)
-
-        n_sigs, n_bkgs = 0, 0
-
-        for i in self.__sliding_window__(traces[0]):
-
-            window, n_sig, _, _ = traces[0].get_trace_window((i, i + self.window_length), True, True)
-
-            if n_sig: n_sigs += 1
-            else: n_bkgs += 1
-
-            print(i, window.shape, n_sig, "->", n_sigs, n_bkgs)
-
-        print(f"\nGiven prior: {self.prior} <-> {n_sigs / (n_sigs + n_bkgs)} this prior")    
-
     # run some diagnostics to make sure dataset is in order
-    def unit_test(self, n_traces : int = None) -> None :
+    def unit_test(self, n_showers : int = None) -> None :
 
-        if n_traces is None: n_traces = self.__len__() * (GLOBAL.n_bins - 10) * 5
+        if n_showers is None: n_showers = self.__len__()
+        temp, self.for_training = self.for_training, False
+        n_muons, n_electrons, n_photons = [], [], []
+        energy, zenith, spd = [], [], []
+        start_time = perf_counter_ns()
+        x_sig, x_bkg = [], []
 
-        start = perf_counter_ns()
-        mean_per_step_us = np.inf
-        n_traces_looked_at = 0
+        for batch, Shower in enumerate(self):
+            
+            progress_bar(batch, n_showers, start_time)
+            
+            for trace in Shower:
 
-        sig_max_hist, bg_max_hist = [], []
+                # Shower metadata
+                energy.append(trace.Energy)
+                zenith.append(trace.Zenith)
+                spd.append(trace.SPDistance)
+                n_muons.append(trace.n_muons)
+                n_electrons.append(trace.n_electrons)
+                n_photons.append(trace.n_photons)
 
-        # helper variables for results
-        all_energies, all_zeniths = [], []
+                # Particles...?
+                # TODO ...
 
-        # For loop iterates over the whole dataset, return type/format looks like:
-        # traces, labels, [ {Integral, SPDistance, Energy, Zenith} , ...]
-        try:
-            for batch, (traces, labels, metadata) in enumerate(self):
+                # Signal component
+                x_sig.append(np.mean(trace.Signal))
 
-                print(f"{100 * (n_traces_looked_at/n_traces):.2f}% - {mean_per_step_us:.2f}us/trace, ETA = {(n_traces - n_traces_looked_at) * mean_per_step_us * 1e-6:.0f}s", end = 10 * " " + "\r")
+                # Baseline component
+                x_bkg.append(np.mean(trace.Baseline))
 
-                Energy, Zenith = metadata[0, 2:]
-                trace_informations = metadata[:, :2]
+                # Injection component
+                # TODO ...
 
-                all_energies.append(Energy), all_zeniths.append(Zenith)
+            if batch == n_showers: break
 
-                for trace, label, event_info in zip(traces, labels, trace_informations):
-
-                    elapsed = perf_counter_ns() - start
-                    mean_per_step_us = elapsed / (n_traces_looked_at + 1) * 1e-3
-
-                    n_traces_looked_at += 1
-
-                    # analysis code on trace level
-                    if not np.argmax(label):
-                        bg_max_hist.append(np.max(trace))
-                    else:
-                        sig_max_hist.append(np.max(trace))
-
-
-
-                    if n_traces_looked_at == n_traces: raise StopIteration
-        
-        except StopIteration:
-            print(f"-- {batch + 1} EVENTS; SUMMARY -------" + 10 * " ")
-            print(f"E range: {np.log10(min(all_energies)):.2f} < log(E) < {np.log10(max(all_energies)):.2f}")
-            print(f"θ range: {min(all_zeniths):.2f}° <  θ  <  {max(all_zeniths):.2f}°")
-
-
-        # Energy, Zenith 2d Histogram
         plt.figure()
-        plt.xscale("log")
-        plt.hist2d(all_energies, all_zeniths, bins = (40, 50))
+        plt.title("Component information")
+        plt.yscale("log")
 
-        # label vs n_particles
-
-        # Trace characteristica
-        plt.figure()
-        plt.hist(sig_max_hist, color = "orange", histtype = "step", lw = 3, label = "Signal", bins = np.geomspace(0.1, 1e6, 100), density = True)
-        plt.hist(bg_max_hist, color = "steelblue", histtype = "step", lw = 3, label = "Background", bins = 100, range = (-1, 3))
-
-        plt.ylim(0, 500)
+        x_sig = np.clip(x_sig, -1, 5)
+        x_bkg = np.clip(x_bkg, -1, 5)
+        plt.hist(x_sig, bins = 100, histtype = "step", label = "Signal", density = True)
+        plt.hist(x_bkg, bins = 100, histtype = "step", label = "Baseline", density = True)
         plt.legend()
-        plt.xscale("log")
-        plt.show()
+
+        plt.xlabel("Signal strength / VEM")
+        plt.ylabel("Occupation probability")
+
+        _, ((ax0, ax1), (ax2, ax3)) = plt.subplots(2, 2)
+
+        # Energy distribution
+        ax0.set_title("Energy distribution")
+        ax0.hist(energy, histtype = "step", bins = np.geomspace(10**16, 10**19.5, 100))
+
+        for e_cut in [10**16, 10**16.5, 10**17, 10**17.5, 10**18, 10**18.5, 10**19, 10**19.5]:
+            ax0.axvline(e_cut, c = "gray", ls = "--")
+
+        ax0.set_xlabel("Primary energy / eV")
+        ax0.set_xscale("log")
+
+        # Zenith distribution
+        ax1.set_title("Zenith distribution")
+        ax1.hist(zenith, histtype = "step", bins = np.linspace(0, 90, 100))
+        ax1.set_xlabel("Zenith / °")
+
+        # SPDistance distribution
+        ax2.set_title("Shower plane distance distribution")
+        ax2.hist(spd, histtype = "step", bins = np.linspace(0, 6e3, 100))
+        ax2.set_xlabel("Shower plane distance / m")
+        
+        # Particle distribution
+        ax3.set_title("Particle distribution")
+        particle_bins = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        particle_bins += list(np.geomspace(10, 1e4, 40))
+        ax3.hist(n_muons, histtype = "step", bins = particle_bins, label = "Muons")
+        ax3.hist(n_electrons, histtype = "step", bins = particle_bins, label = "Electrons")
+        ax3.hist(n_photons, histtype = "step", bins = particle_bins, label = "Photons")
+        ax3.set_xlabel("Number of particles")
+        ax3.set_xscale("log")
+        ax3.legend()
+
+        plt.tight_layout()
+
+        self.for_training = temp
+
+        # if n_traces is None: n_traces = self.__len__() * (GLOBAL.n_bins - 10) * 5
+
+        # start = perf_counter_ns()
+        # mean_per_step_us = np.inf
+        # n_traces_looked_at = 0
+
+        # sig_max_hist, bg_max_hist = [], []
+
+        # # helper variables for results
+        # all_energies, all_zeniths = [], []
+
+        # # For loop iterates over the whole dataset, return type/format looks like:
+        # # traces, labels, [ {Integral, SPDistance, Energy, Zenith} , ...]
+        # try:
+        #     for batch, (traces, labels, metadata) in enumerate(self):
+
+        #         print(f"{100 * (n_traces_looked_at/n_traces):.2f}% - {mean_per_step_us:.2f}us/trace, ETA = {(n_traces - n_traces_looked_at) * mean_per_step_us * 1e-6:.0f}s", end = 10 * " " + "\r")
+
+        #         Energy, Zenith = metadata[0, 2:]
+        #         trace_informations = metadata[:, :2]
+
+        #         all_energies.append(Energy), all_zeniths.append(Zenith)
+
+        #         for trace, label, event_info in zip(traces, labels, trace_informations):
+
+        #             elapsed = perf_counter_ns() - start
+        #             mean_per_step_us = elapsed / (n_traces_looked_at + 1) * 1e-3
+
+        #             n_traces_looked_at += 1
+
+        #             # analysis code on trace level
+        #             if not np.argmax(label):
+        #                 bg_max_hist.append(np.max(trace))
+        #             else:
+        #                 sig_max_hist.append(np.max(trace))
+
+
+
+        #             if n_traces_looked_at == n_traces: raise StopIteration
+        
+        # except StopIteration:
+        #     print(f"-- {batch + 1} EVENTS; SUMMARY -------" + 10 * " ")
+        #     print(f"E range: {np.log10(min(all_energies)):.2f} < log(E) < {np.log10(max(all_energies)):.2f}")
+        #     print(f"θ range: {min(all_zeniths):.2f}° <  θ  <  {max(all_zeniths):.2f}°")
+
+
+        # # Energy, Zenith 2d Histogram
+        # plt.figure()
+        # plt.xscale("log")
+        # plt.hist2d(all_energies, all_zeniths, bins = (40, 50))
+
+        # # label vs n_particles
+
+        # # Trace characteristica
+        # plt.figure()
+        # plt.hist(sig_max_hist, color = "orange", histtype = "step", lw = 3, label = "Signal", bins = np.geomspace(0.1, 1e6, 100), density = True)
+        # plt.hist(bg_max_hist, color = "steelblue", histtype = "step", lw = 3, label = "Background", bins = 100, range = (-1, 3))
+
+        # plt.ylim(0, 500)
+        # plt.legend()
+        # plt.xscale("log")
+        # plt.show()
 
 
         # background_hist, signal_hist, baseline_hist, priors = [], [], [], []

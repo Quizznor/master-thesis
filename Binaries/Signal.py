@@ -83,7 +83,7 @@ class Trace(Signal):
         else: self.downsampled = False
 
         # build the VEM trace and integral
-        # self.build_integral_trace()
+        self.build_integral_trace()
         self.convert_to_VEM()
         
     # extract pmt data for a given trace window
@@ -94,19 +94,22 @@ class Trace(Signal):
 
         return np.array([pmt_1, pmt_2, pmt_3])
 
-    # calculate number of bins of signal in sliding window
-    def calculate_signal_overlap(self, window : tuple) -> int :
+    # convert from ADC counts to VEM_charge
+    def build_integral_trace(self) -> None :
+
+        conversion_factor = GLOBAL.q_charge/np.array(self.q_charge)
+        baseline = np.array([pmt * conversion_factor[i] for i, pmt in enumerate(self.Baseline)])
         
         if self.has_signal: 
-            return len(range(max(window[0], self.signal_start), min(window[-1], self.signal_end)))
-        else: return 0
+            baseline += self.Signal
 
-    # convert from ADC counts to VEM_charge
-    def build_integral_trace() -> None :
+        if self.has_accidentals:
+            baseline += self.Injected
 
-        # TODO...
-
-        raise NotImplementedError
+        # average across all PMTs to build integral trace
+        # mathematically equivalent to averaging later
+        self.integral_trace = np.mean(baseline, axis = 0)
+        self.deposited_signal = np.sum(self.integral_trace)
 
     # convert from ADC counts to VEM_peak 
     def convert_to_VEM(self) -> None :
@@ -191,9 +194,9 @@ class Trace(Signal):
     def poisson(self) -> int :
         return np.random.poisson( GLOBAL.background_frequency * GLOBAL.single_bin_duration * self.trace_length )
 
-    # # return the mean of integrated PMT signals (VEM_charge) for a given window
-        # def integrate(self, start, stop) -> float :
-        #     return np.mean(np.sum([self.int_1[start : stop], self.int_2[start : stop], self.int_3[start : stop]], axis = 1))
+    # return the mean of integrated PMT signals (VEM_charge) for a given window
+    def integrate(self, start_bin) -> float : 
+        return np.sum(self.integral_trace[start_bin : start_bin + self.window_length])
 
     # make this class an iterable
     def __iter__(self) -> typing.Union[tuple, StopIteration] : 
@@ -280,7 +283,7 @@ class SignalBatch():
 
     def __new__(self, trace_file : str) -> np.ndarray :
 
-        print(f"\n[INFO] -- READING {'/'.join(trace_file.split('/')[-3:])}" + 20 * " ", end = "\r")
+        # print(f"\n[INFO] -- READING {'/'.join(trace_file.split('/')[-3:])}" + 20 * " ", end = "\r")
 
         with open(trace_file, "r") as file:
                 signal = [[float(x) for x in line.split()] for line in file.readlines()]

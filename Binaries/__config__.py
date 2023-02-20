@@ -1,4 +1,7 @@
 from dataclasses import dataclass
+from time import strftime, gmtime
+from time import perf_counter_ns
+from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib.cm as cmap
 from matplotlib.patches import Polygon
@@ -17,8 +20,8 @@ class SignalError(Exception): pass
 class RandomTraceError(Exception): pass
 class ElectronicsError(Exception): pass
 
-def station_hit_probability(x, efficiency, p50, scale):
-    return efficiency * (1 - 1 / (1 + np.exp(-scale * (x - p50))))
+plt.rcParams.update({'font.size': 22})
+plt.rcParams['figure.figsize'] = [30, 15]
 
 @dataclass
 class GLOBAL():
@@ -55,5 +58,15 @@ class GLOBAL():
     n_production_traces         = int(1e6)                                      # how many random traces to look at for predictions
     n_ensembles                 = 10                                            # how many networks of same architecture to train
 
-plt.rcParams.update({'font.size': 22})
-plt.rcParams['figure.figsize'] = [30, 15]
+def station_hit_probability(x : np.ndarray, efficiency : float, p50 : float, scale : float) -> np.ndarray:
+    return efficiency * (1 - 1 / (1 + np.exp(-scale * (x - p50))))
+
+def progress_bar(current_step : int, total_steps : int, start_time : int) -> None : 
+     
+    time_spent = (perf_counter_ns() - start_time) * 1e-9
+    ms_per_iteration =  time_spent / (current_step + 1) * 1e3
+    elapsed = strftime('%H:%M:%S', gmtime(time_spent))
+    eta = strftime('%H:%M:%S', gmtime(time_spent * (total_steps - current_step)/(current_step + 1) ))
+    percentage = int((current_step + 1) / total_steps * 100)
+    
+    print(f"Step {current_step + 1}/{total_steps} | {elapsed} elapsed ||{'-' * (percentage // 5):20}|| {percentage}% -- {ms_per_iteration:.3f} ms/step, ETA: {eta}", end = "\r")
