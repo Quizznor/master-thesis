@@ -273,10 +273,11 @@ class Trace(Signal):
             plt.title(f"Station #{self.StationID} - {np.mean(self.deposited_signal):.2f} VEM")
         except AttributeError:
             plt.title(f"Background trace - {self.deposited_signal:.2f} VEM")
-        
-        plt.plot(x, self.pmt_1, c = "green", label = f"PMT #1{' - downsampled' if self.downsampled else ''}, S = {self.deposited_signal[0] :.1f} VEM", lw = 1)
+            
+        plt.plot(x, self.pmt_1, c = "steelblue", label = f"PMT #1{' - downsampled' if self.downsampled else ''}, S = {self.deposited_signal[0] :.1f} VEM", lw = 1)
         plt.plot(x, self.pmt_2, c = "orange", label = f"PMT #2{' - downsampled' if self.downsampled else ''}, S = {self.deposited_signal[1]:.1f} VEM", lw = 1)
-        plt.plot(x, self.pmt_3, c = "steelblue", label = f"PMT #3{' - downsampled' if self.downsampled else ''}, S = {self.deposited_signal[2]:.1f} VEM", lw = 1)
+        plt.plot(x, self.pmt_3, c = "green", label = f"PMT #3{' - downsampled' if self.downsampled else ''}, S = {self.deposited_signal[2]:.1f} VEM", lw = 1)
+
 
         if self.has_signal:
             plt.axvline(self.signal_start, ls = "--", c = "red", lw = 2)

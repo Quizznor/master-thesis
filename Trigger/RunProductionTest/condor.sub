@@ -1,4 +1,4 @@
-JobBatchName    = production-test-nuria
+JobBatchName    = production-test-lo_qui_don
 Executable      = /cr/users/filip/Trigger/RunProductionTest/run_production_test.py
 
 error           = /cr/users/filip/Trigger/RunProductionTest/output/errors-$(Process).err

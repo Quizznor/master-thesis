@@ -39,6 +39,58 @@ def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -
             open(save_file["FP"], "w") as FP, \
             open(save_file["FN"], "w") as FN:
 
+            # for batch in range(Dataset.__len__()):
+
+            #     try:
+            #         print(f"Fetching batch {batch + 1}/{Dataset.__len__()}: {100 * (batch/Dataset.__len__()):.2f}% --> (TP, FP) = ({TPs}, {FPs}) ~ {TPs/(TPs + FPs) * 100 :.2f}", end = "\r")
+            #     except ZeroDivisionError: print("Starting simulation...", end = "\r")
+
+            #     traces, _ = Dataset.__getitem__(batch, full_trace = True)
+
+            #     for trace in traces:
+
+            #         stop_iteration = False
+
+            #         for window_start in Dataset.__sliding_window__(trace):
+
+            #             i, f = window_start, window_start + Dataset.window_length
+            #             window, label, metadata = trace.get_trace_window((i, f), skip_metadata = False)
+            #             integral, SPDistance, Energy, Zenith = metadata
+
+            #             if label:
+                            
+            #                 save_string = f"{integral:.3f} 1 {Energy:.3e} {int(SPDistance)} {Zenith:.3f}"
+
+            #                 if Classifier(window):
+            #                     prediction = TP
+            #                     TPs += 1
+
+            #                     # go to next trace after classifying
+            #                     #  this trace here as signal
+            #                     stop_iteration = True
+
+            #                 else: prediction = FN
+
+            #             else: 
+
+            #                 save_string = f"{integral:.3f}"
+
+            #                 if Classifier(window):
+            #                     prediction = FP
+            #                     FPs += 1
+
+            #                     # go to next trace after classifying
+            #                     #  this trace here as signal
+            #                     stop_iteration = True
+
+            #                 else:
+            #                     prediction = TN
+
+            #             prediction.write(save_string + "\n")
+            #             if stop_iteration: break
+
+
+            # Need to stop after triggering on individual trace! I think this is wrong
             for batch, (traces, true_labels, metadata) in enumerate(Dataset): 
 
                 try:
@@ -46,9 +98,14 @@ def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -
                     (TP, FP) = ({TPs}, {FPs}) ~ {TPs/(TPs + FPs) * 100 :.2f}", end = "\r")
                 except ZeroDivisionError: print("Starting simulation...", end = "\r")
 
+
+
+                
                 for predicted_label, true_label, info in zip(Classifier(traces), true_labels, metadata):
 
-                    Integral, (SignalBins, Energy, SPDistance, Zenith) = info
+                    # Integral, (SignalBins, Energy, SPDistance, Zenith) = info
+                    Integral, SPDistance, Energy, Zenith = info
+
                     true_label = true_label.argmax()
 
                     if true_label:
@@ -58,7 +115,7 @@ def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -
                         else: prediction = FN
                     
                         # save more metadata for traces containing signal
-                        save_string = f"{Integral:.3f} {int(SignalBins)} {Energy:.3e} {int(SPDistance)} {Zenith:.3f}"
+                        save_string = f"{Integral:.3f} 1 {Energy:.3e} {int(SPDistance)} {Zenith:.3f}"
                     
                     else:
                         if predicted_label:
@@ -71,23 +128,24 @@ def make_dataset(Classifier : Classifier, Dataset : Generator, save_dir : str) -
 
                     prediction.write(save_string + "\n")
         
-        
         return TPs / (TPs + FPs)
 
     else:
 
         start = perf_counter_ns()
 
-        for i, instance in enumerate(Classifier.models,1):
+        for instance_counter, instance in enumerate(Classifier.models,1):
 
             time_spent = (perf_counter_ns() - start) * 1e-9
             elapsed = strftime('%H:%M:%S', gmtime(time_spent))
-            eta = strftime('%H:%M:%S', gmtime(time_spent * (len(Classifier.models)/i - 1)))
+            eta = strftime('%H:%M:%S', gmtime(time_spent * (len(Classifier.models)/instance_counter - 1)))
 
-            print(f"Model {i}/{len(Classifier.models)}, {elapsed} elapsed, ETA = {eta}")
+            print(f"Model {instance_counter}/{len(Classifier.models)}, {elapsed} elapsed, ETA = {eta}")
 
             make_dataset(instance, Dataset, save_dir)
             Dataset.__reset__()
+
+    print()
 
 # plot the estimated confidence range of provided classifiers
 def confidence_comparison(confidence_level, *args, **kwargs):

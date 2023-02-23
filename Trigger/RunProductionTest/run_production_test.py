@@ -234,17 +234,21 @@ Buffer = RandomTrace(station = station, index = i)
 n_traces = len(Buffer._these_traces)
 duration = n_traces * trace_duration
 
-percentages = np.array([-25, -16, -14, -13, -12, -11, -8, -6, -4, -2, -1, 0, 1, 2, 4, 8, 16]) * 1e-2
+# percentages = np.array([-25, -16, -14, -13, -12, -11, -8, -6, -4, -2, -1, 0, 1, 2, 4, 8, 16]) * 1e-2
+increments = np.array([-4, -2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20])
 
-for percentage in percentages:
+# for percentage in percentages:
+for increment in increments:
 
-    pm = "p" if percentage >= 0 else "m"
+    # pm = "p" if percentage >= 0 else "m"
+    pm = "p" if increment >= 0 else "m"
     n_trigger = n_th = n_tot = n_totd = 0
 
     for j, trace in enumerate(Buffer._these_traces):
 
         # apply downsampling to trace
-        downsampled_trace = np.array([(apply_downsampling(trace)[k]) / (Buffer.q_peak[k] * (1 + percentage)) for k in range(3)])
+        # downsampled_trace = np.array([(apply_downsampling(trace)[k]) / (Buffer.q_peak[k] * (1 + percentage)) for k in range(3)])
+        downsampled_trace = np.array([(apply_downsampling(trace)[k] + increment) / Buffer.q_peak[k] for k in range(3)])
 
         # split trigger procedure up into different chunks due to performance
         if Trigger.Th(3.2, downsampled_trace):
@@ -265,6 +269,10 @@ for percentage in percentages:
                     n_totd += 1
                     break
 
-    perc_str = str(int(percentage * 100)).replace('-','')
-    with open(f"/cr/users/filip/Trigger/RunProductionTest/trigger_output/{station}/{station}_all_triggers_{pm}{perc_str}.csv", "a") as f:
+    # perc_str = str(int(percentage * 100)).replace('-','')
+    # with open(f"/cr/users/filip/Trigger/RunProductionTest/trigger_output/{station}/{station}_all_triggers_{pm}{perc_str}.csv", "a") as f:
+    #   f.write(f"{Buffer.random_file} {n_traces} {duration} {n_trigger} {n_th} {n_tot} {n_totd}\n")
+
+    inc_str = str(increment).replace('-','')
+    with open(f"/cr/users/filip/Trigger/RunProductionTest/trigger_output/{station}/trace_increment/{station}_all_triggers_{pm}{inc_str}.csv", "a") as f:
         f.write(f"{Buffer.random_file} {n_traces} {duration} {n_trigger} {n_th} {n_tot} {n_totd}\n")

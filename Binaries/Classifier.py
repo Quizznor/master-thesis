@@ -385,7 +385,7 @@ class Classifier():
                     ldf = lambda x : station_hit_probability(x, 1, p50, scale)
 
                     # spd_bins = np.linspace(1, 10000, kwargs.get("n_bins", 30))
-                    spd_bins = list(np.geomspace(10, 1500, kwargs.get("n_bins", 30)))
+                    spd_bins = list(np.geomspace(10, 1500, kwargs.get("n_bins", 20)))
                     spd_bins += list(np.arange(1500 + np.diff(spd_bins)[-1], 3000, np.diff(spd_bins)[-1]))
                     c = colormap(t / len(hits_by_energy))
 
@@ -409,7 +409,7 @@ class Classifier():
                         ldf_left, ldf_right, ldf_center = ldf(left_edge_x), ldf(right_edge_x), ldf(center_x)
                         top_left_y, bottom_left_y = (center_y + height) * ldf_left, (center_y - height) * ldf_left
                         top_right_y, bottom_right_y = (center_y + height) * ldf_right, (center_y - height) * ldf_right
-                        center_y *= ldf_center
+                        # center_y *= ldf_center
                         y_val.append(center_y)
                         y_err.append(height / 2)
 
@@ -585,6 +585,7 @@ class Classifier():
             header_was_called = True
 
             print("\nDATASET".ljust(72) + "     TP      FP      TN      FN")
+
     
     # Performance visualizers #######################################################################
 
@@ -769,10 +770,14 @@ class NNClassifier(Classifier):
         TrainingSet, ValidationSet = Datasets
 
         try:
-            for i in range(self.epochs, epochs):
-                print(f"Epoch {i + 1}/{epochs}")
-                self.history = self.model.fit(TrainingSet, validation_data = ValidationSet, epochs = 1, callbacks = self.callbacks)
-                self.epochs += 1
+
+            # for i in range(self.epochs, epochs):
+            #     print(f"Epoch {i + 1}/{epochs}")
+            #     self.history = self.model.fit(TrainingSet, validation_data = ValidationSet, epochs = 1, callbacks = self.callbacks)
+            #     self.epochs += 1
+
+            self.history = self.model.fit(TrainingSet, validation_data = ValidationSet, epochs = epochs - self.epochs, callbacks = self.callbacks)
+
         except EarlyStoppingError: 
             self.epochs = "converged"
             training_status = "early"

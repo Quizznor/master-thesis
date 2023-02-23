@@ -368,6 +368,7 @@ class Generator(tf.keras.utils.Sequence):
                 # Signal component
                 x_sig.append(np.mean(trace.Signal))
 
+
                 # Baseline component
                 x_bkg.append(np.mean(trace.Baseline))
 

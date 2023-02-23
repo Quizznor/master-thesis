@@ -42,9 +42,66 @@ In fact, the network architectures discussed here and in the following section c
 \section{Convolutional neural network}
 \label{sec:CNN}
 
-Convolutional neural networks introduce convolutional layers, which aggregate information from nearby input values. Nearby in this refers for example to 
-proximate pixels in a 2D image, or neighbouring voxels in a 3D scan. Even succesive inputs in a 1-dimensional time series can be convoluted. In general, the
-working principle of a convolutional layer can be extended to an arbitrary input shape and size. 
+Convolutional neural networks introduce convolutional layers, which aggregate information from nearby input values. Nearby in this case referring for example 
+to proximate pixels in a 2D image, or neighbouring voxels in a 3D scan. Even succesive inputs in a 1-dimensional time series can be convoluted. In general, 
+the working principle of a convolutional layer can be extended to an arbitrary input shape and size, but will be representatively explained here for a 
+two-dimensional, image-like input.
+
+The convolution in a single layer is done by one or several filters, matrices, that are scalar-multiplied to subchunks of the input data. An example 
+visualization is offered in \autoref{fig:convolution}. In the demonstration, a mock filter designed like
+
+\begin{equation*}
+\mathcal{F} = 
+\begin{pmatrix}
++1 & -1 \\
+-1 & +1 \\
+\end{pmatrix}
+\end{equation*}
+
+is swept across the entire image area. During the iteration, areas of the image that resemble the filter will result in a large (relative to the input data)
+positive scalar value.
+
+In this fashion, an image can be efficiently scanned for specific patterns (lines, edges, etc.) with just few parameters. Namely, these are the numerical
+values in the filter matrices, which can be optimized during training. The resulting output of a single layer containing different filters can interatively 
+be propagated into subsequent convolutional layers (searching for curves, corners, etc.) until full-scale image detection of complex structures becomes possible.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.9\textwidth]{imgs/convolution.png}
+	\caption{asdasd \label{fig:convolution}}
+\end{figure}
 
 \section{Recurrent neural network}
 \label{sec:RNN}
+
+Recurrent neural networks not only propagate an input value forward through their architecture, but also introduce cyclic connections between distinct layers. For
+example, in the simplest conceptional case there exists a feedback loop that connects the output of the last network layer to the input layer of the first network
+(c.f. \autoref{fig:simple-RNN} \TODO). Other feedback configurations are of course also possible, and generally preferred, as they elegantly eliminate the problem
+of vanishing/exploding gradients \cite{hochreiter1991untersuchungen}. 
+
+Moreover, due to the cyclic connections in the network architecture, RNNs are espically qualified for time-series analysis. i.e. where temporally sucessive inputs
+are highly correlated. A popular example is the \textbf{L}ong \textbf{S}hort-\textbf{T}erm \textbf{M}emory (LSTM) architecture, which is visualized in 
+\autoref{fig:LSTM} \TODO.
+
+\begin{figure}
+	\centering
+	\begin{subfigure}[h]{0.45\linewidth}
+	\includegraphics[height=4.2cm]{imgs/simple_RNN.png}
+	\caption{\textbf{simple RNN}\label{fig:simple-RNN}}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[h]{0.45\linewidth}
+	\includegraphics[height=4.2cm]{imgs/LSTM.png}
+	\caption{\textbf{LSTM}\label{fig:LSTM}}
+	\end{subfigure}
+	\caption*{\textbf{a)} An example RNN architecture, with one layer, where the network output of one step is used as an additional input for the next step. 
+	Image taken with changes from \cite{NN-images}. \textbf{b)} The architecture of a single LSTM layer relies on multiple gates, that update the network
+	configuration, or memory of the layer. From \cite{NN-images}. \label{fig:NN-architectures}.}
+\end{figure}
+
+The output of a single LSTM layer at timestep $t\neq0$ is calculated from two variables, the hidden state $h_t$, as well as the cell state $C_t$. While the former
+exists in some form in every RNN, the latter is unique to the LSTM architecture \cite{gers2000learning}. $h_t$ represents the short-term memory of the network, and
+is a
+
+\section{Other architectures}
+\label{sec:NN-other}

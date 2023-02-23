@@ -65,15 +65,6 @@ DummyCentralTriggerDense::Run(evt::Event & event)
   simT3.SetTime(trigTime);
   simT3.SetAlgorithm("DummyDense");
 
-  // ostringstream info;
-  // info << "Dummy T3 trigger, "
-  //   "reference time " << trigTime << " "
-  //   "(" << trigTime.GetGPSSecond() << " s, " << int(trigTime.GetGPSNanoSecond()/1e3) << " us)" << '\n';
-  // INFO(info);
-  // TabularStream tab("r|r|l");
-  // tab <<              endc << "time"                       << endr
-  //     << "station" << endc << "offset" << endc << "energy" << endr
-  //     << hline;
   const SDetector& sDetector = det::Detector::GetInstance().GetSDetector();
   for (sdet::SDetector::StationIterator sIt = sDetector.StationsBegin();
        sIt != sDetector.StationsEnd(); ++sIt) {
@@ -98,9 +89,6 @@ DummyCentralTriggerDense::Run(evt::Event & event)
     // // Trigger everything but dense stations         
     if (!(sIt->IsDense())) 
     {
-      // tab << sIt->GetId() << ' ' << endc
-      //     << ' ' << fDefaultOffset << ' ' << endc
-      //     << " !w" << fDefaultWindow << endr;
       simT3.AddStation(sIt->GetId(), fDefaultOffset, fDefaultWindow);
     }
 
