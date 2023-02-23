@@ -35,7 +35,8 @@ class Signal():
         self.n_photons = int(next(iter(n_photons)))                                 # number of photons injected in trace
 
         self.Signal = np.zeros((3, trace_length))
-        self.signal_start = np.random.randint(0, trace_length - len(pmt_data[0]))
+        # self.signal_start = np.random.randint(0, trace_length - len(pmt_data[0]))
+        self.signal_start = 660                                                     # use same latch bin as offline
         self.signal_end = self.signal_start + len(pmt_data[0])
 
         for i, PMT in enumerate(pmt_data):
@@ -67,11 +68,10 @@ class Trace(Signal):
         # build Signal component
         if signal_data is not None: 
             super().__init__(signal_data, self.trace_length)
-            self.__iteration_index = max(self.signal_start - self.window_length + np.random.randint(1, 10), 0)
             self.has_signal = True
         else:
             self.Signal = None
-            self.__iteration_index = 0
+            self._iteration_index = 0
             self.has_signal = False
 
         # build Baseline component
@@ -79,8 +79,12 @@ class Trace(Signal):
 
         # whether or not to apply downsampling
         if trace_options["apply_downsampling"]:
+            self.random_phase = np.random.randint(0, 3)
+            self._iteration_index = max(self.signal_start - self.window_length + np.random.randint(1, 10), 0) // 3 if self.has_signal else 0
             self.downsampled = True
-        else: self.downsampled = False
+        else: 
+            self.downsampled = False
+            self._iteration_index = max(self.signal_start - self.window_length + np.random.randint(1, 10), 0) if self.has_signal else 0
 
         # build the VEM trace and integral
         self.build_integral_trace()
@@ -97,6 +101,8 @@ class Trace(Signal):
     # convert from ADC counts to VEM_charge
     def build_integral_trace(self) -> None :
 
+        # Signal and Injected are simulated, and have a constant/equal q_peak/q_charge
+        # Baseline (for random traces) has different q_peak/q_charge and needs conversion
         conversion_factor = GLOBAL.q_charge/np.array(self.q_charge)
         baseline = np.array([pmt * conversion_factor[i] for i, pmt in enumerate(self.Baseline)])
         
@@ -108,8 +114,18 @@ class Trace(Signal):
 
         # average across all PMTs to build integral trace
         # mathematically equivalent to averaging later
-        self.integral_trace = np.mean(baseline, axis = 0)
-        self.deposited_signal = np.sum(self.integral_trace)
+        # integral trace is always a full bandwith trace
+
+        self.int_1, self.int_2, self.int_3 = np.floor(baseline) / GLOBAL.q_charge
+        self.deposited_signal = [np.sum(self.int_1), np.sum(self.int_2), np.sum(self.int_3)]
+        self.integral_window = np.empty(self.trace_length)
+        self.integral_window.fill(np.NaN)
+
+        for i in range(self._iteration_index, self.trace_length, self.window_step):
+            start_bin = i if not self.downsampled else i * 3
+            stop_bin = i + self.window_length if not self.downsampled else (i + self.window_length) * 3
+            w1, w2, w3 = self.int_1[start_bin : stop_bin], self.int_2[start_bin : stop_bin], self.int_3[start_bin : stop_bin]
+            self.integral_window[i] = np.mean([sum(w1), sum(w2), sum(w3)])
 
     # convert from ADC counts to VEM_peak 
     def convert_to_VEM(self) -> None :
@@ -117,10 +133,6 @@ class Trace(Signal):
         # Signal + Injections ALWAYS have simulated q_peak/q_area 
         # Background has simulated q_peak/q_area if NOT random traces
         # otherwise set to values defined in RandomTrace class (l281)
-
-        # # maybe ignore VEM_charge ??
-        # simulation_q_charge = np.array([GLOBAL.q_charge for _ in range(3)])
-        # baseline_q_charge = np.array(self.q_charge)
 
         simulation_q_peak = np.array([GLOBAL.q_peak for _ in range(3)])
         baseline_q_peak = np.array(self.q_peak)
@@ -139,9 +151,9 @@ class Trace(Signal):
             self.pmt_3 += component[2]
 
         if self.downsampled:
-            self.pmt_1 = np.floor(self.apply_downsampling(self.pmt_1)) / simulation_q_peak[0]
-            self.pmt_2 = np.floor(self.apply_downsampling(self.pmt_2)) / simulation_q_peak[1]
-            self.pmt_3 = np.floor(self.apply_downsampling(self.pmt_3)) / simulation_q_peak[2]
+            self.pmt_1 = np.floor(self.apply_downsampling(self.pmt_1, self.random_phase)) / simulation_q_peak[0]
+            self.pmt_2 = np.floor(self.apply_downsampling(self.pmt_2, self.random_phase)) / simulation_q_peak[1]
+            self.pmt_3 = np.floor(self.apply_downsampling(self.pmt_3, self.random_phase)) / simulation_q_peak[2]
 
             if self.has_signal:
                 self.signal_start = int(self.signal_start / 3)
@@ -152,9 +164,13 @@ class Trace(Signal):
                 self.injections_end = [int(end / 3) for end in self.injections_end ]
 
             self.trace_length = self.trace_length // 3
+        else:
+            self.pmt_1 = np.floor(self.pmt_1) / simulation_q_peak[0]
+            self.pmt_2 = np.floor(self.pmt_2) / simulation_q_peak[1]
+            self.pmt_3 = np.floor(self.pmt_3) / simulation_q_peak[2]
 
     @staticmethod
-    def apply_downsampling(pmt) -> np.ndarray :
+    def apply_downsampling(pmt, random_phase) -> np.ndarray :
 
         # ensure downsampling works as intended
         # cuts away (at most) the last two bins
@@ -178,7 +194,7 @@ class Trace(Signal):
 
         # perform downsampling
         for j, coeff in enumerate(kFirCoefficients):
-            sampled_trace += [temp[k + j] * coeff for k in range(0, n_bins_uub, 3)]
+            sampled_trace += [temp[k + j] * coeff for k in range(random_phase, n_bins_uub, 3)]
 
         # clipping and bitshifting
         sampled_trace = [int(adc) >> kFirNormalizationBitShift for adc in sampled_trace]
@@ -188,7 +204,7 @@ class Trace(Signal):
         #     # sampled_trace[i,j] = np.clip(int(adc) >> kFirNormalizationBitShift, a_min = -20, a_max = None)              # why clip necessary, why huge negative values?
         #     sampled_trace[j] = int(adc) >> kFirNormalizationBitShift
 
-        return sampled_trace
+        return np.array(sampled_trace)
 
     # poissonian for background injection
     def poisson(self) -> int :
@@ -205,13 +221,13 @@ class Trace(Signal):
             
             # only iterate over Signal region
             if self.has_signal:
-                if self.__iteration_index > self.signal_end: return StopIteration
+                if self._iteration_index > self.signal_end: return StopIteration
             
             # iterate over everything in Background trace
-            if self.__iteration_index + self.window_length > self.trace_length: return StopIteration
+            if self._iteration_index + self.window_length > self.trace_length: return StopIteration
             
-            yield self.get_trace_window(self.__iteration_index)
-            self.__iteration_index += self.window_step
+            yield self.get_trace_window(self._iteration_index)
+            self._iteration_index += self.window_step
 
     # wrapper for pretty printing
     def __repr__(self) -> str :
@@ -252,15 +268,15 @@ class Trace(Signal):
     def __plot__(self) -> None :
 
         x = range(self.trace_length)
-        # int_sig = np.mean([self.int_1.sum(), self.int_2.sum(), self.int_3.sum()])
-
-        # try:
-        #     plt.title(f"Station #{self.StationID} - {int_sig:.2f} VEM")
-        # except AttributeError: pass
         
-        plt.plot(x, self.pmt_1, c = "green", label = f"PMT #1{', downsampled' if self.downsampled else ''}", lw = 1)
-        plt.plot(x, self.pmt_2, c = "orange", label = f"PMT #2{', downsampled' if self.downsampled else ''}", lw = 1)
-        plt.plot(x, self.pmt_3, c = "steelblue", label = f"PMT #3{', downsampled' if self.downsampled else ''}", lw = 1)
+        try:
+            plt.title(f"Station #{self.StationID} - {np.mean(self.deposited_signal):.2f} VEM")
+        except AttributeError:
+            plt.title(f"Background trace - {self.deposited_signal:.2f} VEM")
+        
+        plt.plot(x, self.pmt_1, c = "green", label = f"PMT #1{' - downsampled' if self.downsampled else ''}, S = {self.deposited_signal[0] :.1f} VEM", lw = 1)
+        plt.plot(x, self.pmt_2, c = "orange", label = f"PMT #2{' - downsampled' if self.downsampled else ''}, S = {self.deposited_signal[1]:.1f} VEM", lw = 1)
+        plt.plot(x, self.pmt_3, c = "steelblue", label = f"PMT #3{' - downsampled' if self.downsampled else ''}, S = {self.deposited_signal[2]:.1f} VEM", lw = 1)
 
         if self.has_signal:
             plt.axvline(self.signal_start, ls = "--", c = "red", lw = 2)
@@ -308,7 +324,8 @@ class RandomTrace():
     def __init__(self, station : str = None, index : int = None) -> None : 
 
         ## (HOPEFULLY) TEMPORARILY FIXED TO NURIA/LO_QUI_DON DUE TO BAD FLUCTUATIONS IN OTHER STATIONS
-        self.station = random.choice(["nuria", "lo_qui_don"]) if station is None else station.lower()
+        # self.station = random.choice(["nuria", "lo_qui_don"]) if station is None else station.lower()
+        self.station = "nuria"
         self.index = index
 
         all_files = np.asarray(os.listdir(RandomTrace.baseline_dir + self.station)) # container for all baseline files
@@ -330,13 +347,14 @@ class RandomTrace():
 
         # IF YOU WANT TO USE DAY AVERAGE FROM ONLINE ESTIMATE #########################################
         # values come from $TMPDATA/iRODS/MonitoringData/read_monitoring_data.ipynb -> monitoring files
+        # scale factors for correct trigger rates are at ~/Trigger/RunProductionTest/plot_everything.ipynb
+
         if "nuria" in self.station:
-            self.q_peak = [180.23, 182.52, 169.56]
-            self.q_charge = [3380.59, 3508.69, 3158.88]
+            self.q_peak = np.array([180.23, 182.52, 169.56]) * (1 - 11.59/100)
+            self.q_charge = [3380.59, 3508.69, 3158.88]      # scaling factor ???
         elif "lo_qui_don" in self.random_file:
-            # self.q_peak = [164.79, 163.49, 174.71]
-            self.q_peak = [163.79, 162.49, 173.71]
-            self.q_charge = [2846.67, 2809.48, 2979.65]
+            self.q_peak = np.array([163.79, 162.49, 173.71]) * (1 - 10.99/100)
+            self.q_charge = [2846.67, 2809.48, 2979.65]      # scaling factor ???
         elif "jaco" in self.random_file:
             self.q_peak = [189.56, 156.48, 168.20]
             self.q_charge = [3162.34, 2641.25, 2840.97]

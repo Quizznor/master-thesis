@@ -34,13 +34,14 @@ class GLOBAL():
     background_frequency        = 4665                                          # frequency of accidental injections / Hz
     single_bin_duration         = 8.3e-9                                        # time length of a single bin, in s                                               
     trace_length                = 2048                                          # 1 Bin = 8.3 ns, 2048 Bins = ~17. µs
-    real_background             = False                                         # use random traces instead of gaussian baseline
+    real_background             = True                                          # use random traces instead of gaussian baseline
     random_index                = None                                          # this file is used first when creating randoms
     force_inject                = None                                          # whether or not to force injection of muons
     station                     = None                                          # what station to use for random traces
     
+    # use only for quick checks of performance
     baseline_mean               = 0                                             # gaussian mean of the actual baseline
-    baseline_std                = 2                                             # two ADC counts, NOT converted here!
+    baseline_std                = 0 # 2                                            # two ADC counts, NOT converted here!
 
     # Generator details, can be overwritten in __new__ of EventGenerator
     split                       = 0.8                                           # Ratio of the training / validation events
@@ -51,7 +52,7 @@ class GLOBAL():
     
     # Classifier details, can be overwritten in __new__ of EventGenerator
     ignore_low_VEM              = False                                         # label signals under threshold as background
-    ignore_particles            = 0                                             # label traces with n < ignore_particles as bg
+    ignore_particles            = False                                         # label traces with n < ignore_particles as bg
     window                      = 120                                           # Length (in bins) of the sliding window
     step                        = 10                                            # Sliding window analysis step size (in bins)
     early_stopping_patience     = 7500                                          # number of batches for early stopping patience
@@ -70,3 +71,4 @@ def progress_bar(current_step : int, total_steps : int, start_time : int) -> Non
     percentage = int((current_step + 1) / total_steps * 100)
     
     print(f"Step {current_step + 1}/{total_steps} | {elapsed} elapsed ||{'-' * (percentage // 5):20}|| {percentage}% -- {ms_per_iteration:.3f} ms/step, ETA: {eta}", end = "\r")
+    if current_step + 1 == total_steps: print()

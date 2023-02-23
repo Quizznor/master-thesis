@@ -16,6 +16,8 @@ class Classifier():
     # test the trigger rate of the classifier on random traces
     def production_test(self, n_traces : int = GLOBAL.n_production_traces, **kwargs) -> None :
 
+        raise NotImplementedError
+
         total_trace_duration = GLOBAL.n_bins * GLOBAL.single_bin_duration * n_traces
         self.start_time = str(datetime.now()).replace(" ", "-")[:-10]
         start = perf_counter_ns()
@@ -85,6 +87,7 @@ class Classifier():
         print(f"*********************************")
         print(f"TRIGGER FREQUENCY = {trigger_frequency:.4f} Hz")
 
+    # helper function that saves triggered trace windows for production_test()
     def plot_trace_window(self, trace : np.ndarray, index : int) -> None : 
 
         (pmt1, pmt2, pmt3), x = trace, len(trace[0])
@@ -105,11 +108,84 @@ class Classifier():
         plt.savefig(f"/cr/users/filip/plots/production_tests/{self.name.replace('/','-')}/{self.start_time}/trigger_{index}")
         plt.cla()
 
+    # calculate performance for a given set of showers
+    def make_signal_dataset(self, Dataset : Generator, save_dir : str, n_showers : int = None, save_traces : bool = False) -> None : 
+
+        temp, Dataset.for_training = Dataset.for_training, False
+        if n_showers is None: n_showers = Dataset.__len__()
+
+        if self.name == "HardwareClassifier": save_path = "/cr/data01/filip/models/HardwareClassifier/ROC_curve/" + save_dir
+        else: save_path = "/cr/data01/filip/models/" + self.name + f"/model_{self.epochs}/ROC_curve/" + save_dir
+
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+
+        start_time = perf_counter_ns()
+        save_file = \
+            {
+                "TP" : f"{save_path}/true_positives.csv",
+                "TN" : f"{save_path}/true_negatives.csv",
+                "FP" : f"{save_path}/false_positives.csv",
+                "FN" : f"{save_path}/false_negatives.csv"
+            }
+        
+        # open all files only once, increases performance
+        with open(save_file["TP"], "w") as TP, \
+            open(save_file["TN"], "w") as TN, \
+            open(save_file["FP"], "w") as FP, \
+            open(save_file["FN"], "w") as FN:
+
+            for batch, traces in enumerate(Dataset):
+
+                progress_bar(batch, n_showers, start_time)
+                random_file = Dataset.files[batch]
+                random_file = f"{'/'.join(random_file.split('/')[-3:])}"
+
+                for trace in traces:
+
+                    stop_iteration = False
+
+                    StationID = trace.StationID
+                    SPDistance = trace.SPDistance
+                    Energy = trace.Energy
+                    Zenith = trace.Zenith
+                    n_muons = trace.n_muons
+                    n_electrons = trace.n_electrons
+                    n_photons = trace.n_photons
+
+                    save_string = f"{random_file} {StationID} {SPDistance} {Energy} {Zenith} {n_muons} {n_electrons} {n_photons} "
+
+                    for window in trace:
+                        label, integral = Dataset.calculate_label(trace)
+
+                        if label == "SIG":
+                            if self.__call__(window): 
+                                prediction = TP
+                                stop_iteration = True
+                            else: prediction = FN
+                        else:
+                            if self.__call__(window): 
+                                prediction = FP
+                                stop_iteration = True
+                            else: prediction = TN
+
+                        if save_traces:
+                            for pmt in window:
+                                prediction.write(save_string + f" {integral} ")
+                                prediction.write(" ".join([str(np.round(adc, 4)) for adc in pmt]) + "\n")
+                        else:
+                            prediction.write(save_string + f" {integral} \n")
+
+                        if stop_iteration: break
+
+                if batch + 1 >= n_showers: break        
+
+        Dataset.for_training = temp
 
     # Performance visualizers #######################################################################
     if True:                                              # So this can be collapsed in the editor =)
         # load a specific dataset (e.g. 'validation_data', 'real_background', etc.) and print performance
-        def load_and_print_performance(self, dataset : str, usecols : list = None) -> tuple : 
+        def load_and_print_performance(self, dataset : str) -> tuple : 
 
             try:
                 if header_was_called: pass
@@ -119,7 +195,8 @@ class Classifier():
 
             print(f"Fetching predictions for: {self.name} -> {dataset}", end = "\r")
 
-            try:
+            # load dataset in it's completeness
+            if self.name == "HardwareClassifier":
                 save_files = \
                 {
                     "TP" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/true_positives.csv",
@@ -127,14 +204,7 @@ class Classifier():
                     "FP" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/false_positives.csv",
                     "FN" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/false_negatives.csv"
                 }
-
-                TP = np.loadtxt(save_files['TP'], usecols = usecols[0])
-                FP = np.loadtxt(save_files['FP'], usecols = usecols[1])
-                TN = np.loadtxt(save_files['TN'], usecols = usecols[2])
-                FN = np.loadtxt(save_files['FN'], usecols = usecols[3])
-
-            except OSError:
-
+            else:
                 save_files = \
                 {
                     "TP" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/true_positives.csv",
@@ -143,25 +213,36 @@ class Classifier():
                     "FN" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/false_negatives.csv"
                 }
 
-                TP = np.loadtxt(save_files['TP'], usecols = usecols[0])
-                FP = np.loadtxt(save_files['FP'], usecols = usecols[1])
-                TN = np.loadtxt(save_files['TN'], usecols = usecols[2])
-                FN = np.loadtxt(save_files['FN'], usecols = usecols[3])
+            if os.stat(save_files['TN']).st_size:
+                TN = np.loadtxt(save_files['TN'], usecols = [2, 3, 4, 5, 6, 7])
+            else: TN = []
+
+            if os.stat(save_files['FP']).st_size:
+                FP = np.loadtxt(save_files['FP'], usecols = [2, 3, 4, 5, 6, 7])
+            else: FP = []
+
+            if os.stat(save_files['TP']).st_size:
+                TP = np.loadtxt(save_files['TP'], usecols = [2, 3, 4, 5, 6, 7])
+            else: TP = []
+            
+            if os.stat(save_files['FN']).st_size:
+                FN = np.loadtxt(save_files['FN'], usecols = [2, 3, 4, 5, 6, 7])
+            else: FN = []
 
             tp, fp = len(TP), len(FP)
             tn, fn = len(TN), len(FN)
 
-            all = ( tp + tn + fp + fn )
-            TPR = ( tp ) / ( tp + fp ) * 100
-            ACC = ( tp + tn ) / all * 100
+            ACC = ( tp + tn ) / (tp + fp + tn + fn)* 100
 
             name_wrapper = self.name[10:50] + "..." if len(self.name) > 40 else self.name
-            print(f"{name_wrapper} {dataset}".ljust(70), f"{f'{tp}'.ljust(7)} {f'{fp}'.ljust(7)} {f'{tn}'.ljust(7)} {f'{fn}'.ljust(7)}{f'{all}'.ljust(7)} -> Acc = {ACC:.2f}%, TPR = {TPR:.4f}%")
+            print(f"{name_wrapper} {dataset}".ljust(70), f"{f'{tp}'.rjust(7)} {f'{fp}'.rjust(7)} {f'{tn}'.rjust(7)} {f'{fn}'.rjust(7)} -> {ACC = :.2f}%")
 
             return TP, FP, TN, FN
 
         # plot the ROC curve for a specific dataset (e.g. 'validation_data', 'real_background', etc.) over signal strength (VEM_charge)
         def ROC(self, dataset, **kwargs) -> None :
+
+            raise NotImplementedError
 
             TP, FP, TN, FN = self.load_and_print_performance(dataset, usecols = [0, 0, 0, 0])
 
@@ -214,6 +295,8 @@ class Classifier():
         # precision and recall curve over signal strength (VEM_charge)
         def PRC(self, dataset : str, **kwargs) -> None :
 
+            raise NotImplementedError
+
             TP, FP, TN, FN = self.load_and_print_performance(dataset, usecols = [0, 0, 0, 0])
 
             TP = np.clip(TP, a_min = 1e-6, a_max = None)
@@ -253,18 +336,20 @@ class Classifier():
             plt.plot([0,1],[0.5,0.5,], ls = "--", c = "gray")
 
         # plot the classifiers efficiency at a given SPD and energy
+        # TODO error calculation for fit params, fit curves 
         def spd_energy_efficiency(self, dataset : str, **kwargs) -> None : 
 
+            theta_bins = [26, 38, 49, 60]
+            energy_bins = [10**16.5, 1e17, 10**17.5, 1e18, 10**18.5, 1e19]
+            ldf_fitparams = np.loadtxt("/cr/tempdata01/filip/QGSJET-II/LDF/fitparams.csv", usecols = [4,5])
+            
             warnings.simplefilter("ignore", RuntimeWarning)
             draw_plot = not kwargs.get("quiet", False)
 
             # Prediction structure: [ integral, n_signal, energy, SPD, Theta]
-            TP, FP, TN, FN = self.load_and_print_performance(dataset, usecols = [(2, 3, 4), 0, 0, (2, 3, 4)])
-            fitparams = np.loadtxt("/cr/tempdata01/filip/QGSJET-II/LDF/fitparams.csv", usecols = [4,5])
+            TP, FP, TN, FN = self.load_and_print_performance(dataset)
             colormap = cmap.get_cmap("plasma")
 
-            theta_bins = [26, 38, 49, 60]
-            energy_bins = [10**16.5, 1e17, 10**17.5, 1e18, 10**18.5, 1e19]
             miss_sorted = [[ [] for t in range(len(theta_bins) + 1) ] for e in range(len(energy_bins) + 1)]
             hits_sorted = [[ [] for t in range(len(theta_bins) + 1) ] for e in range(len(energy_bins) + 1)]
             e_labels = [r"$16$", r"$16.5$", r"$17$", r"$17.5$", r"$18$", r"$18.5$", r"$19$", r"$19.5$"]
@@ -274,7 +359,7 @@ class Classifier():
             # sort predictions into bins of theta and energy
             for source, target in zip([TP, FN], [hits_sorted, miss_sorted]):
 
-                E, SPD, T = source[:, 0], source[:, 1], source[:, 2]
+                SPD, E, T = source[:, 0], source[:, 1], source[:, 2]
 
                 # sort misses / hits w.r.t zenith and primary energy
                 theta_indices = np.digitize(T, theta_bins)
@@ -284,8 +369,6 @@ class Classifier():
                     target[e][t].append(spd)
 
             for e, (hits_by_energy, misses_by_energy) in enumerate(zip(hits_sorted, miss_sorted)):
-
-                if e != 6: continue
 
                 if draw_plot:
 
@@ -298,14 +381,7 @@ class Classifier():
 
                 for t, (hits_by_theta, miss_by_theta) in enumerate(zip(hits_by_energy, misses_by_energy)):
 
-                    # if t != 0: continue
-
-                    # print(len(hits_by_theta), len(miss_by_theta))
-
-                    # spd_bins = np.linspace(min(min(hits_by_theta), min(miss_by_theta)),
-                    #                        max(max(hits_by_theta), max(miss_by_theta)), 20)
-
-                    p50, scale = fitparams[e * 5 + t]
+                    p50, scale = ldf_fitparams[e * 5 + t]
                     ldf = lambda x : station_hit_probability(x, 1, p50, scale)
 
                     # spd_bins = np.linspace(1, 10000, kwargs.get("n_bins", 30))
@@ -319,8 +395,6 @@ class Classifier():
 
                     # draw individual patches
                     for i, (x, o) in enumerate(zip(x_hist, o_hist)):
-
-                        # print(x/(x + o), x, o)
 
                         if x == o == 0: continue
 
@@ -344,26 +418,26 @@ class Classifier():
                         draw_plot and plt.errorbar(center_x, center_y, color = c, marker = "s", markersize = int(2 * np.log(x+o)), ls = ":")
                         # draw_plot and plt.gca().add_patch(Polygon(coordinates, closed = True, color = c, alpha = 0.1, lw = 0))
 
-                    # # perform efficiency fit
-                    # try:
-                    #     popt, pcov = curve_fit(station_hit_probability, x_val, y_val, 
-                    #                                           p0 = [y_val[0], p50, scale],
-                    #                                           bounds = ([0, 0, 0], [1, np.inf, np.inf]),
-                    #                                           sigma = y_err,
-                    #                                           absolute_sigma = True)
-                    # except ValueError:
-                    #     popt, pcov = curve_fit(station_hit_probability, x_val, y_val, 
-                    #                                           p0 = [y_val[0], p50, scale],
-                    #                                           bounds = ([0, 0, 0], [1, np.inf, np.inf]),
-                    #                                           maxfev = 10000)
+                    # perform efficiency fit
+                    try:
+                        popt, pcov = curve_fit(station_hit_probability, x_val, y_val, 
+                                                              p0 = [y_val[0], p50, scale],
+                                                              bounds = ([0, 0, 0], [1, np.inf, np.inf]),
+                                                              sigma = y_err,
+                                                              absolute_sigma = True)
+                    except ValueError:
+                        popt, pcov = curve_fit(station_hit_probability, x_val, y_val, 
+                                                              p0 = [y_val[0], p50, scale],
+                                                              bounds = ([0, 0, 0], [1, np.inf, np.inf]),
+                                                              maxfev = 10000)
 
 
-                    # fit_params[e].append(popt)
-                    # fit_uncertainties[e].append(pcov)
+                    fit_params[e].append(popt)
+                    fit_uncertainties[e].append(pcov)
 
-                    # if draw_plot:
-                    #     X = np.linspace(0, 3000, 100)
-                    #     plt.plot(X, station_hit_probability(X, *popt), c = c, lw = 2)
+                    if draw_plot:
+                        X = np.linspace(0, 3000, 100)
+                        plt.plot(X, station_hit_probability(X, *popt), c = c, lw = 2)
 
                 if draw_plot:
                     plt.xlabel("Shower plane distance / m")
@@ -380,7 +454,9 @@ class Classifier():
                 for energy in fit_params:
                     np.savetxt(file, energy)
 
+
             warnings.simplefilter("default", RuntimeWarning)
+            plt.show()
 
             return np.array(fit_params), np.array(fit_uncertainties)
             
@@ -393,6 +469,7 @@ class Classifier():
                 fitparams = np.loadtxt(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/fit_params.csv")
             else:
                 fitparams = np.loadtxt(f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/fit_params.csv")
+
             plt.rcParams["figure.figsize"] = [25, 18]
             plt.rcParams["font.size"] = 22
             colormap = cmap.get_cmap("plasma")
@@ -416,6 +493,8 @@ class Classifier():
             xs[reflect] = -xs[reflect] + 2250
             ys[reflect] = -ys[reflect] + 750
 
+            start_time = perf_counter_ns()
+
             # do the T3 simulation
             t3_hits, t3_misses = np.zeros((7, 5)), np.zeros((7, 5))
             x_container, y_container = [[[] for t in range(5)] for e in range(7)], [[[] for t in range(5)] for e in range(7)]
@@ -423,7 +502,7 @@ class Classifier():
 
             for step_count, (x, y) in enumerate(zip(xs, ys)):
 
-                print(f"Enumerating showers: {step_count + 1}/{len(xs)} ~ {(step_count + 1)/len(xs) * 1e2:.2f}%", end = "\r")
+                progress_bar(step_count, n_points, start_time)
 
                 energy_and_theta = np.random.randint(0, len(fitparams))
                 energy, t = energy_and_theta // 5, energy_and_theta % 5
@@ -497,13 +576,15 @@ class Classifier():
             plt.xlabel("Zenith range")
             plt.ylabel("Energy range")
 
+            plt.show()
+
         @staticmethod
         def __header__() -> None : 
 
             global header_was_called
             header_was_called = True
 
-            print("\nDATASET".ljust(72) + "TP      FP      TN      FN     sum")
+            print("\nDATASET".ljust(72) + "     TP      FP      TN      FN")
     
     # Performance visualizers #######################################################################
 
