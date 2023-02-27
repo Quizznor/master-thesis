@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<SdCalibrator
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation='/cr/data01/filip/offline_ubuntu20/install/share/auger-offline/config/SdCalibrator.xsd'>
+
+  <!-- display parameter info at module init [bool] -->
+  <infoParameters/>
+
+  <!-- Unless you know what you are doing, you should not change any
+       of the values below -->
+
+  <!-- Sum only PMT traces above this value [VEM] -->
+  <PMTSummationCutoff> 0.1 </PMTSummationCutoff>
+
+  <!-- if Dynode/Anode ratio outside the valid range low gain trace will
+       not be used in the case of high gain saturation -->
+  <validDynodeAnodeRatioRange> 20 45 </validDynodeAnodeRatioRange>
+
+  <!-- LS calibration version >= 8 parameters:
+       muon peak (amplitude) histogram fit range [fraction of on-line peak] -->
+  <peakFitRange> 0.75 1.35 </peakFitRange>
+  <!-- accept value from fit when chi2/NDF < than this value -->
+  <peakFitChi2Accept> 3.5 </peakFitChi2Accept>
+  <!-- VEMization from Laura -->
+  <peakVEMConversionFactor> 0.87 </peakVEMConversionFactor>
+
+  <!-- muon charge (integral) histogram fit
+       search for local maximum (from high end) with drops of this ratio -->
+  <chargeFitShoulderHeadRatio> 0.75 </chargeFitShoulderHeadRatio>
+  <!-- accept value from fit when chi2/NDF < than this value -->
+  <chargeFitChi2Accept> 2.5 </chargeFitChi2Accept>
+  <!-- position of the muon charge histogram maximum to VEM, from Laura -->
+  <chargeVEMConversionFactor> 1.01 </chargeVEMConversionFactor>
+  <!-- conversion of the LS online charge estimate to VEM -->
+  <onlineChargeVEMFactor> 1.045 </onlineChargeVEMFactor>
+  <!-- SSD charge MIP from simulations -->
+  <chargeMIPConversionFactor> 1.16 </chargeMIPConversionFactor>
+
+  <!-- muon shape histogram fit -->
+  <shapeFitRange>
+    <beforeCalibrationVersion12> 44 187 </beforeCalibrationVersion12>
+    <sinceCalibrationVersion12> 110 300 </sinceCalibrationVersion12>
+  </shapeFitRange>
+
+  <!-- fractions for rise/fall time definitions; the fractions are assumed to be
+       ordered in an ascending order and that
+       rise-time start fraction < fall-time end fraction [fractions of total integral] -->
+  <riseTimeFractions> 0.1 0.5 </riseTimeFractions>
+  <fallTimeFractions> 0.5 0.9 </fallTimeFractions>
+
+  <!-- with simulated events use unsaturated FADC traces
+       (sevt::Station::eTotalNoSaturation trace component)
+       disabled by default (eTotal used instead)
+       only used for old calibration (pre CDAS v4r4) -->
+  <!-- <useUnsaturatedTraces/> -->
+
+  <!-- Station trigger is recalcualted only for LS calibration versions <= 12.
+       This switch forces the recalcualtion for all versions. -->
+  <!-- <forceLSTriggerRecalculation/> -->
+  <!-- Is the trigger recalculation allowed to change station TOT to Th2 or Th1? -->
+  <keepLSTOTTrigger/>
+  <!-- For some stations the LS trigger has to be recalcualted even when the
+       LS calibration version is above 12. These are the stations with cyclon
+       boards. The same list of station ids is also used to remove monitoring
+       data from the end of the FADC traces. -->
+  <recalculateLSTriggerForTestStations>
+    600 610 620 625 627 630 648 20 22 25 39 60 1733 1736 1737 1738 1742 1744
+  </recalculateLSTriggerForTestStations>
+
+  <findSignal>
+    <threshold> 3 </threshold>
+    <binsAboveThreshold> 2 </binsAboveThreshold>
+  </findSignal>
+
+  <!-- switch on the equal treatment of high and low gain signal when
+       determining signal regions -->
+  <!--treatHGLGEqualInSignalSearch/-->
+
+  <!-- check whether a found flat piece is also flat when starting from
+       its end in opposite direction, reduces inclusion of the trailing
+       edge of the signal -->
+  <!--applyBackwardFlatPieceCheck/-->
+
+  <!-- the fluctuations on the low gain signal are smaller in terms of FADC
+       bins, reduce the tolerance by one (thus, hg : 3, lg : 2) -->
+  <!--decreaseLGFlatPieceTolerance/-->
+
+  <!-- If enabled, use the Water Cherenkov Detector's start and stop times to define the minimum
+       integration window for the Scintillator. If this option is turned on, the algorithms
+       determining the Scintillator's start and stop times can only expand the integration window
+       (for the Scintillator only) beyond that of the Water Cherenkov Detector. If this is not
+       enabled, the start and stop times determined independently for the Scintillator using only
+       the scintillator trace are used to define the Scintillator's integration window. -->
+  <includeWaterCherenkovDetectorInScintillatorStartStopDetermination> 1 </includeWaterCherenkovDetectorInScintillatorStartStopDetermination>
+
+  <!-- The SmallPMT signal anticipates the LPMTs one of few tens of ns.
+       Thus is necessary to integrate the SPMT trace starting from some bins
+       before the start bin defined by the LPMTs. -->
+  <binsBeforeStartForSPMT> 5 </binsBeforeStartForSPMT>       
+  
+</SdCalibrator>

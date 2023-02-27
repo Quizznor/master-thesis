@@ -17,7 +17,7 @@ E_DICT = {
           "19_19.5" : ["napoli","*.part","(1).part"],
           }
 
-E_RANGE = "18.5_19"
+E_RANGE = "16_16.5"
 ALREADY_PRESENT = 0
 NUM_RETHROWS = 1
 
@@ -27,6 +27,7 @@ DESTINATION_DIR=f"/cr/tempdata01/filip/QGSJET-II/protons/{E_RANGE}/"
 file_list = [file for file in os.listdir(SRC_DIR) if not '.' in file or file.endswith(".part")]
 FILE_NAME = file_list[int(sys.argv[1])]
 EVENT_NAME = FILE_NAME.replace(".part", "")
+OFFSET = 10
 
 # n_showers in lib
 #   30000 16_16.5
@@ -37,7 +38,7 @@ EVENT_NAME = FILE_NAME.replace(".part", "")
 #    7232 18.5_19
 #    8646 19_19.5
 
-for j in range(ALREADY_PRESENT, ALREADY_PRESENT + NUM_RETHROWS):
+for j in range(ALREADY_PRESENT + OFFSET, ALREADY_PRESENT + NUM_RETHROWS + OFFSET):
     NAME = f"{EVENT_NAME}_{str(j).zfill(2)}"
     SEED = str(j).zfill(6)
 

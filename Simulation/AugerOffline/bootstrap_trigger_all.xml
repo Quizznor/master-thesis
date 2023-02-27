@@ -86,13 +86,13 @@
             ADST.root
           </outputFileName>
         </rootOutput>
-        <asciiOutput>
+        <!-- <asciiOutput>
           <outputFileMode> eWrite </outputFileMode>
           <mode> Hybrid </mode>
           <outputFileName> HybridRec.dat </outputFileName>
           <minimumFDRecLevel> 5 </minimumFDRecLevel>
           <minimumSDRecLevel> 3 </minimumSDRecLevel>
-        </asciiOutput>
+        </asciiOutput> -->
       </RecDataWriter>
     </configLink>
 

@@ -392,9 +392,49 @@ void DoLtpCalculation(fs::path pathToAdst)
 
 }
 
+void DoLtpDenseCalculation(fs::path pathToAdst)
+{
+  // const auto csvTraceFile = pathToAdst.parent_path()/ pathToAdst.filename().replace_extension("csv"); // for testing
+  const auto energyRange = pathToAdst.string().substr(44, 7);
+  const std::string csvDenseFilePath = "/cr/tempdata01/filip/QGSJET-II/LTP/LTP_1000/denseCalculation_" + energyRange + ".csv";
+
+  ofstream ltpDenseFile(csvDenseFilePath, std::ios_base::app);
+
+  // (2) start main loop
+  RecEventFile     recEventFile(pathToAdst.string());
+  RecEvent*        recEvent = nullptr;
+
+  // will be assigned by root
+  recEventFile.SetBuffers(&recEvent);
+
+  float triggeredStations = 0;
+  const int nDenseStations = 12;
+
+  for (unsigned int i = 0; i < recEventFile.GetNEvents(); ++i) 
+  {
+    // skip if event reconstruction failed
+    if (recEventFile.ReadEvent(i) != RecEventFile::eSuccess){continue;}
+
+    // allocate memory for data
+    const SDEvent& sdEvent = recEvent->GetSDEvent();                              // contains the traces
+    const GenShower& genShower = recEvent->GetGenShower();                        // contains the shower
+
+    const auto showerZenith = genShower.GetZenith() * (180 / 3.141593);           // in °
+
+    for (const auto& recStation : sdEvent.GetStationVector())
+    {
+      if (recStation.GetId() != 5398)
+      {
+        triggeredStations += 1;
+      } 
+    }
+    
+    ltpDenseFile << showerZenith << " " << triggeredStations / nDenseStations << "\n";   
+  }
+}
+
 int main(int argc, char** argv) 
 {
-  ExtractDataFromAdstFiles(argv[1]);
-  // DoLtpCalculation(argv[1]);
+  DoLtpDenseCalculation(argv[1]);
   return 0;
 }

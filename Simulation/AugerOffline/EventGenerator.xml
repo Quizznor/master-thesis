@@ -35,8 +35,8 @@
 
     <!-- change this to tessalate over entire grid with single station EC -->
     <sizeOfTile>
-      <deltaNorthing unit="meter"> 866 </deltaNorthing>
-      <deltaEasting unit="meter"> 1500 </deltaEasting>
+      <deltaNorthing unit="meter"> 650 </deltaNorthing>
+      <deltaEasting unit="meter"> 750 </deltaEasting>
     </sizeOfTile>
 
   </coreRandomization>

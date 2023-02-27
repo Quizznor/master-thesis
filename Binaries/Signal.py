@@ -210,10 +210,6 @@ class Trace(Signal):
     def poisson(self) -> int :
         return np.random.poisson( GLOBAL.background_frequency * GLOBAL.single_bin_duration * self.trace_length )
 
-    # return the mean of integrated PMT signals (VEM_charge) for a given window
-    def integrate(self, start_bin) -> float : 
-        return np.sum(self.integral_trace[start_bin : start_bin + self.window_length])
-
     # make this class an iterable
     def __iter__(self) -> typing.Union[tuple, StopIteration] : 
 
@@ -342,7 +338,7 @@ class RandomTrace():
             except IndexError:
                 raise RandomTraceError
 
-        print(f"\n[INFO] -- LOADING {self.station.upper()}: {self.random_file}" + 20 * " ", end = "\r")
+        print(f"\n[INFO] -- LOADING {self.station.upper()}: {self.random_file}" + 20 * " ", end = "\n")
 
         these_traces = np.loadtxt(RandomTrace.baseline_dir + self.station + "/" + self.random_file)
 

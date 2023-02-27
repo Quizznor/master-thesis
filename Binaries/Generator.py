@@ -177,6 +177,12 @@ class Generator(tf.keras.utils.Sequence):
 
         if self.use_real_background and self.force_inject is None: self.force_inject = 0
 
+        # Build first background trace
+        self.BackgroundTrace = Trace(self.build_baseline(), None, self.trace_options)
+
+        # For labelling/prior stuff
+        self.__n_sig, self.__n_bkg, self.__n_int, self.__n_prt = np.NaN, np.NaN, np.NaN, np.NaN
+
     # number of batches in generator
     def __len__(self) -> int : 
         return len(self.files)
@@ -188,80 +194,90 @@ class Generator(tf.keras.utils.Sequence):
         * *for_training = True* -- used for trace diagnostics, full traces that stem from the same shower, returns: *Traces*
         * *for_training = False* -- should ONLY be used during training, returns labelled batches, returns *(Traces, Labels)*
         '''
-        
-        # used for trace diagnostics, return full traces that stem from the same shower!
-        stations = SignalBatch(self.files[index]) if self.prior != 0 else []                                # load this shower file in memory
-        self.__integral_n_rejected, self.__particles_n_rejected = 0, 0                                      # keep track of cut statistics
-        self.__n_sig, self.__n_bkg = 0, 0                                                                   # keep track of return types
-        full_traces, traces, labels = [], [], []                                                            # reserve space for return values
 
-        for station in stations:
-
-            # create the baseline component for this trace
-            if self.use_real_background: q_peak, q_charge, baseline = self.RandomTraceBuffer.get()          # load random trace baseline
-            else: 
-                baseline = Baseline(GLOBAL.baseline_mean, GLOBAL.baseline_std, self.trace_length)           # create mock gauss. baseline
-                q_charge = [GLOBAL.q_charge for _ in range(3)]
-                q_peak = [GLOBAL.q_peak for _ in range(3)]
-
-            # create injections at this step as well?
-            # TODO ...
-
-            self.trace_options["q_charge"] = q_charge
-            self.trace_options["q_peak"] = q_peak
-
-            VEMTrace = Trace(baseline, station, self.trace_options)                                         # create the trace
-            full_traces.append(VEMTrace)
-
-            if not self.for_training: continue
-            else:
-
-                # add signal data to training batch
-                for window in VEMTrace:
-
-                    this_label, _ = self.calculate_label(VEMTrace)
-                    self.__n_sig = self.__n_sig + 1
-
-                    traces.append(window), labels.append(Generator.labels[this_label])
-
-                # add background events according to prior
-                n_rejected = self.__particles_n_rejected + self.__integral_n_rejected
-                self.__n_bkg = max(0, int((self.__n_sig - n_rejected) * ( (1 - self.prior) / self.prior ) - n_rejected))
-
-                while len(traces) < self.__n_sig + self.__n_bkg:
-                    
-                    # build baseline component for this background trace instance
-                    if self.use_real_background: q_peak, q_charge, baseline = self.RandomTraceBuffer.get()
-                    else: 
-                        baseline = Baseline(GLOBAL.baseline_mean, GLOBAL.baseline_std, self.trace_length)
-                        q_charge = [GLOBAL.q_charge for _ in range(3)]
-                        q_peak = [GLOBAL.q_peak for _ in range(3)]
-
-                    # create injections at this step as well?
-                    # TODO ...
-
-                    self.trace_options["q_charge"] = q_charge
-                    self.trace_options["q_peak"] = q_peak
-
-                    BackgroundTrace = Trace(baseline, None, self.trace_options)
-
-                    for window in BackgroundTrace:
-                        traces.append(window), labels.append(Generator.labels["BKG"])
-                        if len(traces) == self.__n_sig + self.__n_bkg: break
+        n_sig, n_int, n_prt, n_bkg = 0, 0, 0, 0                                                                 # reserve space for loop variables
 
         if self.prior != 0:
-            # should ONLY be used during training, need to return labelled trace windows 
-            # where population of SIG and BKG conform to the prior set in __init__    
-            if self.for_training:
+
+            stations = SignalBatch(self.files[index]) if self.prior != 0 else []                                # load this shower file in memory
+            full_traces, traces, labels = [], [], []                                                            # reserve space for return values
+
+            for station in stations:
+
+                VEMTrace = Trace(self.build_baseline(), station, self.trace_options)                            # create the trace
+                full_traces.append(VEMTrace)
+
+                if not self.for_training: continue
+
+                # should ONLY be used during training, need to return labelled trace windows 
+                # where population of SIG and BKG conform to the prior set in __init__    
+                else:
+
+                    # add signal data to training batch
+                    for window in VEMTrace:
+
+                        this_label, _ = self.calculate_label(VEMTrace)
+                        
+                        if this_label == "PRT":
+                            label = "BKG"
+                            n_prt += 1
+                        elif this_label == "INT":
+                            label = "BKG"
+                            n_int += 1
+                        elif this_label == "SIG":
+                            label = this_label
+                            n_sig += 1
+                        else:
+                            label = this_label
+                            n_bkg += 1
+                            print(f"[WARN] -- invalid {label = } encountered in signal creation!")
+
+                        traces.append(window), labels.append(Generator.labels[label])
+
+            # return full traces for analysis purposes
+            if not self.for_training:
+                return full_traces
+            
+            else:
+
+                
+                # (traces), (labels) at this moment only contains signal traces
+                # fill up with background according to prior set in __init__...
+                n_bkg = int(n_sig * (1 - self.prior)/self.prior) - (n_int + n_prt)
+
+                # all traces from shower were rejected, try again...
+                # this may cause a RecursionError with super high cuts
+                if n_sig == 0:
+                    return self.__getitem__(np.random.randint(self.__len__()))
+
+                # more traces than required prior were rejected, delete some "background" traces
+                elif n_bkg < 0:
+                    while n_bkg < 0:
+                        
+                        false_backgrounds = np.unique(np.argwhere(labels == self.labels["BKG"])[:, 0])
+                        random_delete = np.random.choice(false_backgrounds)
+                        _, _ = traces.pop(random_delete), labels.pop(random_delete)
+
+                        n_bkg += 1
+                        n_int -= 1
+
+                # less traces than required prior were rejected, add some from library
+                elif n_bkg > 0:
+                    for _ in range(n_bkg):
+                        traces.append(self.get_background_window()), labels.append(self.labels["BKG"])
+
+                # by chance exactly right amount of traces were rejected, do nothing
+                else:
+                    pass
+
 
                 # # shuffle traces / labels
                 # p = np.random.permutation(len(traces))
                 # traces, labels = np.array(traces)[p], np.array(labels)[p]
                 traces, labels = np.array(traces), np.array(labels)
+                self.__n_sig, self.__n_bkg, self.__n_int, self.__n_prt = n_sig, n_bkg, n_int, n_prt
 
                 return traces, labels
-            # in all other cases returning the full trace is better for analysis purposes
-            else: return full_traces
         
         # Training with prior = 0 is stupid, hence assume self.for_training = False
         # returns 1 Background trace in __getitem__ if prior is set to zero by user
@@ -301,25 +317,24 @@ class Generator(tf.keras.utils.Sequence):
     # calculate the VEM trace window label given cuts
     def calculate_label(self, VEMTrace : Trace) -> str :
 
-        if not VEMTrace.has_signal: return "BKG"
-        else:
+        integral = VEMTrace.integral_window[VEMTrace._iteration_index]
 
-            integral = VEMTrace.integral_window[VEMTrace._iteration_index]
-            if np.isnan(integral): raise ValueError
+        # Safety check for minimalistic integral calculation
+        if np.isnan(integral): raise ValueError
+
+        if not VEMTrace.has_signal: return "BKG", integral
+        else:
 
             # check particles first (computationally easier)
             if self.ignore_particles:
                 n_particles = VEMTrace.n_muons + VEMTrace.n_electrons + VEMTrace.n_photons
-                if n_particles > self.ignore_particles:
-
-                    self.__particles_n_rejected += 1
-                    return "BKG", integral
+                if n_particles <= self.ignore_particles:
+                    return "PRT", integral
 
             # check integral trace next for cut threshold
             if self.ignore_low_VEM:
-                if integral > self.ignore_low_VEM: 
-                    self.__integral_n_rejected += 1
-                    return "BKG", integral
+                if integral <= self.ignore_low_VEM: 
+                    return "INT", integral 
 
             return "SIG", integral
 
@@ -334,19 +349,58 @@ class Generator(tf.keras.utils.Sequence):
 
         return NewGenerator
 
+    # generator for background traces used to fill up __getitem__
+    def get_background_window(self) -> np.ndarray : 
+
+        self.BackgroundTrace._iteration_index += self.BackgroundTrace.window_step
+
+        if self.BackgroundTrace._iteration_index >= self.trace_length - self.BackgroundTrace.window_length:
+
+            self.BackgroundTrace = Trace(self.build_baseline(), None, self.trace_options)
+            return self.get_background_window()
+
+        return self.BackgroundTrace.get_trace_window(self.BackgroundTrace._iteration_index - self.BackgroundTrace.window_step)
+
+    # create a baseline according to options set in __init__
+    def build_baseline(self) -> np.ndarray :
+
+        if self.use_real_background: q_peak, q_charge, baseline = self.RandomTraceBuffer.get()              # load random trace baseline
+        else: 
+            baseline = Baseline(GLOBAL.baseline_mean, GLOBAL.baseline_std, self.trace_length)               # or create mock gauss. baseline
+            q_charge = [GLOBAL.q_charge for _ in range(3)]
+            q_peak = [GLOBAL.q_peak for _ in range(3)]
+
+        self.trace_options["q_charge"] = q_charge
+        self.trace_options["q_peak"] = q_peak
+
+        return baseline
+
     # getter for __getitem__ statistics during iteration
-    def get_train_loop_statistics(self) -> tuple : 
-        return self.__n_sig, self.__n_bkg, self.__integral_n_rejected, self.__particles_n_rejected
+    def get_train_loop_statistics(self) -> tuple :
+
+        n_sig, n_bkg, n_int, n_prt = self.__n_sig, self.__n_bkg, self.__n_int, self.__n_prt
+
+        if np.any(np.isnan([self.__n_sig, self.__n_bkg, self.__n_int, self.__n_prt])): 
+            raise ValueError
+        
+        self.__n_sig, self.__n_bkg, self.__n_int, self.__n_prt = np.NaN, np.NaN, np.NaN, np.NaN
+
+        return n_sig, n_bkg, n_int, n_prt
 
     # run some diagnostics on physical variables
-    def unit_test(self, n_showers : int = None) -> None :
+    def physics_test(self, n_showers : int = None) -> None :
 
         if n_showers is None: n_showers = self.__len__()
         temp, self.for_training = self.for_training, False
-        n_muons, n_electrons, n_photons = [], [], []
-        energy, zenith, spd = [], [], []
-        start_time = perf_counter_ns()
+        all_muons, all_electrons, all_photons = [], [], []
+        all_energy, all_zenith, all_spd, all_integral = [], [], [], []
         x_sig, x_bkg = [], []
+
+        sel_muons, sel_electrons, sel_photons = [], [], []
+        sel_energy, sel_zenith, sel_spd, sel_integral = [], [], [], []
+        sel_x_sig, sel_x_bkg = [], []
+        
+        start_time = perf_counter_ns()
 
         for batch, Shower in enumerate(self):
             
@@ -354,47 +408,52 @@ class Generator(tf.keras.utils.Sequence):
             
             for trace in Shower:
 
+                has_label = False
+
+                # check for cut requirements set in __init__
+                if self.ignore_low_VEM or self.ignore_particles:
+                    for _ in trace:
+                        if self.calculate_label(trace)[0] == "SIG": 
+                            has_label = True
+                            break
+                                    
                 # Shower metadata
-                energy.append(trace.Energy)
-                zenith.append(trace.Zenith)
-                spd.append(trace.SPDistance)
-                n_muons.append(trace.n_muons)
-                n_electrons.append(trace.n_electrons)
-                n_photons.append(trace.n_photons)
+                all_energy.append(trace.Energy)
+                all_zenith.append(trace.Zenith)
+                all_spd.append(trace.SPDistance)
+                all_muons.append(trace.n_muons)
+                all_electrons.append(trace.n_electrons)
+                all_photons.append(trace.n_photons)
+                all_integral.append(np.mean(trace.deposited_signal))
 
-                # Particles...?
-                # TODO ...
-
-                # Signal component
+                # Component information
                 x_sig.append(np.mean(trace.Signal))
-
-
-                # Baseline component
                 x_bkg.append(np.mean(trace.Baseline))
+
+                if has_label:
+                    sel_energy.append(trace.Energy)
+                    sel_zenith.append(trace.Zenith)
+                    sel_spd.append(trace.SPDistance)
+                    sel_muons.append(trace.n_muons)
+                    sel_electrons.append(trace.n_electrons)
+                    sel_photons.append(trace.n_photons)
+                    sel_integral.append(np.mean(trace.deposited_signal))
+
+                    sel_x_sig.append(np.mean(trace.Signal))
+                    sel_x_bkg.append(np.mean(trace.Baseline))
 
                 # Injection component
                 # TODO ...
 
             if batch == n_showers: break
 
-        plt.figure()
-        plt.title("Component information")
-        plt.yscale("log")
-
-        x_sig = np.clip(x_sig, -1, 5)
-        x_bkg = np.clip(x_bkg, -1, 5)
-        plt.hist(x_sig, bins = 100, histtype = "step", label = "Signal", density = True)
-        plt.hist(x_bkg, bins = 100, histtype = "step", label = "Baseline", density = True)
-        plt.legend()
-
-        plt.xlabel("Signal strength / VEM")
-        plt.ylabel("Occupation probability")
-
-        _, ((ax0, ax1), (ax2, ax3)) = plt.subplots(2, 2)
+        _, ((ax0, ax1, ax2), (ax3, ax4, ax5)) = plt.subplots(2, 3)
 
         # Energy distribution
         ax0.set_title("Energy distribution")
-        ax0.hist(energy, histtype = "step", bins = np.geomspace(10**16, 10**19.5, 100))
+        ax0.hist(all_energy, histtype = "step", bins = np.geomspace(10**16, 10**19.5, 100), label = "All showers")
+        ax0.hist(sel_energy, histtype = "step", bins = np.geomspace(10**16, 10**19.5, 100), label = "Selected showers")
+        ax0.legend(fontsize = 16)
 
         for e_cut in [10**16, 10**16.5, 10**17, 10**17.5, 10**18, 10**18.5, 10**19, 10**19.5]:
             ax0.axvline(e_cut, c = "gray", ls = "--")
@@ -404,28 +463,71 @@ class Generator(tf.keras.utils.Sequence):
 
         # Zenith distribution
         ax1.set_title("Zenith distribution")
-        ax1.hist(zenith, histtype = "step", bins = np.linspace(0, 90, 100))
+        ax1.hist(all_zenith, histtype = "step", bins = np.linspace(0, 90, 100), label = "All showers")
+        ax1.hist(sel_zenith, histtype = "step", bins = np.linspace(0, 90, 100), label =" Selected showers")
         ax1.set_xlabel("Zenith / °")
+        ax1.legend(fontsize = 16)
+
+        # Charge integral
+        ax2.set_title("Deposited signal in tank")
+        ax2.hist(all_integral, histtype = "step", bins = np.geomspace(1e-1, 1e3, 100), label = "All showers")
+        ax2.hist(sel_integral, histtype = "step", bins = np.geomspace(1e-1, 1e3, 100), label = "Selected showers")
+        self.ignore_low_VEM and ax2.axvline(self.ignore_low_VEM, ls = "--", c = "gray")
+        ax2.set_ylabel("# of Occurence")
+        ax2.set_xlabel("Integral signal / VEM")
+        ax2.set_xscale("log")
+        ax2.legend(fontsize = 16)
 
         # SPDistance distribution
-        ax2.set_title("Shower plane distance distribution")
-        ax2.hist(spd, histtype = "step", bins = np.linspace(0, 6e3, 100))
-        ax2.set_xlabel("Shower plane distance / m")
+        ax3.set_title("Shower plane distance distribution")
+        ax3.hist(all_spd, histtype = "step", bins = np.linspace(0, 6e3, 100), label = "All showers")
+        ax3.hist(sel_spd, histtype = "step", bins = np.linspace(0, 6e3, 100), label = "Selected showers")
+        ax3.set_xlabel("Shower plane distance / m")
+        ax3.legend(fontsize = 16)
         
         # Particle distribution
-        ax3.set_title("Particle distribution")
+        ax4.set_title("Particle distribution")
         particle_bins = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         particle_bins += list(np.geomspace(10, 1e4, 40))
-        ax3.hist(n_muons, histtype = "step", bins = particle_bins, label = "Muons")
-        ax3.hist(n_electrons, histtype = "step", bins = particle_bins, label = "Electrons")
-        ax3.hist(n_photons, histtype = "step", bins = particle_bins, label = "Photons")
-        ax3.set_xlabel("Number of particles")
-        ax3.set_xscale("log")
-        ax3.legend()
+        self.ignore_particles and ax4.axvline(self.ignore_particles, ls = "--", color = "gray")
+        ax4.hist(all_muons, histtype = "step", bins = particle_bins, label = "Muons", color = "steelblue")
+        ax4.hist(all_electrons, histtype = "step", bins = particle_bins, label = "Electrons", color = "orange")
+        ax4.hist(all_photons, histtype = "step", bins = particle_bins, label = "Photons", color = "green")
+        ax4.hist(sel_muons, histtype = "step", bins = particle_bins, color = "steelblue", ls = "--")
+        ax4.hist(sel_electrons, histtype = "step", bins = particle_bins, color = "orange", ls = "--")
+        ax4.hist(sel_photons, histtype = "step", bins = particle_bins, color = "green", ls = "--")
+        ax4.plot([],[], c = "k", ls = "--", label = "selected")   
+        ax4.set_xlabel("Number of particles")
+        ax4.set_xscale("log")
+        ax4.set_yscale("log")
+        ax4.legend(fontsize = 16)
 
-        plt.tight_layout()
+        # Component information
+        ax5.set_title("Component information")
+        ax5.set_yscale("log")
 
+        x_sig = np.clip(x_sig, -1, 5)
+        x_bkg = np.clip(x_bkg, -1, 5)
+        ax5.hist(x_sig, bins = 100, histtype = "step", label = "Signal", color = "steelblue")
+        ax5.hist(x_bkg, bins = 100, histtype = "step", label = "Baseline", color = "orange")
+        ax5.hist(x_sig, bins = 100, histtype = "step", ls = "--", color = "steelblue")
+        ax5.hist(x_bkg, bins = 100, histtype = "step", ls = "--", color = "orange")
+        ax5.legend(fontsize = 16)
+
+        ax5.set_xlabel("Signal strength / VEM")
+        ax5.set_ylabel("Occupation probability")
+
+        plt.subplots_adjust(
+            top=0.93,
+            bottom=0.111,
+            left=0.053,
+            right=0.982,
+            hspace=0.441,
+            wspace=0.302)
+        
         self.for_training = temp
+        
+        plt.show()
 
     # run some dignostics for training purposes
     def training_test(self, n_showers : int = None) -> None :
@@ -436,55 +538,59 @@ class Generator(tf.keras.utils.Sequence):
         start_time = perf_counter_ns()
 
         bins = np.linspace(-1, 5, 1000)
-        sig_no_label = np.zeros_like(bins[:-1])
-        sig_label = np.zeros_like(bins[:-1])
-        bkg_hist = np.zeros_like(bins[:-1])
+        # sig_no_label = np.zeros_like(bins[:-1])
+        # sig_label = np.zeros_like(bins[:-1])
+        # bkg_hist = np.zeros_like(bins[:-1])
         prior_hist = []
         
         for step_counter, (traces, labels) in enumerate(self):
 
             progress_bar(step_counter, n_showers, start_time)
 
-            n_sig, n_bkg, n_integral_rejected, n_particles_rejected = self.get_train_loop_statistics()
-            sig_traces, sig_labels = traces[:n_sig], labels[:n_sig]
-            bkg_traces = traces[n_sig:]
+            n_sig, n_bkg, n_int, n_prt = self.get_train_loop_statistics()
 
-            # evaluate signal component
-            for trace, label in zip (sig_traces, sig_labels):
-                if label[1]: sig_label += np.histogram(trace, bins = bins)[0]
-                else: sig_no_label += np.histogram(trace, bins = bins)[0]
+            # sig_traces, sig_labels = traces[:n_sig], labels[:n_sig]
+            # bkg_traces = traces[n_sig:]
 
-            # evaluate background component
-            for trace in bkg_traces:
-                bkg_hist += np.histogram(trace, bins = bins)[0]
+            # # evaluate signal component
+            # for trace, label in zip (sig_traces, sig_labels):
+            #     if label[1]: sig_label += np.histogram(trace, bins = bins)[0]
+            #     else: sig_no_label += np.histogram(trace, bins = bins)[0]
 
-            prior_hist.append( (n_sig - n_integral_rejected - n_particles_rejected) / (n_sig + n_bkg) )           
-            SIG, BKG, INT, PAR = SIG + n_sig, BKG + n_bkg, INT + n_integral_rejected, PAR + n_particles_rejected
+            # # evaluate background component
+            # for trace in bkg_traces:
+            #     bkg_hist += np.histogram(trace, bins = bins)[0]
 
-            # # first use of an assignment expression for me, neat!
+            prior_hist.append( (n_sig) / (n_sig + n_bkg + n_int + n_prt) )           
+            SIG, BKG, INT, PAR = SIG + n_sig, BKG + n_bkg, INT + n_int, PAR + n_prt
+
+            # first use of an assignment expression for me, neat!
             # if step_counter := step_counter + 1 >= n_traces: break
             if step_counter >= n_showers: break
 
-        # Plot test statistics
-        plt.title("Sliding window trace characteristics")
-        plt.plot(0.5 * (bins[1:] + bins[:-1]), sig_label, label = "Classified signal")
-        plt.plot(0.5 * (bins[1:] + bins[:-1]), sig_no_label, label = "Classified Background")
-        plt.plot(0.5 * (bins[1:] + bins[:-1]), bkg_hist, label = "True Background")
-        plt.axvline(self.ignore_low_VEM, c = "gray", ls = "--")
-        plt.xlabel("Signal strength / VEM")
-        plt.yscale("log")
-        plt.legend()
+        # # Plot test statistics
+        # plt.title("Sliding window trace characteristics")
+        # plt.plot(0.5 * (bins[1:] + bins[:-1]), sig_label, label = "Classified signal")
+        # plt.plot(0.5 * (bins[1:] + bins[:-1]), sig_no_label, label = "Classified Background")
+        # plt.plot(0.5 * (bins[1:] + bins[:-1]), bkg_hist, label = "True Background")
+        # plt.axvline(self.ignore_low_VEM, c = "gray", ls = "--")
+        # plt.xlabel("Signal strength / VEM")
+        # plt.yscale("log")
+        # plt.legend()
 
         plt.figure()
         plt.title("Distribution of priors")
-        plt.hist(prior_hist, histtype = "step", bins = np.linspace(0, 1, 30))
+        plt.hist(prior_hist, histtype = "step", bins = np.linspace(0, 1, 60))
         plt.axvline(self.prior, c = "gray", ls = "--")
         plt.xlim(0, 1), plt.ylim(-0.01)
 
         # Print test statistics
         print("\n\n-- Sliding window summary --")
-        print(f"{SIG = } + {BKG = } = {SIG + BKG} traces raised")
-        print(f"{INT = } + {PAR = } = {INT + PAR} traces rejected")
-        print(f"Prior = {(SIG - INT - PAR)/(BKG + SIG) * 100:.0f}%")
+        print(f"{SIG = :6} + {BKG = :6} = {SIG + BKG :6} traces raised")
+        print(f"{INT = :6} + {PAR = :6} = {INT + PAR :6} traces rejected")
+        print(f"\nset: {self.prior:.3f} <=> {(SIG)/(BKG + SIG + INT + PAR):.3f} :returned")
+        print(f"Cut eliminates {(INT + PAR)/(BKG + SIG + INT + PAR) * 100:.0f}% of all traces\n")
 
         self.for_training = temp
+        plt.show()
+

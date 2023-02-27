@@ -14,81 +14,48 @@ class Classifier():
     def __call__(self) -> int : raise NotImplementedError
 
     # test the trigger rate of the classifier on random traces
-    def production_test(self, n_traces : int = GLOBAL.n_production_traces, **kwargs) -> None :
+    def production_test(self, n_showers : int = 10000, **kwargs) -> None :
 
-        raise NotImplementedError
-
-        total_trace_duration = GLOBAL.n_bins * GLOBAL.single_bin_duration * n_traces
-        self.start_time = str(datetime.now()).replace(" ", "-")[:-10]
-        start = perf_counter_ns()
         n_total_triggered = 0
+        total_trace_duration = GLOBAL.trace_length * GLOBAL.single_bin_duration * n_showers
+        start_time = str(datetime.now()).replace(" ", "-")[:-10]
 
-        os.system(f"mkdir -p /cr/users/filip/plots/production_tests/{self.name.replace('/','-')}/{self.start_time}/")
+        os.system(f"mkdir -p /cr/users/filip/plots/production_tests/{self.name.replace('/','-')}/{start_time}/")
 
         RandomTraces = EventGenerator(["19_19.5"], split = 1, force_inject = 0, real_background = True, prior = 0, **kwargs)
-        RandomTraces.files = np.zeros(n_traces)
+        downsample = kwargs.get("apply_downsampling", False)
+        RandomTraces.files = np.zeros(n_showers)
 
-        n_bins = GLOBAL.n_bins if not RandomTraces.downsampling else GLOBAL.n_bins // 3
-        t_single_bin = GLOBAL.single_bin_duration if not RandomTraces.downsampling else GLOBAL.single_bin_duration * 3
+        start = perf_counter_ns()
 
-        if type(self) == type(HardwareClassifier()):
+        for batch, trace in enumerate(RandomTraces):
 
-            for batch in range(RandomTraces.__len__()):
+            progress_bar(batch, n_showers, start)
 
-                elapsed = perf_counter_ns() - start
-                mean_per_step_ms = elapsed / (batch + 1) * 1e-6
-                to_str = lambda x : f"{int(x//3600)}h {int((x % 3600)//60)}m"
+            for window in trace[0]:
 
-                rate = n_total_triggered / ((batch + 1)/n_traces * total_trace_duration)
-                print(f"{100 * (batch/n_traces):.2f}% - {mean_per_step_ms:.2f}ms/batch, ETA = {to_str((n_traces - batch) * mean_per_step_ms * 1e-3)} -> {n_total_triggered} trace(s) triggered, {rate:.2f} Hz      ", end ="\r")
+                if self.__call__(window):
 
-                traces, _ = RandomTraces.__getitem__(batch, full_trace = True)
-                trace = traces[0]
+                    if (n_total_triggered := n_total_triggered + 1) < 100: self.plot_trace_window(window, n_total_triggered, start_time, downsample)
 
-                for index in RandomTraces.__sliding_window__(trace):
+                    # perhaps skipping the entire trace isn't exactly accurate
+                    # but then again just skipping one window seems wrong also
+                    # -> David thinks this should be fine
+                    break
 
-                    window, _, _, _ = trace.get_trace_window((index, index + RandomTraces.window_length), skip_integral = True)
-                    
-                    if self.__call__(window):
-
-                        n_total_triggered += 1
-
-                        if n_total_triggered < 100: self.plot_trace_window(window, n_total_triggered)
-
-                        # perhaps skipping the entire trace isn't exactly accurate
-                        # but then again just skipping one window seems wrong also
-                        # -> David thinks this should be fine
-                        break
-
-        else:
-
-            for batch, (traces, _, _) in enumerate(RandomTraces):
-
-                elapsed = perf_counter_ns() - start
-                mean_per_step_ms = elapsed / (batch + 1) * 1e-6
-                to_str = lambda x : f"{int(x//3600)}h {int((x % 3600)//60)}m"
-                predictions = self.__call__(traces)
-
-                print(f"{100 * (batch/n_traces):.2f}% - {mean_per_step_ms:.2f}ms/batch, ETA = {to_str((n_traces - batch) * mean_per_step_ms * 1e-3)} -> {n_total_triggered} trace(s) triggered          ", end ="\r")
-
-                if np.any(predictions):
-                    n_total_triggered += 1
-
-                    if n_total_triggered < 100: self.plot_trace_window(traces[np.argmax(predictions)], n_total_triggered)               # plots the FIRST trigger in batch!    
-
-        total_trace_duration = t_single_bin * n_bins * n_traces
         trigger_frequency = n_total_triggered / total_trace_duration
+        frequency_error = np.sqrt(n_total_triggered) / total_trace_duration
 
         print("\n\nProduction test results:")
         print("")
-        print(f"random traces injected: {n_traces}")
+        print(f"random traces injected: {n_showers}")
         print(f"summed traces duration: {total_trace_duration:.4}s")
         print(f"total T2 trigger found: {n_total_triggered}")
         print(f"*********************************")
-        print(f"TRIGGER FREQUENCY = {trigger_frequency:.4f} Hz")
+        print(f"TRIGGER FREQUENCY = {trigger_frequency:.2f} +- {frequency_error:.2f} Hz")
 
     # helper function that saves triggered trace windows for production_test()
-    def plot_trace_window(self, trace : np.ndarray, index : int) -> None : 
+    def plot_trace_window(self, trace : np.ndarray, index : int, start_time : str, downsampled : bool) -> None : 
 
         (pmt1, pmt2, pmt3), x = trace, len(trace[0])
         assert len(pmt1) == len(pmt2) == len(pmt3), "TRACE LENGTHS DO NOT MATCH"
@@ -100,12 +67,12 @@ class Classifier():
         plt.plot(range(x), pmt3, label = "PMT #3")
 
         plt.ylabel(r"Signal / VEM$_\mathrm{Peak}$")
-        plt.xlabel("Bin / 8.33 ns")
+        plt.xlabel("Bin / 8.33 ns" if not downsampled else "Bin / 25 ns")
         plt.xlim(0, x)
         plt.legend()
         plt.tight_layout()
         
-        plt.savefig(f"/cr/users/filip/plots/production_tests/{self.name.replace('/','-')}/{self.start_time}/trigger_{index}")
+        plt.savefig(f"/cr/users/filip/plots/production_tests/{self.name.replace('/','-')}/{start_time}/trigger_{index}")
         plt.cla()
 
     # calculate performance for a given set of showers
@@ -215,19 +182,19 @@ class Classifier():
 
             if os.stat(save_files['TN']).st_size:
                 TN = np.loadtxt(save_files['TN'], usecols = [2, 3, 4, 5, 6, 7])
-            else: TN = []
+            else: TN = np.array([])
 
             if os.stat(save_files['FP']).st_size:
                 FP = np.loadtxt(save_files['FP'], usecols = [2, 3, 4, 5, 6, 7])
-            else: FP = []
+            else: FP = np.array([])
 
             if os.stat(save_files['TP']).st_size:
                 TP = np.loadtxt(save_files['TP'], usecols = [2, 3, 4, 5, 6, 7])
-            else: TP = []
+            else: TP = np.array([])
             
             if os.stat(save_files['FN']).st_size:
                 FN = np.loadtxt(save_files['FN'], usecols = [2, 3, 4, 5, 6, 7])
-            else: FN = []
+            else: FN = np.array([])
 
             tp, fp = len(TP), len(FP)
             tn, fn = len(TN), len(FN)
@@ -335,7 +302,7 @@ class Classifier():
             plt.plot(1 - np.array(PRC_x), PRC_y, c = kwargs.get("c", "steelblue"), label = self.name + "/" + dataset, ls = kwargs.get("ls", "solid"))
             plt.plot([0,1],[0.5,0.5,], ls = "--", c = "gray")
 
-        # plot the classifiers efficiency at a given SPD and energy
+        # plot the classifiers efficiency at a given SPD, energy, and theta
         # TODO error calculation for fit params, fit curves 
         def spd_energy_efficiency(self, dataset : str, **kwargs) -> None : 
 
@@ -458,8 +425,64 @@ class Classifier():
             warnings.simplefilter("default", RuntimeWarning)
             plt.show()
 
-            return np.array(fit_params), np.array(fit_uncertainties)
+        # plot the classifiers efficiency in terms of deposited signal
+        def signal_efficiency(self, dataset : str, **kwargs) -> None : 
+
+            theta_bins = [26, 38, 49, 60]
+            energy_bins = [10**16.5, 1e17, 10**17.5, 1e18, 10**18.5, 1e19]
+            TP, FP, TN, FN = self.load_and_print_performance(dataset)
+            # Prediction structure: [ integral, n_signal, energy, SPD, Theta]
+
+            signal_bins = np.geomspace(1e-1, 1e4, kwargs.get("bins", 50))
+            colormap = cmap.get_cmap("plasma")
             
+            warnings.simplefilter("ignore", RuntimeWarning)
+
+            miss_sorted = [[ [] for t in range(len(theta_bins) + 1) ] for e in range(len(energy_bins) + 1)]
+            hits_sorted = [[ [] for t in range(len(theta_bins) + 1) ] for e in range(len(energy_bins) + 1)]
+            e_labels = [r"$16$", r"$16.5$", r"$17$", r"$17.5$", r"$18$", r"$18.5$", r"$19$", r"$19.5$"]
+            t_labels = [r"0$^{\circ}$", r"26$^{\circ}$", r"38$^{\circ}$", r"49$^{\circ}$", r"60$^{\circ}$", r"90$^{\circ}$"]
+
+            # sort predictions into bins of theta and energy
+            for source, target in zip([TP, FN], [hits_sorted, miss_sorted]):
+
+                SPD, E, T = source[:, 0], source[:, 1], source[:, 2]
+
+                # sort misses / hits w.r.t zenith and primary energy
+                theta_indices = np.digitize(T, theta_bins)
+                energy_indices = np.digitize(E, energy_bins)
+
+                for e, t, spd in zip(energy_indices, theta_indices, SPD):
+                    target[e][t].append(spd)
+
+            for e, (hits_by_energy, misses_by_energy) in enumerate(zip(hits_sorted, miss_sorted)):
+
+                fig = plt.figure()
+                plt.xscale("log")
+                plt.ylim(-0.05, 1.05)
+                plt.errorbar([],[], c = "k", ls = "--", label = "Simulated")
+                plt.legend(loc = "upper right", title = e_labels[e] + r" $\leq$ log($E$ / eV) < " + e_labels[e + 1], title_fontsize = 19)
+                plt.xlabel("Deposited Signal / VEM")
+                plt.ylabel("Trigger efficiency / %")
+
+                for t, (hits_by_theta, miss_by_theta) in enumerate(zip(hits_by_energy, misses_by_energy)):
+
+                    c = colormap(t / len(hits_by_energy))
+                    x, _ = np.histogram(hits_by_theta, bins = signal_bins)
+                    o, _ = np.histogram(miss_by_theta, bins = signal_bins)
+
+                    bins, y = 0.5 * (signal_bins[1:] + signal_bins[:-1]), x / (x + o)
+                    sx, sy = 0.5 * np.diff(signal_bins), x/(x + 0)**2 * np.sqrt(o**2 + (x + 2*o)/(x + o)**2)
+
+                    plt.errorbar(bins, y, ls = "--", xerr = sx, yerr = sy, label = t_labels[t] + r"$\leq$ $\theta$ < " + t_labels[t + 1], color = c)
+                    
+
+                norm = BoundaryNorm([0] + theta_bins + [90], colormap.N)
+                ax2 = fig.add_axes([0.95, 0.1, 0.01, 0.8])
+                ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"Zenith angle")
+
+            plt.show()
+
         # relate single station efficiency function to T3 efficiency
         def do_t3_simulation(self, dataset : str, n_points : int = 1e5) -> None :
 
@@ -597,7 +620,8 @@ class NNClassifier(Classifier):
     # Early stopping callback that gets evaluated at the end of each batch
     class BatchwiseEarlyStopping(tf.keras.callbacks.Callback):
 
-        def __init__(self, patience : int) -> None :
+        def __init__(self, patience : int, acc_threshold : float) -> None :
+            self.acc_threshold = acc_threshold
             self.patience = patience
         
         def on_train_begin(self, logs : dict = None) -> None :
@@ -607,7 +631,7 @@ class NNClassifier(Classifier):
 
         def on_batch_end(self, batch, logs : dict = None) -> None :
 
-            if logs.get("accuracy") >= 0.985:
+            if logs.get("accuracy") >= self.acc_threshold:
                 current_loss = logs.get("loss")
                 if np.less(current_loss, self.best_loss):
                     self.best_loss = current_loss
@@ -756,10 +780,13 @@ class NNClassifier(Classifier):
             self.models[set_architecture](self.Architectures, self.model)
             self.epochs = 0
 
-        self.model.compile(loss = 'categorical_crossentropy', optimizer = 'adam', metrics = [tf.keras.metrics.Precision(), 'accuracy'], run_eagerly = True)
+        self.model.compile(loss = 'categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy'], run_eagerly = True)
         self.model.build()
+
+        early_stopping_patience = kwargs.get("early_stopping_patience", GLOBAL.early_stopping_patience)
+        early_stopping_accuracy = kwargs.get("early_stopping_accuracy", GLOBAL.early_stopping_accuracy)
         
-        EarlyStopping = self.BatchwiseEarlyStopping(kwargs.get("early_stopping_patience", GLOBAL.early_stopping_patience))
+        EarlyStopping = self.BatchwiseEarlyStopping(early_stopping_patience, early_stopping_accuracy)
 
         self.callbacks = [EarlyStopping,]
         not supress_print and print(self)
@@ -770,11 +797,6 @@ class NNClassifier(Classifier):
         TrainingSet, ValidationSet = Datasets
 
         try:
-
-            # for i in range(self.epochs, epochs):
-            #     print(f"Epoch {i + 1}/{epochs}")
-            #     self.history = self.model.fit(TrainingSet, validation_data = ValidationSet, epochs = 1, callbacks = self.callbacks)
-            #     self.epochs += 1
 
             self.history = self.model.fit(TrainingSet, validation_data = ValidationSet, epochs = epochs - self.epochs, callbacks = self.callbacks)
 
@@ -787,13 +809,11 @@ class NNClassifier(Classifier):
         # provide some metadata
         print(f"\nTraining exited {training_status}. Onto providing metadata now...")
 
-        true_positive_rate = make_dataset(self, ValidationSet, f"validation_data")
+        self.make_signal_dataset(ValidationSet, f"validation_data")
 
-        with open(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/metrics.csv", "w") as metadata:
-            for key, value in self.history.history.items():
-                metadata.write(f"{key} {value[0]}\n")
-
-            metadata.write(f"val_tpr {true_positive_rate}")
+        # with open(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/metrics.csv", "w") as metadata:
+        #     for key, value in self.history.history.items():
+        #         metadata.write(f"{key} {value[0]}\n")
 
     def save(self) -> None : 
         self.model.save(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}")

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<!-- Configuration of Module EventFileExporter -->
+
+<EventFileExporter
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation='/cr/data01/filip/offline_ubuntu20/install/share/auger-offline/config/EventFileExporter.xsd'>
+
+  <!-- file type: Offline
+                  FDAS
+                  CDAS
+                  IoAuger -->
+
+  <OutputFileType> Offline </OutputFileType>
+
+  <OutputFilename> SdSimAndRecOffline.root </OutputFilename>
+
+  <!-- (optional) switches to turn on or off streaming to root file for selected parts of the event -->
+  <StreamerSwitches>
+    <FDRaw> off </FDRaw>
+    <FDSimTraces> off </FDSimTraces>
+    <FDSimTelescope> off </FDSimTelescope>
+    <SDSimPEHisto> off </SDSimPEHisto> <!-- photoelectron time distributions at PMT photocathode -->
+    <SDSimPMTBaseHisto> off </SDSimPMTBaseHisto> <!-- simulated signal at PMT base -->
+    <SDSimPMTFilterHisto> off </SDSimPMTFilterHisto>  <!-- simulated signal after PMT filter -->
+    <SDSimTankParticles> off </SDSimTankParticles> <!-- particles injected in a simulated tank -->
+  </StreamerSwitches>
+
+</EventFileExporter>

@@ -55,9 +55,11 @@ class GLOBAL():
     ignore_particles            = False                                         # label traces with n < ignore_particles as bg
     window                      = 120                                           # Length (in bins) of the sliding window
     step                        = 10                                            # Sliding window analysis step size (in bins)
-    early_stopping_patience     = 7500                                          # number of batches for early stopping patience
     n_production_traces         = int(1e6)                                      # how many random traces to look at for predictions
     n_ensembles                 = 10                                            # how many networks of same architecture to train
+    
+    early_stopping_patience     = 7500                                          # number of batches for early stopping patience
+    early_stopping_accuracy     = 0.95                                          # activate early stopping above this accuracy
 
 def station_hit_probability(x : np.ndarray, efficiency : float, p50 : float, scale : float) -> np.ndarray:
     return efficiency * (1 - 1 / (1 + np.exp(-scale * (x - p50))))
@@ -70,5 +72,5 @@ def progress_bar(current_step : int, total_steps : int, start_time : int) -> Non
     eta = strftime('%H:%M:%S', gmtime(time_spent * (total_steps - current_step)/(current_step + 1) ))
     percentage = int((current_step + 1) / total_steps * 100)
     
-    print(f"Step {current_step + 1}/{total_steps} | {elapsed} elapsed ||{'-' * (percentage // 5):20}|| {percentage}% -- {ms_per_iteration:.3f} ms/step, ETA: {eta}", end = "\r")
-    if current_step + 1 == total_steps: print()
+    print(f"Step {current_step + 1}/{total_steps} | {elapsed} elapsed ||{'-' * (percentage // 5):20}|| {percentage}% -- {ms_per_iteration:.3f} ms/step, ETA: {eta}", end = f"{' ' * len(str(total_steps))}\r")
+    if current_step + 2 == total_steps: print()
