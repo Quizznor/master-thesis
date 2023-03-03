@@ -22,7 +22,7 @@ ALREADY_PRESENT = 0
 NUM_RETHROWS = 1
 
 SRC_DIR=f"/lsdf/auger/corsika/{E_DICT[E_RANGE][0]}/QGSJET-II.04/proton/{E_RANGE}/"
-DESTINATION_DIR=f"/cr/tempdata01/filip/QGSJET-II/LTP/LTP_1500/{E_RANGE}/"
+DESTINATION_DIR=f"/cr/tempdata01/filip/QGSJET-II/LTP/LTP_2000/{E_RANGE}/"
 file_list = [file for file in os.listdir(SRC_DIR) if not '.' in file or file.endswith(".part")]
 FILE_NAME = file_list[int(sys.argv[1])]
 EVENT_NAME = FILE_NAME.replace(".part", "")

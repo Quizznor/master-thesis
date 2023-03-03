@@ -1,8 +1,8 @@
-JobBatchName    = simulateDenseStationLTP_18.5_19
+JobBatchName    = simulateDenseStationLTP_19_19.5
 Executable      = /cr/users/filip/Simulation/DenseSimulatedLTP/run_simulation.py 
 
-error           = /cr/users/filip/Simulation/condor/errors-$(Process).err
-# output          = /cr/users/filip/Simulation/condor/output-$(Process).log
+# error           = /cr/users/filip/Simulation/condor/errors-$(Process).err
+output          = /cr/users/filip/Simulation/condor/output-$(Process).log
 
 arguments       = $(Process)   
 # arguments       = $(Item)
@@ -15,7 +15,7 @@ Requirements	= (OpSysName == "Ubuntu" && OpSysMajorVer == 22  && TARGET.Machine 
 # transfer_input_files  = ../AugerOffline/userAugerOffline, ../AugerOffline/ModuleSequence_trigger_all.xml, ../AugerOffline/EventFileReader.xml, ../AugerOffline/EventFileExporter.xml, ../AugerOffline/EventGenerator.xml, ../AugerOffline/CustomStationList.xml, ../
 
 # queue from seq 0 4998 |
-queue 1
+queue 1000
 
 # PRAGUE LIBRARIES
 # 15_15.5 log E = 4999 Files

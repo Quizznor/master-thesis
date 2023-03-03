@@ -376,7 +376,7 @@ class Classifier():
                         ldf_left, ldf_right, ldf_center = ldf(left_edge_x), ldf(right_edge_x), ldf(center_x)
                         top_left_y, bottom_left_y = (center_y + height) * ldf_left, (center_y - height) * ldf_left
                         top_right_y, bottom_right_y = (center_y + height) * ldf_right, (center_y - height) * ldf_right
-                        # center_y *= ldf_center
+                        center_y *= ldf_center
                         y_val.append(center_y)
                         y_err.append(height / 2)
 
@@ -623,9 +623,8 @@ class NNClassifier(Classifier):
         def __init__(self, patience : int, acc_threshold : float) -> None :
             self.acc_threshold = acc_threshold
             self.patience = patience
-        
-        def on_train_begin(self, logs : dict = None) -> None :
-            
+
+        def __reset__(self) -> None : 
             self.current_patience = 0
             self.best_loss = np.Inf
 
@@ -641,6 +640,10 @@ class NNClassifier(Classifier):
 
                     if self.current_patience >= self.patience: raise EarlyStoppingError
 
+        def on_train_begin(self, logs : dict = None) -> None : self.__reset__()
+        def on_epoch_end(self, epoch, logs : dict = None) -> None : self.__reset__()
+
+    # Collection of different network architectures
     class Architectures():
 
         ### Library functions to add layers #################
@@ -681,12 +684,12 @@ class NNClassifier(Classifier):
 
         # doesn't really work all well with the dataset log E = 16-16.5 
         # since empty files raise background traces, which get scaled UP
-        # 96 parameters
+        # 366 parameters
         def __normed_one_layer_conv2d__(self, model) -> None :
 
             self.add_input(model, shape = (3, 120, 1))
             self.add_norm(model)
-            self.add_conv2d(model, filters = 1, kernel_size = 3, strides = 3)
+            self.add_conv2d(model, filters = 4, kernel_size = 3, strides = 3)
             self.add_output(model, units = 2, activation = "softmax")
 
         # 92 parameters
@@ -696,30 +699,29 @@ class NNClassifier(Classifier):
             self.add_conv2d(model, filters = 1, kernel_size = 3, strides = 3)
             self.add_output(model, units = 2, activation = "softmax")
 
-        # 252 parameters
+        # 1002 parameters
         def __one_layer_downsampling_equal__(self, model) -> None :
 
             self.add_input(model, shape = (3, 360, 1))
-            self.add_conv2d(model, filters = 502, kernel_size = 3, strides = 3)
+            self.add_conv2d(model, filters = 4, kernel_size = 3, strides = 3)
             self.add_output(model, units = 2, activation = "softmax")
 
 
-        # 55 parameters
+        # 140 parameters
         def __two_layer_conv2d__(self, model) -> None :
 
             self.add_input(model, shape = (3, 120, 1))
-            self.add_conv2d(model, filters = 1, kernel_size = 3, strides = 3)
-            self.add_conv1d(model, filters = 1, kernel_size = 2, strides = 2)
+            self.add_conv2d(model, filters = 4, kernel_size = 3, strides = 3)
+            self.add_conv1d(model, filters = 2, kernel_size = 2, strides = 2)
             self.add_output(model, units = 2, activation = "softmax")
 
-        # 300 parameters
+        # 630 parameters
         def __two_layer_downsampling_equal__(self, model) -> None :
 
             self.add_input(model, shape = (3, 360, 1))
-            self.add_conv2d(model, filters = 1, kernel_size = 3, strides = 3)
-            self.add_conv1d(model, filters = 1, kernel_size = 2, strides = 2)
-            self.add_output(model, units = 2, activation = "softmax")
-        
+            self.add_conv2d(model, filters = 8, kernel_size = 3, strides = 3)
+            self.add_conv1d(model, filters = 4, kernel_size = 2, strides = 2)
+            self.add_output(model, units = 2, activation = "softmax") 
 
         # 35 parameters
         def __minimal_conv2d__(self, model) -> None :
@@ -771,8 +773,11 @@ class NNClassifier(Classifier):
                 self.model = tf.keras.models.load_model("/cr/data01/filip/models/" + name + "/model_converged")
                 self.epochs = "converged"
             except OSError:
-                choice = input(f"\nSelect epoch from {os.listdir('/cr/data01/filip/models/' + name)}\n Model: ")
-                self.model = tf.keras.models.load_model("/cr/data01/filip/models/" + name + choice)
+                available_models = os.listdir('/cr/data01/filip/models/' + name)
+                if len(available_models) != 1:
+                    choice = input(f"\nSelect epoch from {available_models}\n Model: ")
+                else: choice = available_models[0]
+                self.model = tf.keras.models.load_model("/cr/data01/filip/models/" + name + "/" + choice)
                 self.epochs = int(choice.split("_")[-1])
         else:
 
@@ -798,7 +803,8 @@ class NNClassifier(Classifier):
 
         try:
 
-            self.history = self.model.fit(TrainingSet, validation_data = ValidationSet, epochs = epochs - self.epochs, callbacks = self.callbacks)
+            self.model.fit(TrainingSet, validation_data = ValidationSet, epochs = epochs - self.epochs, callbacks = self.callbacks)
+            self.epochs = epochs
 
         except EarlyStoppingError: 
             self.epochs = "converged"
@@ -806,14 +812,17 @@ class NNClassifier(Classifier):
 
         self.save()
 
+        with open(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/training_files.csv", "w") as training_file:
+            for file in TrainingSet.files:
+                training_file.write(file + "\n")
+
+        with open(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/validation_files.csv", "w") as validation_file:
+            for file in ValidationSet.files:
+                validation_file.write(file + "\n")
+
         # provide some metadata
         print(f"\nTraining exited {training_status}. Onto providing metadata now...")
-
         self.make_signal_dataset(ValidationSet, f"validation_data")
-
-        # with open(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/metrics.csv", "w") as metadata:
-        #     for key, value in self.history.history.items():
-        #         metadata.write(f"{key} {value[0]}\n")
 
     def save(self) -> None : 
         self.model.save(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}")
@@ -836,9 +845,19 @@ class NNClassifier(Classifier):
         self.model.summary()
         return ""
 
+    # add a layer to the model architecture
     def add(self, layer : str, **kwargs) -> None :
         print(self.layers[layer], layer, kwargs)
         self.layers[layer](**kwargs)
+
+    # get validation/training file path in a list
+    def get_files(self, dataset : str) -> typing.Union[list, None] : 
+
+        if dataset not in ["training", "validation"]:
+            print(f"[WARN] -- Attempt to fetch invalid dataset: <{dataset}>")
+            return None
+        
+        return list(np.loadtxt(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/{dataset}_files.csv", dtype = str))
 
 # Class for streamlined handling of multiple NNs with the same architecture
 class Ensemble(NNClassifier):

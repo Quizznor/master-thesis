@@ -75,6 +75,12 @@ class EventGenerator():
         elif isinstance(datasets, list):
             try: data = [EventGenerator.libraries[key] for key in datasets]
             except KeyError: sys.exit("Couldn't construct a valid dataset from inputs")
+        elif hasattr(datasets, "name") and hasattr(datasets, "epochs"):
+            with open(f"/cr/data01/filip/models/{datasets.name}/model_{datasets.epochs}/validation_files.csv", "r") as validation_file:
+                lines = validation_file.readlines()
+                lines = [line.strip("\n") for line in lines]
+
+            return Generator(lines, **kwargs)
 
 
         all_files = [[os.path.abspath(os.path.join(library, p)) for p in os.listdir(library)] for library in data]
@@ -259,7 +265,9 @@ class Generator(tf.keras.utils.Sequence):
                         _, _ = traces.pop(random_delete), labels.pop(random_delete)
 
                         n_bkg += 1
-                        n_int -= 1
+                        
+                        if self.ignore_particles: n_prt -= 1
+                        elif self.ignore_low_VEM: n_int -= 1
 
                 # less traces than required prior were rejected, add some from library
                 elif n_bkg > 0:
@@ -411,23 +419,26 @@ class Generator(tf.keras.utils.Sequence):
                 has_label = False
 
                 # check for cut requirements set in __init__
-                if self.ignore_low_VEM or self.ignore_particles:
+                if (self.ignore_low_VEM or self.ignore_particles) and trace.has_signal:
                     for _ in trace:
                         if self.calculate_label(trace)[0] == "SIG": 
                             has_label = True
                             break
                                     
                 # Shower metadata
-                all_energy.append(trace.Energy)
-                all_zenith.append(trace.Zenith)
-                all_spd.append(trace.SPDistance)
-                all_muons.append(trace.n_muons)
-                all_electrons.append(trace.n_electrons)
-                all_photons.append(trace.n_photons)
+                if trace.has_signal:
+                    all_energy.append(trace.Energy)
+                    all_zenith.append(trace.Zenith)
+                    all_spd.append(trace.SPDistance)
+                    all_muons.append(trace.n_muons)
+                    all_electrons.append(trace.n_electrons)
+                    all_photons.append(trace.n_photons)
+
+                    x_sig.append(np.mean(trace.Signal))
+
                 all_integral.append(np.mean(trace.deposited_signal))
 
                 # Component information
-                x_sig.append(np.mean(trace.Signal))
                 x_bkg.append(np.mean(trace.Baseline))
 
                 if has_label:
