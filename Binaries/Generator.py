@@ -70,11 +70,25 @@ class EventGenerator():
         if isinstance(datasets, str):
             try: data = EventGenerator.libraries[datasets]
             except KeyError:
-                if datasets == "all": data = [*EventGenerator.libraries.values()]
+                if ":" in datasets:
+                    all_energies = ["16_16.5", "16.5_17", "17_17.5", "17.5_18", "18_18.5", "18.5_19", "19_19.5"]
+                    low, high = data.split(":")
+                    data = []
+
+                    low = all_energies.index(low) if low else 0
+                    high = all_energies.index(high) if high else -1
+
+                    for energy in all_energies[low : high]:
+                        data.append(EventGenerator.libraries[energy])
+
+                elif datasets == "all": data = [*EventGenerator.libraries.values()]
                 else: sys.exit("Couldn't construct a valid dataset from inputs")
+        
         elif isinstance(datasets, list):
             try: data = [EventGenerator.libraries[key] for key in datasets]
             except KeyError: sys.exit("Couldn't construct a valid dataset from inputs")
+
+        # isinstance(datasets, NNClassifier) would be more convenient, but this isn't defined yet
         elif hasattr(datasets, "name") and hasattr(datasets, "epochs"):
             with open(f"/cr/data01/filip/models/{datasets.name}/model_{datasets.epochs}/validation_files.csv", "r") as validation_file:
                 lines = validation_file.readlines()
@@ -129,25 +143,26 @@ class Generator(tf.keras.utils.Sequence):
         
         __:Generator options:_______________________________________________________
 
-        * *prior* (``float``) -- p(signal), p(background) = 1 - prior
+        * *prior* (``float``)               -- p(signal), p(background) = 1 - prior
         * *sliding_window_length* (``int``) -- length of the sliding window
-        * *sliding_window_step* (``int``) -- stepsize for the sliding window
-        * *real_background* (``bool``) -- use real background from random traces
-        * *random_index* (``int``) -- which file to use first in random traces
-        * *force_inject* (``int``) -- inject <force_inject> background particles
-        * *for_training* (``bool``) -- return labelled batches if *True* 
+        * *sliding_window_step* (``int``)   -- stepsize for the sliding window
+        * *real_background* (``bool``)      -- use real background from random traces
+        * *random_index* (``int``)          -- which file to use first in random traces
+        * *force_inject* (``int``)          -- inject <force_inject> background particles
+        * *for_training* (``bool``)         -- return labelled batches if *True* 
 
         __:VEM traces:______________________________________________________________
 
-        * *apply_downsampling* (``bool``) -- make UUB traces resembel UB traces
-        * *q_peak* (``float``) -- ADC to VEM conversion factor, for UB <-> UUB
-        * *q_charge* (``float``) -- Conversion factor for the integral trace
-        * *n_bins* (``int``) -- generate a baseline with <trace_length> bins
+        * *apply_downsampling* (``bool``)   -- make UUB traces resembel UB traces
+        * *q_peak* (``float``)              -- ADC to VEM conversion factor, for UB <-> UUB
+        * *q_charge* (``float``)            -- Conversion factor for the integral trace
+        * *n_bins* (``int``)                -- generate a baseline with <trace_length> bins
 
         __:Classifier:______________________________________________________________
 
-        * *ignore_low_vem* (``float``) -- intentionally mislabel low VEM_charge signals
-        * *ignore_particles* (``int``) -- intentionally mislabel few-particle signals
+        * *ignore_low_vem* (``float``)      -- intentionally mislabel low VEM_charge signals
+        * *ignore_particles* (``int``)      -- intentionally mislabel few-particle signals
+        * *particle_type* (``list[str]``)   -- what particles to consider in particle cut
 
         '''
         
@@ -177,6 +192,7 @@ class Generator(tf.keras.utils.Sequence):
         # Classifier options
         self.ignore_low_VEM = kwargs.get("ignore_low_vem", GLOBAL.ignore_low_VEM)                           # integrated signal cut threshold
         self.ignore_particles = kwargs.get("ignore_particles", GLOBAL.ignore_particles)                     # particle in tank cut threshold
+        self.particle_type = kwargs.get("particle_type", GLOBAL.particle_type)                              # type of particles that count
 
         if self.use_real_background:
             self.RandomTraceBuffer = RandomTrace(station = station, index = random_index)
@@ -335,8 +351,10 @@ class Generator(tf.keras.utils.Sequence):
 
             # check particles first (computationally easier)
             if self.ignore_particles:
-                n_particles = VEMTrace.n_muons + VEMTrace.n_electrons + VEMTrace.n_photons
-                if n_particles <= self.ignore_particles:
+                total_particles = 0
+                for key in self.particle_type:
+                    total_particles += VEMTrace.particles[key]
+                if total_particles <= self.ignore_particles:
                     return "PRT", integral
 
             # check integral trace next for cut threshold
@@ -430,9 +448,9 @@ class Generator(tf.keras.utils.Sequence):
                     all_energy.append(trace.Energy)
                     all_zenith.append(trace.Zenith)
                     all_spd.append(trace.SPDistance)
-                    all_muons.append(trace.n_muons)
-                    all_electrons.append(trace.n_electrons)
-                    all_photons.append(trace.n_photons)
+                    all_muons.append(trace.particles["muons"])
+                    all_electrons.append(trace.particles["electrons"])
+                    all_photons.append(trace.particles["photons"])
 
                     x_sig.append(np.mean(trace.Signal))
 
@@ -445,9 +463,9 @@ class Generator(tf.keras.utils.Sequence):
                     sel_energy.append(trace.Energy)
                     sel_zenith.append(trace.Zenith)
                     sel_spd.append(trace.SPDistance)
-                    sel_muons.append(trace.n_muons)
-                    sel_electrons.append(trace.n_electrons)
-                    sel_photons.append(trace.n_photons)
+                    sel_muons.append(trace.particles["muons"])
+                    sel_electrons.append(trace.particles["electrons"])
+                    sel_photons.append(trace.particles["photons"])
                     sel_integral.append(np.mean(trace.deposited_signal))
 
                     sel_x_sig.append(np.mean(trace.Signal))

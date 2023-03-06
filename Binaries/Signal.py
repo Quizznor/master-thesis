@@ -30,9 +30,23 @@ class Signal():
         self.SPDistance = int(next(iter(sp_distances)))                             # the distance from the shower core
         self.Energy = next(iter(energies))                                          # energy of the shower of this signal
         self.Zenith = next(iter(zeniths))                                           # zenith of the shower of this signal
+
         self.n_muons = int(next(iter(n_muons)))                                     # number of muons injected in trace
         self.n_electrons = int(next(iter(n_electrons)))                             # number of electrons injected in trace
         self.n_photons = int(next(iter(n_photons)))                                 # number of photons injected in trace
+
+        self.particles = \
+        {
+            "mu" : self.n_muons,
+            "muon" : self.n_muons,
+            "muons" : self.n_muons,
+            "e" : self.n_electrons,
+            "electron" : self.n_electrons,
+            "electrons" : self.n_electrons,
+            "ph" : self.n_photons,
+            "photon" : self.n_photons,
+            "photons" : self.n_photons
+        }
 
         self.Signal = np.zeros((3, trace_length))
         # self.signal_start = np.random.randint(0, trace_length - len(pmt_data[0]))
@@ -138,8 +152,10 @@ class Trace(Signal):
         baseline_q_peak = np.array(self.q_peak)
 
         # convert Baseline from "real" q_peak/charge to simulated
+        # simulate a floating point baseline for realistic bin overflow
         conversion_factor = simulation_q_peak/baseline_q_peak
-        self.Baseline = np.array([pmt * conversion_factor[i] for i, pmt in enumerate(self.Baseline)])
+        self.Baseline += np.random.uniform(size = self.Baseline.shape)
+        self.Baseline = np.array([pmt * c for c, pmt in zip(conversion_factor, self.Baseline)])
 
         self.pmt_1, self.pmt_2, self.pmt_3 = np.zeros((3, 2048) )
 
@@ -168,6 +184,8 @@ class Trace(Signal):
             self.pmt_1 = np.floor(self.pmt_1) / simulation_q_peak[0]
             self.pmt_2 = np.floor(self.pmt_2) / simulation_q_peak[1]
             self.pmt_3 = np.floor(self.pmt_3) / simulation_q_peak[2]
+
+        self.Baseline = np.floor(self.Baseline)
 
     @staticmethod
     def apply_downsampling(pmt, random_phase) -> np.ndarray :

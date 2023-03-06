@@ -53,6 +53,7 @@ class GLOBAL():
     # Classifier details, can be overwritten in __new__ of EventGenerator
     ignore_low_VEM              = False                                         # label signals under threshold as background
     ignore_particles            = False                                         # label traces with n < ignore_particles as bg
+    particle_type               = ["mu", "e", "ph"]                             # type of particles that count toward cut
     window                      = 120                                           # Length (in bins) of the sliding window
     step                        = 10                                            # Sliding window analysis step size (in bins)
     n_production_traces         = int(1e6)                                      # how many random traces to look at for predictions
