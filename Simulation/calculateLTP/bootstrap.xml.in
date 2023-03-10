@@ -20,32 +20,32 @@
     <configLink
       id         = "ModuleSequence"
       type       = "XML"
-      xlink:href = "/cr/users/filip/Simulation/AugerOffline/ModuleSequence_trigger_all.xml"/>
+      xlink:href = "/cr/users/filip/Simulation/.src/ModuleSequence.xml"/>
 
     <configLink
       id         = "EventFileReader"
       type       = "XML"
-      xlink:href = "/cr/users/filip/Simulation/AugerOffline/EventFileReader.xml"/>
+      xlink:href = "/cr/users/filip/Simulation/.src/EventFileReader.xml"/>
 
     <configLink
       id         = "EventFileExporter"
       type       = "XML"
-      xlink:href = "/cr/users/filip/Simulation/AugerOffline/EventFileExporter.xml"/>
+      xlink:href = "/cr/users/filip/Simulation/.src/EventFileExporter.xml"/>
 
     <configLink
       id         = "EventGenerator"
       type       = "XML"
-      xlink:href = "/cr/users/filip/Simulation/AugerOffline/EventGenerator.xml"/>
+      xlink:href = "/cr/users/filip/Simulation/.src/EventGenerator.xml"/>
 
    <configLink
        id         = "SStationListXMLManager"
        type       = "XML"
-       xlink:href = "/cr/users/filip/Simulation/AugerOffline/CustomStationList.xml"/>
+       xlink:href = "/cr/users/filip/Simulation/.src/StationListAllStations.xml"/>
 
    <configLink
        id         = "SDenseStationListXMLManager"
        type       = "XML"
-       xlink:href = '/cr/users/filip/Simulation/AugerOffline/SDenseStations_purged.xml'/>
+       xlink:href = '/cr/users/filip/Simulation/.src/SDenseStationsPurged.xml'/>
 
   </centralConfig>
 
@@ -70,20 +70,6 @@
         </CORSIKA>
       </EventFileReader>
     </configLink>
-
-  <!-- <configLink id="EventGenerator">
-    <EventGenerator>
-       <coreRandomization>
-        <centerOfTile>
-          <stationAtCenter> 5398 </stationAtCenter>
-        </centerOfTile>
-        <sizeOfTile>
-          <deltaNorthing unit="meter"> 866 </deltaNorthing>
-          <deltaEasting unit="meter"> 1500 </deltaEasting>
-        </sizeOfTile>
-    </coreRandomization>
-    </EventGenerator>
-  </configLink> -->
     
   <configLink id="RecDataWriter">
       <RecDataWriter>
@@ -95,13 +81,6 @@
             @OUTPUTFILE@
           </outputFileName>
         </rootOutput>
-        <!-- <asciiOutput>
-          <outputFileMode> eWrite </outputFileMode>
-          <mode> Hybrid </mode>
-          <outputFileName> HybridRec.dat </outputFileName>
-          <minimumFDRecLevel> 5 </minimumFDRecLevel>
-          <minimumSDRecLevel> 3 </minimumSDRecLevel>
-        </asciiOutput> -->
       </RecDataWriter>
     </configLink>
 

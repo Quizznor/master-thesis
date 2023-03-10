@@ -7,6 +7,7 @@ import matplotlib.cm as cmap
 from matplotlib.patches import Polygon
 from matplotlib.colors import BoundaryNorm
 from matplotlib.colorbar import ColorbarBase
+from scipy.stats.mstats import mquantiles
 from scipy.optimize import curve_fit
 import seaborn as sns
 import numpy as np
@@ -36,7 +37,7 @@ class GLOBAL():
     trace_length                = 2048                                          # 1 Bin = 8.3 ns, 2048 Bins = ~17. µs
     real_background             = True                                          # use random traces instead of gaussian baseline
     random_index                = None                                          # this file is used first when creating randoms
-    force_inject                = None                                          # whether or not to force injection of muons
+    force_inject                = 0                                             # whether or not to force injection of muons
     station                     = None                                          # what station to use for random traces
     
     # use only for quick checks of performance
@@ -62,8 +63,22 @@ class GLOBAL():
     early_stopping_patience     = 7500                                          # number of batches for early stopping patience
     early_stopping_accuracy     = 0.95                                          # activate early stopping above this accuracy
 
-def station_hit_probability(x : np.ndarray, efficiency : float, p50 : float, scale : float) -> np.ndarray:
-    return efficiency * (1 - 1 / (1 + np.exp(-scale * (x - p50))))
+def station_hit_probability(x : np.ndarray, efficiency : float, prob_50 : float, scale : float) -> np.ndarray :
+    return efficiency * (1 - 1 / (1 + np.exp(-scale * (x - prob_50))))
+
+def station_hit_probability_error(x : np.ndarray, pcov : np.ndarray, efficiency : float, prob_50 : float, scale : float) -> np.ndarray :
+
+    errors = np.zeros_like(x)
+
+    d_eff = lambda u : station_hit_probability(u, efficiency, prob_50, scale) / efficiency
+    d_prob_50 = lambda u : efficiency * scale * np.exp(scale * (u + prob_50)) / (np.exp(prob_50 * scale) + np.exp(scale * u))**2
+    d_scale = lambda u : efficiency * (prob_50 - u) * np.exp(scale * (prob_50 + u)) / (np.exp(prob_50 * scale) + np.exp(scale * u))**2
+
+    for i, X in enumerate(x):
+        gradient = np.array([d_eff(X), d_prob_50(X), d_scale(X)])
+        errors[i] += np.sqrt(gradient.T @ pcov @ gradient)
+
+    return errors
 
 def progress_bar(current_step : int, total_steps : int, start_time : int) -> None : 
      
