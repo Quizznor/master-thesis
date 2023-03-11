@@ -25,13 +25,13 @@ for k, file in enumerate(os.listdir(root_path)):
 
 # save all gathered data
 for e_bin in range(1, len(energy_bins)):
+
     for t_bin in range(1, len(theta_bins)): 
 
         sp_distances = np.arange(100, 6501, 100)
-        save_file = f"/cr/tempdata01/filip/QGSJET-II/LDF/BINNED/{energy_bins[e - 1]}_{energy_bins[e]}__{int(theta_bins[t_bin - 1])}_{int(theta_bins[t_bin])}.csv"
-        save_hits, save_misses = hits_sorted[e_bin - 1][t_bin - 1], miss_sorted[e_bin - 1][t_bin - 1] 
+        save_file = f"/cr/tempdata01/filip/QGSJET-II/LDF/BINNED/{energy_bins[e_bin - 1]}_{energy_bins[e_bin]}__{int(theta_bins[t_bin - 1])}_{int(theta_bins[t_bin])}.csv"
+        save_hits, save_misses = hits_sorted[e_bin - 1][t_bin - 1], miss_sorted[e_bin - 1][t_bin - 1]
+        save_matrix = np.dstack([sp_distances, save_hits, save_misses])[0]
 
         if np.all(save_hits == 0) or np.all(save_misses == 0): continue
-
-        save_matrix = np.dstack([sp_distances, save_hits, save_misses])[0]
         np.savetxt(save_file, save_matrix)

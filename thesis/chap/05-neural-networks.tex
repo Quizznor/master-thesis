@@ -75,9 +75,9 @@ be propagated into subsequent convolutional layers (searching for curves, corner
 \label{sec:RNN}
 
 Recurrent neural networks not only propagate an input value forward through their architecture, but also introduce cyclic connections between distinct layers. For
-example, in the simplest conceptional case there exists a feedback loop that connects the output of the last network layer to the input layer of the first network
-(c.f. \autoref{fig:simple-RNN} \TODO). Other feedback configurations are of course also possible, and generally preferred, as they elegantly eliminate the problem
-of vanishing/exploding gradients \cite{hochreiter1991untersuchungen}. 
+example, in the simplest conceptional case there exists a feedback loop that connects the output of a single network layer to its' input(c.f. 
+\autoref{fig:simple-RNN}). Other feedback configurations are of course possible, and generally preferred, as they elegantly eliminate the problem of 
+vanishing/exploding gradients \cite{hochreiter1991untersuchungen}. 
 
 Moreover, due to the cyclic connections in the network architecture, RNNs are espically qualified for time-series analysis. i.e. where temporally sucessive inputs
 are highly correlated. A popular example is the \textbf{L}ong \textbf{S}hort-\textbf{T}erm \textbf{M}emory (LSTM) architecture, which is visualized in 
@@ -94,9 +94,9 @@ are highly correlated. A popular example is the \textbf{L}ong \textbf{S}hort-\te
 	\includegraphics[height=4.2cm]{imgs/LSTM.png}
 	\caption{\textbf{LSTM}\label{fig:LSTM}}
 	\end{subfigure}
-	\caption*{\textbf{a)} An example RNN architecture, with one layer, where the network output of one step is used as an additional input for the next step. 
-	Image taken with changes from \cite{NN-images}. \textbf{b)} The architecture of a single LSTM layer relies on multiple gates, that update the network
-	configuration, or memory of the layer. From \cite{NN-images}. \label{fig:NN-architectures}.}
+	\caption*{\textbf{a)} An example RNN architecture, with one layer A, where the network output $h_t$ of at step $t$ is used as an additional input for step $t+1$. 
+	Image taken from \cite{NN-images}. \textbf{b)} The architecture of a single LSTM layer relies on multiple gates, that update the network
+	configuration, or memory of the layer. From \cite{NN-images} with changes. \label{fig:NN-architectures}.}
 \end{figure}
 
 The output of a single LSTM layer at timestep $t\neq0$ is calculated from two variables, the hidden state $h_t$, as well as the cell state $C_t$. While the former

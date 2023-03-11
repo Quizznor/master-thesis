@@ -406,7 +406,7 @@ class Classifier():
 
                     norm = BoundaryNorm(theta_bins, colormap.N)
                     ax2 = fig.add_axes([0.95, 0.1, 0.01, 0.8])
-                    cbar = ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"1 - sec$(\theta)$")
+                    cbar = ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"sec$(\theta)$ - 1")
                     cbar.set_ticks(theta_bins)
                     cbar.set_ticklabels(["0.0", "0.2", "0.4", "0.6", "0.8", "1.4"])
 
