@@ -76,12 +76,12 @@ be propagated into subsequent convolutional layers (searching for curves, corner
 
 Recurrent neural networks not only propagate an input value forward through their architecture, but also introduce cyclic connections between distinct layers. For
 example, in the simplest conceptional case there exists a feedback loop that connects the output of a single network layer to its' input(c.f. 
-\autoref{fig:simple-RNN}). Other feedback configurations are of course possible, and generally preferred, as they elegantly eliminate the problem of 
-vanishing/exploding gradients \cite{hochreiter1991untersuchungen}. 
+\autoref{fig:simple-RNN}). Other feedback configurations are of course possible, and generally preferred, as they can address the problem of vanishing/exploding 
+gradients \cite{hochreiter1991untersuchungen}. 
 
 Moreover, due to the cyclic connections in the network architecture, RNNs are espically qualified for time-series analysis. i.e. where temporally sucessive inputs
 are highly correlated. A popular example is the \textbf{L}ong \textbf{S}hort-\textbf{T}erm \textbf{M}emory (LSTM) architecture, which is visualized in 
-\autoref{fig:LSTM} \TODO.
+\autoref{fig:LSTM}.
 
 \begin{figure}
 	\centering
@@ -99,9 +99,15 @@ are highly correlated. A popular example is the \textbf{L}ong \textbf{S}hort-\te
 	configuration, or memory of the layer. From \cite{NN-images} with changes. \label{fig:NN-architectures}.}
 \end{figure}
 
-The output of a single LSTM layer at timestep $t\neq0$ is calculated from two variables, the hidden state $h_t$, as well as the cell state $C_t$. While the former
-exists in some form in every RNN, the latter is unique to the LSTM architecture \cite{gers2000learning}. $h_t$ represents the short-term memory of the network, and
-is a
+The output of a single LSTM layer at timestep $t\neq0$ is calculated from two variables, the hidden state $h_t$, as well as the cell state $C_t$. The former exists in 
+some form in every RNN and represents the networks' ability to remember inputs over few steps (consequently labelled the short-term memory). The cell state $C_t$
+corresponds to a long-term memory that is unique to the LSTM architecture \cite{gers2000learning}. Data propagates through an LSTM layer according to the below steps
+(c.f. as well \autoref{fig:LSTM}):
+
+\begin{itemize}
+	\item
+
+\end{itemize}
 
 \section{Other architectures}
 \label{sec:NN-other}

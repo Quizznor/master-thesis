@@ -17,7 +17,7 @@ E_DICT = {
           "19_19.5" : ["napoli","*.part","(1).part"],
           }
 
-E_RANGE = "19_19.5"
+E_RANGE = "18.5_19"
 ALREADY_PRESENT = 0
 NUM_RETHROWS = 1
 

@@ -63,6 +63,15 @@ class GLOBAL():
     early_stopping_patience     = 7500                                          # number of batches for early stopping patience
     early_stopping_accuracy     = 0.95                                          # activate early stopping above this accuracy
 
+def get_fit_function(type : str, energy : str, theta : str) -> np.ndarray : 
+
+    try:
+        efficiency, prob_50, scale = np.loadtxt(f"/cr/tempdata01/filip/QGSJET-II/{type}/FITPARAM/{energy}__{theta}.csv")
+        return lambda x : station_hit_probability(x, efficiency, prob_50, scale)
+    
+    except FileNotFoundError:
+        raise ValueError(f"Invalid keys: {type = }, {energy = }, {theta = }")
+
 def station_hit_probability(x : np.ndarray, efficiency : float, prob_50 : float, scale : float) -> np.ndarray :
     return efficiency * (1 - 1 / (1 + np.exp(-scale * (x - prob_50))))
 

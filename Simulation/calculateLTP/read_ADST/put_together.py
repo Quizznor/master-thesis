@@ -3,7 +3,7 @@
 import numpy as np
 import sys, os
 
-root_path = "/cr/tempdata01/filip/QGSJET-II/LDF/ADST"
+root_path = "/cr/tempdata01/filip/QGSJET-II/LTP/ADST"
 
 energy_bins = [16, 16.5, 17, 17.5, 18, 18.5, 19, 19.5]              # uniform in log(E)
 theta_bins =  [0., 33.56, 44.42, 51.32, 56.25, 65.37]               # pseudo-uniform in sec(θ)
@@ -31,7 +31,7 @@ for e_bin in range(1, len(energy_bins)):
     for t_bin in range(1, len(theta_bins)): 
 
         sp_distances = np.arange(100, 6501, 100)
-        save_file = f"/cr/tempdata01/filip/QGSJET-II/LDF/BINNED/{energy_bins[e_bin - 1]}_{energy_bins[e_bin]}__{int(theta_bins[t_bin - 1])}_{int(theta_bins[t_bin])}.csv"
+        save_file = f"/cr/tempdata01/filip/QGSJET-II/LTP/BINNED/{energy_bins[e_bin - 1]}_{energy_bins[e_bin]}__{int(theta_bins[t_bin - 1])}_{int(theta_bins[t_bin])}.csv"
         save_hits, save_misses = hits_sorted[e_bin - 1][t_bin - 1], miss_sorted[e_bin - 1][t_bin - 1]
         save_matrix = np.dstack([sp_distances, save_hits, save_misses])[0]
 
