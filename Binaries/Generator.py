@@ -176,11 +176,13 @@ class Generator(tf.keras.utils.Sequence):
         self.apply_downsampling = kwargs.get("apply_downsampling", GLOBAL.downsampling)
         self.trace_options = \
         {
-            "window_length"      : kwargs.get("window_length", GLOBAL.window),
-            "window_step"        : kwargs.get("window_step", GLOBAL.step),
-            "apply_downsampling" : self.apply_downsampling,
-            "force_inject"       : self.force_inject,
-            "trace_length"       : self.trace_length
+            "window_length"         : kwargs.get("window_length", GLOBAL.window),
+            "window_step"           : kwargs.get("window_step", GLOBAL.step),
+            "simulation_q_peak"     : kwargs.get("q_peak", GLOBAL.q_peak),
+            "simulation_q_charge"   : kwargs.get("q_charge", GLOBAL.q_charge),
+            "apply_downsampling"    : self.apply_downsampling,
+            "force_inject"          : self.force_inject,
+            "trace_length"          : self.trace_length,
         }
 
         # Generator options
@@ -200,7 +202,8 @@ class Generator(tf.keras.utils.Sequence):
         if self.use_real_background and self.force_inject is None: self.force_inject = 0
 
         # Build first background trace
-        self.BackgroundTrace = Trace(self.build_baseline(), None, self.trace_options)
+        baseline = self.build_baseline()
+        self.BackgroundTrace = Trace(baseline, None, self.trace_options)
 
         # For labelling/prior stuff
         self.__n_sig, self.__n_bkg, self.__n_int, self.__n_prt = np.NaN, np.NaN, np.NaN, np.NaN
@@ -226,7 +229,8 @@ class Generator(tf.keras.utils.Sequence):
 
             for station in stations:
 
-                VEMTrace = Trace(self.build_baseline(), station, self.trace_options)                            # create the trace
+                baseline = self.build_baseline()
+                VEMTrace = Trace(baseline, station, self.trace_options)                                         # create the trace
                 full_traces.append(VEMTrace)
 
                 if not self.for_training: continue
@@ -305,18 +309,7 @@ class Generator(tf.keras.utils.Sequence):
         # Training with prior = 0 is stupid, hence assume self.for_training = False
         # returns 1 Background trace in __getitem__ if prior is set to zero by user
         else:
-
-            if self.use_real_background: q_peak, q_charge, baseline = self.RandomTraceBuffer.get()          # load random trace baseline
-            else: 
-                baseline = Baseline(GLOBAL.baseline_mean, GLOBAL.baseline_std, self.trace_length)           # create mock gauss. baseline
-                q_charge = [GLOBAL.q_charge for _ in range(3)]
-                q_peak = [GLOBAL.q_peak for _ in range(3)]
-
-            # create injections at this step as well?
-            # TODO ...
-
-            self.trace_options["q_charge"] = q_charge
-            self.trace_options["q_peak"] = q_peak
+            baseline = self.build_baseline()
 
             # convert this to an np.ndarray to keep continuity of return type
             return np.array([Trace(baseline, None, self.trace_options)])
@@ -382,7 +375,8 @@ class Generator(tf.keras.utils.Sequence):
 
         if self.BackgroundTrace._iteration_index >= trace_length - self.BackgroundTrace.window_length:
 
-            self.BackgroundTrace = Trace(self.build_baseline(), None, self.trace_options)
+            baseline = self.build_baseline()
+            self.BackgroundTrace = Trace(baseline, None, self.trace_options)
             return self.get_background_window()
 
         return self.BackgroundTrace.get_trace_window(self.BackgroundTrace._iteration_index - self.BackgroundTrace.window_step)
@@ -393,11 +387,13 @@ class Generator(tf.keras.utils.Sequence):
         if self.use_real_background: q_peak, q_charge, baseline = self.RandomTraceBuffer.get()              # load random trace baseline
         else: 
             baseline = Baseline(GLOBAL.baseline_mean, GLOBAL.baseline_std, self.trace_length)               # or create mock gauss. baseline
-            q_charge = [GLOBAL.q_charge for _ in range(3)]
-            q_peak = [GLOBAL.q_peak for _ in range(3)]
 
-        self.trace_options["q_charge"] = q_charge
-        self.trace_options["q_peak"] = q_peak
+            # TODO this should take into account users choice of q_peak/q_charge
+            q_charge = np.array([GLOBAL.q_charge for _ in range(3)])
+            q_peak = np.array([GLOBAL.q_peak for _ in range(3)])
+
+        self.trace_options["baseline_q_charge"] = q_charge
+        self.trace_options["baseline_q_peak"] = q_peak
 
         return baseline
 
@@ -442,6 +438,9 @@ class Generator(tf.keras.utils.Sequence):
                         if self.calculate_label(trace)[0] == "SIG": 
                             has_label = True
                             break
+
+                max_sig = trace.Signal.max() / np.mean(trace.simulation_q_peak)
+                max_bkg = trace.Baseline.max() / np.mean(trace.simulation_q_peak)
                                     
                 # Shower metadata
                 if trace.has_signal:
@@ -452,12 +451,10 @@ class Generator(tf.keras.utils.Sequence):
                     all_electrons.append(trace.particles["electrons"])
                     all_photons.append(trace.particles["photons"])
 
-                    x_sig.append(np.mean(trace.Signal))
+                    x_sig.append(max_sig)
+                    x_bkg.append(max_bkg)
 
-                all_integral.append(np.mean(trace.deposited_signal))
-
-                # Component information
-                x_bkg.append(np.mean(trace.Baseline))
+                all_integral.append(np.mean(trace.deposited_signal))              
 
                 if has_label:
                     sel_energy.append(trace.Energy)
@@ -468,8 +465,8 @@ class Generator(tf.keras.utils.Sequence):
                     sel_photons.append(trace.particles["photons"])
                     sel_integral.append(np.mean(trace.deposited_signal))
 
-                    sel_x_sig.append(np.mean(trace.Signal))
-                    sel_x_bkg.append(np.mean(trace.Baseline))
+                    sel_x_sig.append(max_sig)
+                    sel_x_bkg.append(max_bkg)
 
                 # Injection component
                 # TODO ...
@@ -534,13 +531,14 @@ class Generator(tf.keras.utils.Sequence):
         # Component information
         ax5.set_title("Component information")
         ax5.set_yscale("log")
+        ax5.plot([],[], ls ="--", c = "k", label = "selected")
 
         x_sig = np.clip(x_sig, -1, 5)
         x_bkg = np.clip(x_bkg, -1, 5)
         ax5.hist(x_sig, bins = 100, histtype = "step", label = "Signal", color = "steelblue")
         ax5.hist(x_bkg, bins = 100, histtype = "step", label = "Baseline", color = "orange")
-        ax5.hist(x_sig, bins = 100, histtype = "step", ls = "--", color = "steelblue")
-        ax5.hist(x_bkg, bins = 100, histtype = "step", ls = "--", color = "orange")
+        ax5.hist(sel_x_sig, bins = 100, histtype = "step", ls = "--", color = "steelblue")
+        ax5.hist(sel_x_bkg, bins = 100, histtype = "step", ls = "--", color = "orange")
         ax5.legend(fontsize = 16)
 
         ax5.set_xlabel("Signal strength / VEM")

@@ -88,6 +88,7 @@
 	citebordercolor=kitcolor
 		]{hyperref}
 \usepackage{import}
+\usepackage{float}
 
 % DRAFT
 \usepackage{lipsum}

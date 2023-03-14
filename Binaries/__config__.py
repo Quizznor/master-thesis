@@ -28,8 +28,8 @@ plt.rcParams['figure.figsize'] = [30, 15]
 class GLOBAL():
     
     # electronics constants set in offline, see Framework/SDetector/SdSimCalibrationConstants.xml.in
-    q_peak                      = 215.934                                       # OFFLINE calibration factor for ADC - VEM
-    q_charge                    = 1606.467                                      # OFFLINE calibration factor for integrals
+    q_peak                      = 215.781                                       # OFFLINE calibration factor for ADC - VEM
+    q_charge                    = 1593.51                                       # OFFLINE calibration factor for integrals
 
     # Trace details, can be overwritten in __new__ of EventGenerator
     background_frequency        = 4665                                          # frequency of accidental injections / Hz

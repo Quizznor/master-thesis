@@ -66,11 +66,11 @@ class Trace(Signal):
         self.window_step = trace_options["window_step"]
         self.downsampled = trace_options["apply_downsampling"]
         self.trace_length = trace_options["trace_length"]
-        self.q_charge = trace_options["q_charge"]
-        self.q_peak = trace_options["q_peak"]
-
-        # determine number of accidental injections and build their component
-        self.injected = trace_options["force_inject"] if trace_options["force_inject"] is not None else self.poisson()
+        self.simulation_q_charge = trace_options["simulation_q_charge"]
+        self.simulation_q_peak = trace_options["simulation_q_peak"]
+        self.baseline_q_charge = trace_options["baseline_q_charge"]
+        self.baseline_q_peak = trace_options["baseline_q_peak"]
+        self.injected = trace_options["force_inject"]
 
         if self.injected:
             self.injections_start, self.injections_end, self.Injected = InjectedBackground(self.injected, self.trace_length)
@@ -92,12 +92,10 @@ class Trace(Signal):
         self.Baseline = baseline_data
 
         # whether or not to apply downsampling
-        if trace_options["apply_downsampling"]:
+        if self.downsampled:
             self.random_phase = np.random.randint(0, 3)
             self._iteration_index = max(self.signal_start - self.window_length + np.random.randint(1, 10), 0) // 3 if self.has_signal else 0
-            self.downsampled = True
         else: 
-            self.downsampled = False
             self._iteration_index = max(self.signal_start - self.window_length + np.random.randint(1, 10), 0) if self.has_signal else 0
 
         # build the VEM trace and integral
@@ -118,7 +116,10 @@ class Trace(Signal):
 
         # Signal and Injected are simulated, and have a constant/equal q_peak/q_charge
         # Baseline (for random traces) has different q_peak/q_charge and needs conversion
-        conversion_factor = GLOBAL.q_charge/np.array(self.q_charge)
+        conversion_factor = self.simulation_q_charge / self.baseline_q_charge
+
+        # Technically, there should be a uniform distribution [0, 1] added here, to simulate ADC overflow
+        # But...! Needs to be the exact same increment as in self.convert_to_VEM(), is this even relevant?
         baseline = np.array([pmt * conversion_factor[i] for i, pmt in enumerate(self.Baseline)])
         
         if self.has_signal: 
@@ -129,9 +130,11 @@ class Trace(Signal):
 
         # average across all PMTs to build integral trace
         # mathematically equivalent to averaging later
-        # integral trace is always a full bandwith trace
+        # integral trace is always calculated from full bandwith trace
 
-        self.int_1, self.int_2, self.int_3 = np.floor(baseline) / GLOBAL.q_charge
+        self.int_1 = np.floor(baseline[0]) / self.simulation_q_charge[0]
+        self.int_2 = np.floor(baseline[1]) / self.simulation_q_charge[1]
+        self.int_3 = np.floor(baseline[2]) / self.simulation_q_charge[2]
         self.deposited_signal = [np.sum(self.int_1), np.sum(self.int_2), np.sum(self.int_3)]
         self.integral_window = np.empty(self.trace_length)
         self.integral_window.fill(np.NaN)
@@ -149,18 +152,9 @@ class Trace(Signal):
         # Background has simulated q_peak/q_area if NOT random traces
         # otherwise set to values defined in RandomTrace class (l281)
 
-        simulation_q_peak = np.array([GLOBAL.q_peak for _ in range(3)])
-
-        ###############################################################
-        # THIS IS A TEMPORARY HACK TO CHECK SOMETHING, PLEASE REMOVE ME
-        # simulation_q_peak = np.array([GLOBAL.q_peak * 0.89 for _ in range(3)])              # 11% decrease as observed in random traces
-        ###############################################################
-
-        baseline_q_peak = np.array(self.q_peak)
-
         # convert Baseline from "real" q_peak/charge to simulated
         # simulate a floating point baseline for realistic bin overflow
-        conversion_factor = simulation_q_peak/baseline_q_peak
+        conversion_factor = self.simulation_q_peak / self.baseline_q_peak
         self.Baseline += np.random.uniform(size = self.Baseline.shape)
         self.Baseline = np.array([pmt * c for c, pmt in zip(conversion_factor, self.Baseline)])
 
@@ -174,9 +168,9 @@ class Trace(Signal):
             self.pmt_3 += component[2]
 
         if self.downsampled:
-            self.pmt_1 = np.floor(self.apply_downsampling(self.pmt_1, self.random_phase)) / simulation_q_peak[0]
-            self.pmt_2 = np.floor(self.apply_downsampling(self.pmt_2, self.random_phase)) / simulation_q_peak[1]
-            self.pmt_3 = np.floor(self.apply_downsampling(self.pmt_3, self.random_phase)) / simulation_q_peak[2]
+            self.pmt_1 = np.floor(self.apply_downsampling(self.pmt_1, self.random_phase)) / self.simulation_q_peak[0]
+            self.pmt_2 = np.floor(self.apply_downsampling(self.pmt_2, self.random_phase)) / self.simulation_q_peak[1]
+            self.pmt_3 = np.floor(self.apply_downsampling(self.pmt_3, self.random_phase)) / self.simulation_q_peak[2]
 
             if self.has_signal:
                 self.signal_start = int(self.signal_start / 3)
@@ -188,9 +182,9 @@ class Trace(Signal):
 
             self.trace_length = self.trace_length // 3
         else:
-            self.pmt_1 = np.floor(self.pmt_1) / simulation_q_peak[0]
-            self.pmt_2 = np.floor(self.pmt_2) / simulation_q_peak[1]
-            self.pmt_3 = np.floor(self.pmt_3) / simulation_q_peak[2]
+            self.pmt_1 = np.floor(self.pmt_1) / self.simulation_q_peak[0]
+            self.pmt_2 = np.floor(self.pmt_2) / self.simulation_q_peak[1]
+            self.pmt_3 = np.floor(self.pmt_3) / self.simulation_q_peak[2]
 
         self.Baseline = np.floor(self.Baseline)
 
@@ -230,10 +224,6 @@ class Trace(Signal):
         #     sampled_trace[j] = int(adc) >> kFirNormalizationBitShift
 
         return np.array(sampled_trace)
-
-    # poissonian for background injection
-    def poisson(self) -> int :
-        return np.random.poisson( GLOBAL.background_frequency * GLOBAL.single_bin_duration * self.trace_length )
 
     # make this class an iterable
     def __iter__(self) -> typing.Union[tuple, StopIteration] : 
@@ -373,18 +363,18 @@ class RandomTrace():
 
         if "nuria" in self.station:
             self.q_peak = np.array([180.23, 182.52, 169.56]) * (1 - 11.59/100)
-            self.q_charge = [3380.59, 3508.69, 3158.88]      # scaling factor ???
+            self.q_charge = np.array([3380.59, 3508.69, 3158.88])      # scaling factor ???
         elif "lo_qui_don" in self.random_file:
             self.q_peak = np.array([163.79, 162.49, 173.71]) * (1 - 10.99/100)
-            self.q_charge = [2846.67, 2809.48, 2979.65]      # scaling factor ???
+            self.q_charge = np.array([2846.67, 2809.48, 2979.65])      # scaling factor ???
         elif "jaco" in self.random_file:
-            self.q_peak = [189.56, 156.48, 168.20]
-            self.q_charge = [3162.34, 2641.25, 2840.97]
+            self.q_peak = np.array([189.56, 156.48, 168.20])
+            self.q_charge = np.array([3162.34, 2641.25, 2840.97])
         elif "peru" in self.random_file:
-            self.q_peak = [164.02, 176.88, 167.37]
-            self.q_charge = [2761.37, 3007.72, 2734.63]
+            self.q_peak = np.array([164.02, 176.88, 167.37])
+            self.q_charge = np.array([2761.37, 3007.72, 2734.63])
         else:
-            print("Station not found! THIS SHOULD NOT HAPPEN")
+            print("[WARN] -- Station not found! Using OFFLINE estimate")
             self.q_peak = [GLOBAL.q_peak for i in range(3)]
             self.q_charge = [GLOBAL.q_charge for i in range(3)]
 
@@ -418,7 +408,9 @@ class InjectedBackground():
     shape : tuple = library.shape                                                   # (number, length) of particles in ^
 
     # get n injected particles
-    def __new__(self, n : int, trace_length : int) -> tuple : 
+    def __new__(self, n : int, trace_length : int) -> tuple :
+
+        if isinstance(n, str): n = self.poisson()
         
         Injections = np.zeros((3, trace_length))
         n_particles, length = InjectedBackground.shape
@@ -436,3 +428,8 @@ class InjectedBackground():
             injections_end.append(injection_end)
 
         return injections_start, injections_end, Injections
+    
+    # poissonian for background injection
+    @staticmethod
+    def poisson() -> int :
+        return np.random.poisson( GLOBAL.background_frequency * GLOBAL.single_bin_duration * GLOBAL.trace_length )

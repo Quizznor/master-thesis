@@ -396,7 +396,7 @@ After a shower core has been pinpointed and the shower axis was determined, all 
 \textbf{d}istance (SPD), the minimal separation between shower axis and station position, is calculated for each tank participating in the event and related to the
 integrated signal $S$ (in units of \Qpeak) it received. From the so gathered lateral distribution of a shower the integrated signal $S_{1000}$ of a hypothetical 
 (labelled dense) station laying at $\text{SPD} = \SI{1000}{\meter}$ is obtained.
-This standardizes the comparison of results across many different events, even if a shower has only triggered few stations. \TODO{cite}
+This standardizes the comparison of results across many different events, even if a shower has only triggered few stations \cite{gaisser1977reliability}.
 
 Due to attenuation effects in the atmosphere $S_{1000}$ is a function of $\theta$. It has been shown in \cite{DarkoCIC} that by separating the $\theta$ dependence
 of a signal $S(\theta) = S\cdot A(\theta)$ and normalizing to a reference shower inclination, a reasonably unbiased estimator $S_{38}$ can be recovered via a 
@@ -407,14 +407,14 @@ of a signal $S(\theta) = S\cdot A(\theta)$ and normalizing to a reference shower
 f_\text{CIC} = \frac{S_{1000}(\theta)}{S_{1000}(\theta_\text{ref})}=\frac{A(\theta)}{A(\theta_\text{ref})}.
 \end{equation}
 
-The reference angle is chosen as $\theta_\text{ref} = 38^\circ$, as this is the median inclination of detected events \TODO{cite}. It follows
+The reference angle is chosen as $\theta_\text{ref} = 38^\circ$, as this is the median inclination of detected events \cite{aab2020measurement}. It follows
 
 \begin{equation}
 \label{eq:constant-intensity-cut-2}
 S_{38} = \frac{S_{1000}(\theta)}{f_\text{CIC}(\theta)}.
 \end{equation}
 
-Further corrections are applied to $S_{38}$ in order to counteract influence of the local weather or geomagnetic effects \TODO{cite}. What remains is a shower 
+Further corrections are applied to $S_{38}$ in order to counteract influence of the local weather or geomagnetic effects \cite{aab2020measurement}. What remains is a shower 
 parameter which has been sanitized as much as possible from any environmental factors, and which has a proportionality to the energy of the primary particle, 
 as discussed in \autoref{chap:extensive-air-showers}.
 

@@ -47,29 +47,40 @@ to proximate pixels in a 2D image, or neighbouring voxels in a 3D scan. Even suc
 the working principle of a convolutional layer can be extended to an arbitrary input shape and size, but will be representatively explained here for a 
 two-dimensional, image-like input.
 
-The convolution in a single layer is done by one or several filters, matrices, that are scalar-multiplied to subchunks of the input data. An example 
-visualization is offered in \autoref{fig:convolution}. In the demonstration, a mock filter designed like
+The convolution in a single layer is done by one or several filters, matrices, that are scalar-multiplied to subchunks of the input data. For example a mock 
+filter like
 
-\begin{equation*}
-\mathcal{F} = 
-\begin{pmatrix}
-+1 & -1 \\
--1 & +1 \\
-\end{pmatrix}
-\end{equation*}
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}[h]{0.45\linewidth}
+		\begin{equation*}
+			\resizebox{\hsize}{!}{\ensuremath{
+				\mathcal{F} = 
+				\begin{pmatrix}
+				-1 & -1 & -1 & -1 & -1 & -1 \\
+				-1 & +1 & -1 & -1 & +1 & -1 \\
+				-1 & -1 & -1 & -1 & -1 & -1 \\
+				-1 & +1 & -1 & -1 & +1 & -1 \\
+				-1 & +1 & +1 & +1 & +1 & -1 \\
+				-1 & -1 & -1 & -1 & -1 & -1
+				\end{pmatrix}
+			}}
+		\end{equation*}
+	\end{subfigure}
+	\hfill
+	% \vspace{-40cm}
+	\begin{subfigure}[h]{0.45\linewidth}
+	\includegraphics[height=4.2cm]{imgs/convolution.png}
+	\end{subfigure}
+\end{figure}
 
-is swept across the entire image area. During the iteration, areas of the image that resemble the filter will result in a large (relative to the input data)
+
+could be swept across an entire image area. During the iteration, areas of the image that resemble the filter will result in a large (relative to the input data)
 positive scalar value.
 
 In this fashion, an image can be efficiently scanned for specific patterns (lines, edges, etc.) with just few parameters. Namely, these are the numerical
 values in the filter matrices, which can be optimized during training. The resulting output of a single layer containing different filters can interatively 
 be propagated into subsequent convolutional layers (searching for curves, corners, etc.) until full-scale image detection of complex structures becomes possible.
-
-\begin{figure}
-	\centering
-	\includegraphics[width=0.9\textwidth]{imgs/convolution.png}
-	\caption{asdasd \label{fig:convolution}}
-\end{figure}
 
 \section{Recurrent neural network}
 \label{sec:RNN}
@@ -89,25 +100,40 @@ are highly correlated. A popular example is the \textbf{L}ong \textbf{S}hort-\te
 	\includegraphics[height=4.2cm]{imgs/simple_RNN.png}
 	\caption{\textbf{simple RNN}\label{fig:simple-RNN}}
 	\end{subfigure}
-	\hfill
+	% \hfill
+	% \vspace{-40cm}
 	\begin{subfigure}[h]{0.45\linewidth}
 	\includegraphics[height=4.2cm]{imgs/LSTM.png}
 	\caption{\textbf{LSTM}\label{fig:LSTM}}
 	\end{subfigure}
 	\caption*{\textbf{a)} An example RNN architecture, with one layer A, where the network output $h_t$ of at step $t$ is used as an additional input for step $t+1$. 
-	Image taken from \cite{NN-images}. \textbf{b)} The architecture of a single LSTM layer relies on multiple gates, that update the network
-	configuration, or memory of the layer. From \cite{NN-images} with changes. \label{fig:NN-architectures}.}
+	Image altered from \cite{NN-images}. \textbf{b)} The architecture of a single LSTM layer relies on multiple gates, that update the network configuration, or 
+	memory of the layer. From \cite{NN-images} with changes. \label{fig:NN-architectures}.}
 \end{figure}
 
 The output of a single LSTM layer at timestep $t\neq0$ is calculated from two variables, the hidden state $h_t$, as well as the cell state $C_t$. The former exists in 
-some form in every RNN and represents the networks' ability to remember inputs over few steps (consequently labelled the short-term memory). The cell state $C_t$
-corresponds to a long-term memory that is unique to the LSTM architecture \cite{gers2000learning}. Data propagates through an LSTM layer according to the below steps
-(c.f. as well \autoref{fig:LSTM}):
+some form in every RNN, while the cell state $C_t$ corresponds to a long-term memory that is unique to the LSTM architecture \cite{gers2000learning}. Unlike the name 
+implies, the hidden state corresponds to the output of the network, and is thus in no way hidden. Due to vanishing/exploding gradients, the hidden state does not 
+preserve information for more than few iterations. For this reason, it is often referred to as the short-term memory of the network. Data propagates through an LSTM 
+layer according to the below steps (c.f. as well \autoref{fig:LSTM}):
 
 \begin{itemize}
-	\item 
-
+	\item A sigmoid layer outputs a number between 0 and 1 depending on the input $x_t$. The cell state from the previous iteration, $C_{t-1}$, is weighted by this 
+	number. In this fashion, the network can choose to discard or keep information from previous iterations. The first sigmoid layer is thus aptly named the 
+	forget gate.
+	\item Next, the new cell state is calculated by extracting important information from the input. This is achieved via a feature extraction layer, which is 
+	weighted by another instance of a sigmoidal layer. The thus recovered new long term memory is added to the weighted cell state $C_{t-1}$ and represents the new 
+	cell state $C_t$. This is the input gate of the LSTM.
+	\item Lastly, the hidden state $h_t$ is computed at the output gate of the LSTM. A feature extraction layer processes $C_t$ and provides an output, that is 
+	weighted by one last sigmoid layer dependant on the input $x_t$.
 \end{itemize}
 
 \section{Other architectures}
 \label{sec:NN-other}
+
+With the current rise of deep learning applications in every facet of data processing, a plethora of other architectures have been established to achieve specific
+tasks. Some of these are purely generative (e.g. \textbf{G}enerative \textbf{A}dversarial \textbf{N}etworks (GANs) \cite{creswell2018generative}) or not out of the 
+box suitable for classification due to other reasons. Of particular interest, specifically for this work, are architectures that have been shown to outperform others
+in time-series analysis. Apart from the LSTM discussed in \autoref{sec:RNN} the \textbf{G}ated \textbf{R}ecurrent \textbf{U}nit (GRU) \cite{dey2017gate} is a popular 
+implementation of a recurrent neural network. Last but not least, transformers \cite{vaswani2017attention} have consistently been among the most promising architectures 
+for time-series analysis. However, because they require a lot of computational resources they are not compatible with the use-case that this work is pertaining to.
