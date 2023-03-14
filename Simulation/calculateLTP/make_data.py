@@ -7,7 +7,7 @@ ADST = root + "ADST/"
 move_from = root + "temp/"
 move_to = root + "temp_processed/"
 
-# # print("moving everything from source to temp")
+# print("moving everything from source to temp")
 os.system(f"mkdir {move_from} {move_to} {ADST}")
 os.system(f"mv {source + '/*'} {move_from}")
 while True:
@@ -25,8 +25,8 @@ while True:
         # print(f"moving target files in {source} to {move_to}")
         os.system(f"mv {source}/* {move_to}")
 
-# os.system("/cr/users/filip/Simulation/calculateLTP/read_ADST/put_together.py")
-# os.system(f"rm -rf {ADST}")
+os.system("/cr/users/filip/Simulation/calculateLTP/read_ADST/put_together.py")
+os.system(f"rm -rf {ADST}")
 os.system(f"mv {move_from}/* {source}")
 os.system(f"mv {move_to}/* {source}")
 os.system(f"rm -rf {move_to} {move_from}")

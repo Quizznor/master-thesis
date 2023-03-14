@@ -150,6 +150,12 @@ class Trace(Signal):
         # otherwise set to values defined in RandomTrace class (l281)
 
         simulation_q_peak = np.array([GLOBAL.q_peak for _ in range(3)])
+
+        ###############################################################
+        # THIS IS A TEMPORARY HACK TO CHECK SOMETHING, PLEASE REMOVE ME
+        # simulation_q_peak = np.array([GLOBAL.q_peak * 0.89 for _ in range(3)])              # 11% decrease as observed in random traces
+        ###############################################################
+
         baseline_q_peak = np.array(self.q_peak)
 
         # convert Baseline from "real" q_peak/charge to simulated

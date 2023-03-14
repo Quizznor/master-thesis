@@ -347,7 +347,7 @@ class Classifier():
                 # axis 2 = sorted by zenith angle
                 for t, (hits, misses) in enumerate(zip(hits, misses)):
 
-                    c = colormap(t / len(theta_bins))
+                    c = colormap(t / (len(theta_bins) - 1))
                     all_data = hits + misses
                     n_data_in_bins = 500
 
@@ -394,6 +394,7 @@ class Classifier():
                         upper = np.clip(efficiency + efficiency_err, 0, 1)
                         lower = np.clip(efficiency - efficiency_err, 0, 1)
 
+                        plt.axvline(1500, c = "k", ls = ":", lw = 0.5)
                         plt.errorbar(bin_center, efficiency, yerr = [efficiency - lower, upper - efficiency], color = c, **bar_kwargs)
 
                 if kwargs.get("draw_plot", True):

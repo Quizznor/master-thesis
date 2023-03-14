@@ -10,6 +10,7 @@ theta_bins =  [0., 33.56, 44.42, 51.32, 56.25, 65.37]               # pseudo-uni
 
 miss_sorted = [[ np.zeros(65) for t in range(len(theta_bins) - 1) ] for e in range(len(energy_bins) - 1)]
 hits_sorted = [[ np.zeros(65) for t in range(len(theta_bins) - 1) ] for e in range(len(energy_bins) - 1)]
+files_missed = 0
 
 for k, file in enumerate(os.listdir(root_path)):
 
@@ -22,8 +23,12 @@ for k, file in enumerate(os.listdir(root_path)):
 
     t, e = np.digitize(theta, theta_bins), np.digitize(log_e, energy_bins)
 
-    miss_sorted[e - 1][t - 1] += misses
-    hits_sorted[e - 1][t - 1] += hits
+    try:
+        miss_sorted[e - 1][t - 1] += misses
+        hits_sorted[e - 1][t - 1] += hits
+    except IndexError: files_missed += 1
+
+print("files missed:", files_missed)
 
 # save all gathered data
 for e_bin in range(1, len(energy_bins)):
