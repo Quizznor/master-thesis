@@ -109,6 +109,7 @@ class Trace(Signal):
 
         stop_bin = start_bin + self.window_length
         pmt_1, pmt_2, pmt_3 = self.pmt_1[start_bin : stop_bin], self.pmt_2[start_bin : stop_bin], self.pmt_3[start_bin : stop_bin]
+        assert len(pmt_1) == len(pmt_2) == len(pmt_3) == self.window_length, f"Invalid trace window [{len(pmt_1)}, {len(pmt_2)}, {len(pmt_3)}] at index {start_bin}; full shape: [{len(self.pmt_1)}, {len(self.pmt_2)}, {len(self.pmt_3)}]"
 
         return np.array([pmt_1, pmt_2, pmt_3])
 
@@ -149,6 +150,12 @@ class Trace(Signal):
         # otherwise set to values defined in RandomTrace class (l281)
 
         simulation_q_peak = np.array([GLOBAL.q_peak for _ in range(3)])
+
+        ###############################################################
+        # THIS IS A TEMPORARY HACK TO CHECK SOMETHING, PLEASE REMOVE ME
+        # simulation_q_peak = np.array([GLOBAL.q_peak * 0.89 for _ in range(3)])              # 11% decrease as observed in random traces
+        ###############################################################
+
         baseline_q_peak = np.array(self.q_peak)
 
         # convert Baseline from "real" q_peak/charge to simulated
@@ -340,7 +347,7 @@ class RandomTrace():
 
         ## (HOPEFULLY) TEMPORARILY FIXED TO NURIA/LO_QUI_DON DUE TO BAD FLUCTUATIONS IN OTHER STATIONS
         # self.station = random.choice(["nuria", "lo_qui_don"]) if station is None else station.lower()
-        self.station = "nuria"
+        self.station = "nuria" if station is None else station
         self.index = index
 
         all_files = np.asarray(os.listdir(RandomTrace.baseline_dir + self.station)) # container for all baseline files

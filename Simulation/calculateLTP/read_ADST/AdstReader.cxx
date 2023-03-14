@@ -1,6 +1,5 @@
 // Pauls stuff
 #include <algorithm>
-
 // stl
 #include <iostream>
 #include <vector>
@@ -44,6 +43,8 @@ using namespace std;
 using namespace utl;
 namespace fs = boost::filesystem;
 
+// all stations that can theoretically be triggered during simulation. Since were throwing the simulated shower anywhere near Station 5398, this 
+// should ensure complete containment in most cases. Might not be true for highly inclined showers. Should in any case be a fair first estimate
 std::vector<int> consideredStations{
 
              // 4 rings with 5398 in center
@@ -58,16 +59,13 @@ std::vector<int> consideredStations{
               5230, 5231, 5232, 5233, 5234
 };
 
-void doCrossCheck(fs::path pathToAdst)
+void DoLtpCalculation(fs::path pathToAdst)
 {
-  // const auto csvTraceFile = pathToAdst.parent_path()/ pathToAdst.filename().replace_extension("csv"); // for testing
-  const auto csvTraceFile = pathToAdst.parent_path().parent_path() / pathToAdst.filename().replace_extension("csv");
+  std::string csvTraceFile = "/cr/tempdata01/filip/QGSJET-II/LTP/ADST/" + pathToAdst.filename().replace_extension("csv").string();
 
   // (2) start main loop
   RecEventFile     recEventFile(pathToAdst.string());
   RecEvent*        recEvent = nullptr;
-
-  // will be assigned by root
   recEventFile.SetBuffers(&recEvent);
 
   for (unsigned int i = 0; i < recEventFile.GetNEvents(); ++i) 
@@ -75,6 +73,7 @@ void doCrossCheck(fs::path pathToAdst)
     // skip if event reconstruction failed
     if (recEventFile.ReadEvent(i) != RecEventFile::eSuccess){continue;}
 
+    // allocate memory for data
     const SDEvent& sdEvent = recEvent->GetSDEvent();                              // contains the traces
     const GenShower& genShower = recEvent->GetGenShower();                        // contains the shower
     DetectorGeometry detectorGeometry = DetectorGeometry();                       // contains SPDistance
@@ -85,34 +84,56 @@ void doCrossCheck(fs::path pathToAdst)
     const auto showerZenith = genShower.GetZenith() * (180 / 3.141593);           // in °
     const auto showerEnergy = genShower.GetEnergy();                              // in eV
     const auto showerAxis = genShower.GetAxisSiteCS();
-    const auto showerCore = genShower.GetCoreSiteCS();  
+    const auto showerCore = genShower.GetCoreSiteCS();
+    
+    std::vector<int> misses(65, 0);
+    std::vector<int> hits(65, 0);
 
-    // get id of all stations that participated in trigger
-    // get no. of particles that received any particles
+    // get id of all stations that received any particles (= the ones that were generated)
     std::vector<int> recreatedStationIds;
-    std::vector<int> simulatedStationIds;
-
     for (const auto& recStation : sdEvent.GetStationVector()){recreatedStationIds.push_back(recStation.GetId());}
-    for (const auto& genStation : sdEvent.GetSimStationVector()){simulatedStationIds.push_back(genStation.GetId());}
 
-    Detector detector = Detector();
-
-    // loop over all considered Stations
     for (const auto& consideredStationId : consideredStations)
     {
-        const auto stationPosition = detectorGeometry.GetStationPosition(consideredStationId);
+      // calculate shower plane distance
+      auto showerPlaneDistance = detectorGeometry.GetStationAxisDistance(consideredStationId, showerAxis, showerCore);
+      const int binIndex = floor(showerPlaneDistance / 100);
 
-        // calculate shower plane distance for considered station
-        const auto showerPlaneDistanceById = detectorGeometry.GetStationAxisDistance(consideredStationId, showerAxis, showerCore);
-        const auto showerPlaneDistanceByPos = detectorGeometry.GetStationAxisDistance(stationPosition, showerAxis, showerCore);
-
-        std::cout << consideredStationId << ": " << showerPlaneDistanceById << " <=> " << showerPlaneDistanceByPos << std::endl;
+      // check if the station ID appears in the generated stations
+      if (std::find(recreatedStationIds.begin(), recreatedStationIds.end(), consideredStationId) != recreatedStationIds.end())
+      {
+        // station was triggered, add to "hits"
+        hits[binIndex] += 1;
+      }
+      else
+      {
+        // station was not triggered, add to "misses"
+        misses[binIndex] += 1;
+      }
     }
+
+    ofstream saveFile(csvTraceFile, std::ios_base::app);
+    saveFile << "0 " << log10(showerEnergy) << " " << showerZenith << "\n";
+
+    for (int i = 0; i < 65; i++)
+    {
+      // std::cout << "<" << (i+1) * 100 << "m: " << hits[i] << " " << misses[i] << std::endl;
+      saveFile << (i + 1) * 100 << " " << hits[i] << " " << misses[i] << "\n";
+    }
+
+    saveFile.close();
+
   }
 }
 
 int main(int argc, char** argv) 
 {
-  doCrossCheck(argv[1]);
+  const fs::path rootDirectory{"/cr/tempdata01/filip/QGSJET-II/LTP/" + std::string(argv[1]) + "/"};
+  
+  for (const auto& file : fs::directory_iterator{rootDirectory})
+  {
+    DoLtpCalculation(file);
+  }
+
   return 0;
 }

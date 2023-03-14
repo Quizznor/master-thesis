@@ -1,4 +1,4 @@
-cross_check.o: cross_check.cxx /usr/include/stdc-predef.h \
+AdstReader.o: AdstReader.cxx /usr/include/stdc-predef.h \
  /usr/include/c++/11/algorithm /usr/include/c++/11/utility \
  /usr/include/x86_64-linux-gnu/c++/11/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/11/bits/os_defines.h \
@@ -758,7 +758,7 @@ cross_check.o: cross_check.cxx /usr/include/stdc-predef.h \
  /cr/data01/filip/offline_ubuntu20/install/include/utl/MathConstants.h \
  /cr/data01/filip/offline_ubuntu20/install/include/utl/AugerCoordinateSystem.h \
  /cr/data01/filip/offline_ubuntu20/ape/External/boost/1_78_0/include/boost/tuple/tuple_io.hpp
-cross_check.cxx:
+AdstReader.cxx:
 /usr/include/stdc-predef.h:
 /usr/include/c++/11/algorithm:
 /usr/include/c++/11/utility:

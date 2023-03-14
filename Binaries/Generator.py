@@ -72,7 +72,7 @@ class EventGenerator():
             except KeyError:
                 if ":" in datasets:
                     all_energies = ["16_16.5", "16.5_17", "17_17.5", "17.5_18", "18_18.5", "18.5_19", "19_19.5"]
-                    low, high = data.split(":")
+                    low, high = datasets.split(":")
                     data = []
 
                     low = all_energies.index(low) if low else 0
@@ -95,7 +95,6 @@ class EventGenerator():
                 lines = [line.strip("\n") for line in lines]
 
             return Generator(lines, **kwargs)
-
 
         all_files = [[os.path.abspath(os.path.join(library, p)) for p in os.listdir(library)] for library in data]
         all_files = [item for sublist in all_files for item in sublist if not item.endswith("root_files")]        
@@ -174,14 +173,15 @@ class Generator(tf.keras.utils.Sequence):
         # Trace building options
         self.trace_length = kwargs.get("trace_length", GLOBAL.trace_length)
         self.force_inject = kwargs.get("force_inject", GLOBAL.force_inject)
+        self.apply_downsampling = kwargs.get("apply_downsampling", GLOBAL.downsampling)
         self.trace_options = \
         {
-            "apply_downsampling" : kwargs.get("apply_downsampling", GLOBAL.downsampling),
             "window_length"      : kwargs.get("window_length", GLOBAL.window),
             "window_step"        : kwargs.get("window_step", GLOBAL.step),
+            "apply_downsampling" : self.apply_downsampling,
             "force_inject"       : self.force_inject,
             "trace_length"       : self.trace_length
-        }    
+        }
 
         # Generator options
         self.use_real_background = kwargs.get("real_background", GLOBAL.real_background)                    # use random trace baselines
@@ -294,7 +294,6 @@ class Generator(tf.keras.utils.Sequence):
                 else:
                     pass
 
-
                 # # shuffle traces / labels
                 # p = np.random.permutation(len(traces))
                 # traces, labels = np.array(traces)[p], np.array(labels)[p]
@@ -379,8 +378,9 @@ class Generator(tf.keras.utils.Sequence):
     def get_background_window(self) -> np.ndarray : 
 
         self.BackgroundTrace._iteration_index += self.BackgroundTrace.window_step
+        trace_length = self.trace_length if not self.apply_downsampling else self.trace_length // 3
 
-        if self.BackgroundTrace._iteration_index >= self.trace_length - self.BackgroundTrace.window_length:
+        if self.BackgroundTrace._iteration_index >= trace_length - self.BackgroundTrace.window_length:
 
             self.BackgroundTrace = Trace(self.build_baseline(), None, self.trace_options)
             return self.get_background_window()

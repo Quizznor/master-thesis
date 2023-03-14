@@ -71,7 +71,7 @@ class RandomTrace():
             except IndexError:
                 raise RandomTraceError
 
-        print(f"[INFO] -- LOADING RANDOMS: {self.random_file}" + 30 * " ", end = "\r")
+        print(f"[INFO] -- LOADING {station}: {self.random_file}... ", end = "")
 
         these_traces = np.loadtxt(RandomTrace.baseline_dir + self.station + "/" + self.random_file)
 
@@ -80,20 +80,26 @@ class RandomTrace():
         if "nuria" in self.station:
             self.q_peak = [180.23, 182.52, 169.56]
             self.q_charge = [3380.59, 3508.69, 3158.88]
+            print("DONE")
         elif "lo_qui_don" in self.station:
             # self.q_peak = [164.79, 163.49, 174.71]
             self.q_peak = [163.79, 162.49, 173.71]
             self.q_charge = [2846.67, 2809.48, 2979.65]
+            print("DONE")
         elif "jaco" in self.station:
             self.q_peak = [189.56, 156.48, 168.20]
             self.q_charge = [3162.34, 2641.25, 2840.97]
+            print("DONE")
         elif "peru" in self.station:
             self.q_peak = [164.02, 176.88, 167.37]
             self.q_charge = [2761.37, 3007.72, 2734.63]
+            print("DONE")
         else:
             print("Station not found! THIS SHOULD NOT HAPPEN")
             self.q_peak = [GLOBAL.q_peak for i in range(3)]
             self.q_charge = [GLOBAL.q_charge for i in range(3)]
+
+       
 
         self._these_traces = np.split(these_traces, len(these_traces) // 3)         # group random traces by pmt
 
@@ -221,34 +227,39 @@ def apply_downsampling(trace):
 
         return sampled_trace
 
-station = "lo_qui_don"
+print("test", sys.argv[1])
+
+station = "nuria"
 
 i = int(sys.argv[1])
 trace_duration = GLOBAL.n_bins * GLOBAL.single_bin_duration
 
-window_start = range(0, 682 - 120, 10)
-window_stop = range(120, 682, 10)
+window_start = range(0, 682 - 120, 60)
+window_stop = range(120, 682, 60)
 Trigger = HardwareClassifier()
 
 Buffer = RandomTrace(station = station, index = i)
 n_traces = len(Buffer._these_traces)
 duration = n_traces * trace_duration
 
-# percentages = np.array([-25, -16, -14, -13, -12, -11, -8, -6, -4, -2, -1, 0, 1, 2, 4, 8, 16]) * 1e-2
-increments = np.array([-4, -2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20])
+percentages = [-16, -14, -13, -12, -11, -8, -6, -4, -2, -1, 0, 1, 2, 4, 8, 16]
+percentages += list(np.arange(-50, -25, 5)) + list(np.arange(20, 101, 5))
+percentages = np.array(percentages) * 1e-2
 
-# for percentage in percentages:
-for increment in increments:
+# # increments = np.array([-4, -2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20])
 
-    # pm = "p" if percentage >= 0 else "m"
-    pm = "p" if increment >= 0 else "m"
+for percentage in percentages:
+# for increment in increments:
+
+    pm = "p" if percentage >= 0 else "m"
+    # pm = "p" if increment >= 0 else "m"
     n_trigger = n_th = n_tot = n_totd = 0
 
     for j, trace in enumerate(Buffer._these_traces):
 
         # apply downsampling to trace
-        # downsampled_trace = np.array([(apply_downsampling(trace)[k]) / (Buffer.q_peak[k] * (1 + percentage)) for k in range(3)])
-        downsampled_trace = np.array([(apply_downsampling(trace)[k] + increment) / Buffer.q_peak[k] for k in range(3)])
+        downsampled_trace = np.array([(apply_downsampling(trace)[k]) / (Buffer.q_peak[k] * (1 + percentage)) for k in range(3)])
+        # downsampled_trace = np.array([(apply_downsampling(trace)[k] + increment) / Buffer.q_peak[k] for k in range(3)])
 
         # split trigger procedure up into different chunks due to performance
         if Trigger.Th(3.2, downsampled_trace):
@@ -269,10 +280,12 @@ for increment in increments:
                     n_totd += 1
                     break
 
-    # perc_str = str(int(percentage * 100)).replace('-','')
-    # with open(f"/cr/users/filip/Trigger/RunProductionTest/trigger_output/{station}/{station}_all_triggers_{pm}{perc_str}.csv", "a") as f:
-    #   f.write(f"{Buffer.random_file} {n_traces} {duration} {n_trigger} {n_th} {n_tot} {n_totd}\n")
+    perc_str = str(int(percentage * 100)).replace('-','')
+    print(f"/cr/users/filip/Trigger/RunProductionTest/trigger_output/{station}/{station}_all_triggers_{pm}{perc_str}.csv")
 
-    inc_str = str(increment).replace('-','')
-    with open(f"/cr/users/filip/Trigger/RunProductionTest/trigger_output/{station}/trace_increment/{station}_all_triggers_{pm}{inc_str}.csv", "a") as f:
+    with open(f"/cr/users/filip/Trigger/RunProductionTest/trigger_output/{station}/{station}_all_triggers_{pm}{perc_str}.csv", "a") as f:
         f.write(f"{Buffer.random_file} {n_traces} {duration} {n_trigger} {n_th} {n_tot} {n_totd}\n")
+
+    # inc_str = str(increment).replace('-','')
+    # with open(f"/cr/users/filip/Trigger/RunProductionTest/trigger_output/{station}/trace_increment/{station}_all_triggers_{pm}{inc_str}.csv", "a") as f:
+    #     f.write(f"{Buffer.random_file} {n_traces} {duration} {n_trigger} {n_th} {n_tot} {n_totd}\n")
