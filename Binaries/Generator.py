@@ -178,8 +178,8 @@ class Generator(tf.keras.utils.Sequence):
         {
             "window_length"         : kwargs.get("window_length", GLOBAL.window),
             "window_step"           : kwargs.get("window_step", GLOBAL.step),
-            "simulation_q_peak"     : kwargs.get("q_peak", GLOBAL.q_peak),
-            "simulation_q_charge"   : kwargs.get("q_charge", GLOBAL.q_charge),
+            "simulation_q_peak"     : kwargs.get("q_peak", np.array([GLOBAL.q_peak for _ in range(3)])),
+            "simulation_q_charge"   : kwargs.get("q_charge", np.array([GLOBAL.q_charge for _ in range(3)])),
             "apply_downsampling"    : self.apply_downsampling,
             "force_inject"          : self.force_inject,
             "trace_length"          : self.trace_length,
