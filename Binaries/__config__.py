@@ -12,6 +12,7 @@ from scipy.optimize import curve_fit
 import seaborn as sns
 import numpy as np
 import warnings
+import sys, os
 import typing
 
 class EmptyFileError(Exception): pass
@@ -63,14 +64,16 @@ class GLOBAL():
     early_stopping_patience     = 7500                                          # number of batches for early stopping patience
     early_stopping_accuracy     = 0.95                                          # activate early stopping above this accuracy
 
-def get_fit_function(type : str, energy : str, theta : str) -> np.ndarray : 
+def get_fit_function(root_path : str, e : int, t : int) -> np.ndarray : 
 
-    try:
-        efficiency, prob_50, scale = np.loadtxt(f"/cr/tempdata01/filip/QGSJET-II/{type}/FITPARAM/{energy}__{theta}.csv")
-        return lambda x : station_hit_probability(x, efficiency, prob_50, scale)
+    c = lambda x, i : x.split("_")[i]
+    checksum = lambda x : sum([10*float(c(x,0)), 10*float(c(x,1)), float(c(x,3))/10, float(c(x,4)[:-4])/10])
+    ldf_files = np.array(os.listdir(root_path + "FITPARAM/"))[np.argsort([checksum(file) for file in os.listdir(root_path + "FITPARAM/")])]
+    ldf_files = [root_path + "FITPARAM/" + ldf_file for ldf_file in ldf_files]
+    ldf_parameters = np.loadtxt(ldf_files[e * 5 + t])
     
-    except FileNotFoundError:
-        raise ValueError(f"Invalid keys: {type = }, {energy = }, {theta = }")
+    return lambda x : station_hit_probability(x, *ldf_parameters)
+
 
 def station_hit_probability(x : np.ndarray, efficiency : float, prob_50 : float, scale : float) -> np.ndarray :
     return np.clip(efficiency * (1 - 1 / (1 + np.exp(-scale * (x - prob_50)))), 0, 1)

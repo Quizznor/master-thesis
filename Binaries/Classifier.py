@@ -302,7 +302,7 @@ class Classifier():
             plt.plot([0,1],[0.5,0.5,], ls = "--", c = "gray")
 
         # plot the classifiers efficiency at a given SPD, energy, and theta
-        # TODO error calculation for fit params, fit curves 
+        # TODO error calculation from LDF fit, etc...
         def spd_energy_efficiency(self, dataset : str, **kwargs) -> None :
             
             warnings.simplefilter("ignore", RuntimeWarning)
@@ -347,6 +347,8 @@ class Classifier():
                 # axis 2 = sorted by zenith angle
                 for t, (hits, misses) in enumerate(zip(hits, misses)):
 
+                    LDF = get_fit_function("/cr/tempdata01/filip/QGSJET-II/LDF/", e, t)
+
                     c = colormap(t / (len(theta_bins) - 1))
                     all_data = hits + misses
                     n_data_in_bins = 500
@@ -366,9 +368,9 @@ class Classifier():
 
                     x, _ = np.histogram(hits, bins = binning)
                     o, _ = np.histogram(misses, bins = binning)
-                    efficiency = x / (x + o)
-                    efficiency_err = 1/n_all**2 * np.sqrt( x**3 + o**3 - 2 * np.sqrt((x * o)**3) )
-                    efficiency_err[efficiency_err == 0] = 1e-3
+                    efficiency = x / (x + o) * LDF(bin_center)
+                    efficiency_err = 1/n_all**2 * np.sqrt( x**3 + o**3 - 2 * np.sqrt((x * o)**3) )          # lack LDF error part here !!
+                    efficiency_err[efficiency_err == 0] = 1e-3                                              # such that residuals are finite
 
                     # perform fit with x_err and y_err
                     if kwargs.get("perform_fit", True):
@@ -378,6 +380,20 @@ class Classifier():
                                                                 sigma = efficiency_err,
                                                                 absolute_sigma = True,
                                                                 maxfev = 10000)
+
+                        # write fit parameters to disk
+                        file_name = f"{e_labels[e].replace('$','')}_{e_labels[e+1].replace('$','')}__{int(theta_bins[t])}_{int(theta_bins[t+1])}.csv"
+
+                        if hasattr(self, "epochs"):
+                            fit_dir = f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/FITPARAM/"
+                        else: fit_dir = f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/FITPARAM/"
+                        
+                        try: os.mkdir(fit_dir)
+                        except FileExistsError: pass
+
+                        with open(fit_dir + file_name, "w") as fit_parameters:
+                            np.savetxt(fit_parameters, popt)
+
 
                         if kwargs.get("draw_plot", True):
 
@@ -842,7 +858,6 @@ class NNClassifier(Classifier):
             self.add_input(model, shape = (3, 360, 1))
             self.add_conv2d(model, filters = 4, kernel_size = 3, strides = 3)
             self.add_output(model, units = 2, activation = "softmax")
-
 
         # 140 parameters
         def __two_layer_conv2d__(self, model) -> None :
