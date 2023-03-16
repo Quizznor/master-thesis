@@ -790,7 +790,27 @@ class NNClassifier(Classifier):
             @staticmethod
             def add_norm(model, **kwargs) -> None : 
                 model.add(tf.keras.layers.BatchNormalization(**kwargs))
+
+            @staticmethod
+            def add_lstm(**kwargs) -> None :
+
+                # doesn't work, since data is 2-dimensional
+                # model.add(tf.keras.layers.LSTM(**kwargs))
+
+                # # instead use LSTM for each PMT
+                input = tf.keras.layers.Input(kwargs.get("input_shape"))
+                unstacked = tf.keras.layers.Lambda(lambda x: tf.unstack(x, axis=1))(input)
+                dense_outputs = [tf.keras.layers.LSTM(kwargs.get("d_LSTM", 1), activation = "relu")(x) for x in unstacked]
+                merged = tf.keras.layers.Lambda(lambda x: tf.stack(x, axis=1))(dense_outputs)
+                merged_flatten = tf.keras.layers.Flatten()(merged)
+
+                return tf.keras.Model(input, tf.keras.layers.Dense(2, activation = "softmax")(merged_flatten))
+
         #####################################################
+
+        # 44 parameters
+        def __simple_LSTM__(self) -> tf.keras.Model : 
+            return self.add_lstm(input_shape = (3, 120, 1), d_LSTM = 1)
 
         # doesn't really work all well with the dataset log E = 16-16.5 
         # since empty files raise background traces, which get scaled UP
@@ -869,7 +889,8 @@ class NNClassifier(Classifier):
             "one_large_layer_conv2d" : Architectures.__one_large_layer_conv2d__,
             "two_layer_conv2d" : Architectures.__two_layer_conv2d__,
             "minimal_conv2d" : Architectures.__minimal_conv2d__,
-            "large_conv2d" : Architectures.__large_conv2d__
+            "large_conv2d" : Architectures.__large_conv2d__,
+            "simple_LSTM" : Architectures.__simple_LSTM__,
         }
 
     def __init__(self, name : str, set_architecture = None, supress_print : bool = False, **kwargs) -> None :
@@ -898,13 +919,16 @@ class NNClassifier(Classifier):
                 self.model = tf.keras.models.load_model("/cr/data01/filip/models/" + name + "/" + choice)
                 self.epochs = int(choice.split("_")[-1])
         else:
-
-            self.model = tf.keras.Sequential()
-            self.models[set_architecture](self.Architectures, self.model)
-            self.epochs = 0
+            try:
+                self.model = tf.keras.Sequential()
+                self.models[set_architecture](self.Architectures, self.model)
+                self.epochs = 0
+                self.model.build()
+            # ValueError is raised for LSTM due to different initialization
+            except TypeError:
+                self.model = self.models[set_architecture](self.Architectures)
 
         self.model.compile(loss = 'categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy'], run_eagerly = True)
-        self.model.build()
 
         early_stopping_patience = kwargs.get("early_stopping_patience", GLOBAL.early_stopping_patience)
         early_stopping_accuracy = kwargs.get("early_stopping_accuracy", GLOBAL.early_stopping_accuracy)
