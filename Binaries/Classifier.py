@@ -368,12 +368,13 @@ class Classifier():
                     o, _ = np.histogram(misses, bins = binning)
                     efficiency = x / (x + o)
                     efficiency_err = 1/n_all**2 * np.sqrt( x**3 + o**3 - 2 * np.sqrt((x * o)**3) )
+                    efficiency_err[efficiency_err == 0] = 1e-3
 
                     # perform fit with x_err and y_err
                     if kwargs.get("perform_fit", True):
                         popt, pcov = curve_fit(station_hit_probability, bin_center, efficiency, 
-                                                                p0 = [efficiency[0], 500, 1e-5],
-                                                                bounds = ([0, 0, 0], [1, np.inf, 0.1]),
+                                                                p0 = [1, 500, 1e-5],
+                                                                bounds = ([1, 0, 0], [np.inf, np.inf, 0.1]),
                                                                 sigma = efficiency_err,
                                                                 absolute_sigma = True,
                                                                 maxfev = 10000)

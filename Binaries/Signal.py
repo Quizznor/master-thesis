@@ -168,9 +168,9 @@ class Trace(Signal):
             self.pmt_3 += component[2]
 
         if self.downsampled:
-            self.pmt_1 = np.floor(self.apply_downsampling(self.pmt_1, self.random_phase)) / self.simulation_q_peak[0]
-            self.pmt_2 = np.floor(self.apply_downsampling(self.pmt_2, self.random_phase)) / self.simulation_q_peak[1]
-            self.pmt_3 = np.floor(self.apply_downsampling(self.pmt_3, self.random_phase)) / self.simulation_q_peak[2]
+            self.pmt_1 = self.apply_downsampling(self.pmt_1, self.random_phase)
+            self.pmt_2 = self.apply_downsampling(self.pmt_2, self.random_phase)
+            self.pmt_3 = self.apply_downsampling(self.pmt_3, self.random_phase)
 
             if self.has_signal:
                 self.signal_start = int(self.signal_start / 3)
@@ -181,12 +181,17 @@ class Trace(Signal):
                 self.injections_end = [int(end / 3) for end in self.injections_end ]
 
             self.trace_length = self.trace_length // 3
-        else:
-            self.pmt_1 = np.floor(self.pmt_1) / self.simulation_q_peak[0]
-            self.pmt_2 = np.floor(self.pmt_2) / self.simulation_q_peak[1]
-            self.pmt_3 = np.floor(self.pmt_3) / self.simulation_q_peak[2]
 
-        self.Baseline = np.floor(self.Baseline)
+        # floor pmt component traces
+        self.pmt_1 = np.floor(self.pmt_1)
+        self.pmt_2 = np.floor(self.pmt_2)
+        self.pmt_3 = np.floor(self.pmt_3)
+
+        # and finally convert to vem
+        self.pmt_1 = self.pmt_1 / self.simulation_q_peak[0]
+        self.pmt_2 = self.pmt_2 / self.simulation_q_peak[1]
+        self.pmt_3 = self.pmt_3 / self.simulation_q_peak[2]
+
 
     @staticmethod
     def apply_downsampling(pmt, random_phase) -> np.ndarray :
@@ -221,7 +226,7 @@ class Trace(Signal):
         # # clipping and bitshifting
         # for j, adc in enumerate(sampled_trace):
         #     # sampled_trace[i,j] = np.clip(int(adc) >> kFirNormalizationBitShift, a_min = -20, a_max = None)              # why clip necessary, why huge negative values?
-        #     sampled_trace[j] = int(adc) >> kFirNormalizationBitShift
+        # sampled_trace[j] = int(adc) >> kFirNormalizationBitShift
 
         return np.array(sampled_trace)
 

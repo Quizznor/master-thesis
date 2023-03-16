@@ -123,6 +123,7 @@ struct VectorWrapper
 
   vector<float> get_trace(int start, int end)
   {
+    // the end bin should be values.begin() + end + 1 ? Keeping this for continuity
     const auto trace = std::vector<float>(values.begin() + start, values.begin() + end);
     return trace;
   }
@@ -149,9 +150,6 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
 {
   // const auto csvTraceFile = pathToAdst.parent_path()/ pathToAdst.filename().replace_extension("csv"); // for testing
   const auto csvTraceFile = pathToAdst.parent_path().parent_path() / pathToAdst.filename().replace_extension("csv");
-  const auto energyRange = pathToAdst.string().substr(39, 7);
-  const std::string csvLdfFileMisses = "/cr/tempdata01/filip/QGSJET-II/lateral_density_function_" + energyRange + "/misses.csv";
-  const std::string csvLdfFileHits = "/cr/tempdata01/filip/QGSJET-II/lateral_density_function_" + energyRange + "/hits.csv";
 
   // (2) start main loop
   RecEventFile     recEventFile(pathToAdst.string());
@@ -173,8 +171,6 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
 
     // create csv file streams
     ofstream traceFile(csvTraceFile.string(), std::ios_base::app);
-    ofstream ldfFileMisses(csvLdfFileMisses, std::ios_base::app);
-    ofstream ldfFileHits(csvLdfFileHits, std::ios_base::app);
 
     // binaries of the generated shower
     // const auto SPD = detectorGeometry.GetStationAxisDistance(Id, Axis, Core);  // in m
@@ -183,138 +179,140 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
     const auto showerAxis = genShower.GetAxisSiteCS();
     const auto showerCore = genShower.GetCoreSiteCS();  
 
-    // get id of all stations that participated in trigger
-    // get no. of particles that received any particles
-    std::vector<int> recreatedStationIds;
-    std::vector<int> simulatedStationIds;
-
-    for (const auto& recStation : sdEvent.GetStationVector()){recreatedStationIds.push_back(recStation.GetId());}
-    for (const auto& genStation : sdEvent.GetSimStationVector()){simulatedStationIds.push_back(genStation.GetId());}
-
     Detector detector = Detector();
 
-    // loop over all considered Stations
-    for (const auto& consideredStationId : consideredStations)
+    // loop over all triggered stations
+    for (const auto& recStation : sdEvent.GetStationVector())
     {
+      const auto stationId = recStation.GetId();
+      const auto SPD = detectorGeometry.GetStationAxisDistance(stationId, showerAxis, showerCore);  // in m
 
-      const auto genIndex = std::find(simulatedStationIds.begin(), simulatedStationIds.end(), consideredStationId);
+      const auto genStation = sdEvent.GetSimStationById(stationId);
+      const auto nMuons = genStation->GetNumberOfMuons();
+      const auto nElectrons = genStation->GetNumberOfElectrons();
+      const auto nPhotons = genStation->GetNumberOfPhotons();
 
-      // calculate shower plane distance for considered station
-      const auto showerPlaneDistance = detectorGeometry.GetStationAxisDistance(consideredStationId, showerAxis, showerCore);
+      // Save trace in ADC/VEM format
+      for (unsigned int PMT = 1; PMT < 4; PMT++)
+      {
 
-      // // check if considered station has received particles
-      // if (genIndex != simulatedStationIds.end())
-      // {
-      //   // simulated station is hit by the shower
-      //   //      -> write spd and theta to hits.csv
-      //   //      -> check if it actually triggered
+        // total trace container
+        VectorWrapper TotalTrace(2048,0);
 
-        // const auto genIndex = std::find(simulatedStationIds.begin(), simulatedStationIds.end(), consideredStationId);
-        const auto stationId = simulatedStationIds[genIndex - simulatedStationIds.begin()];
-        const auto genStation = sdEvent.GetSimStationById(stationId);
-
-        const auto nMuons = genStation->GetNumberOfMuons();
-        const auto nElectrons = genStation->GetNumberOfElectrons();
-        const auto nPhotons = genStation->GetNumberOfPhotons();
-
-        if (nMuons == 0 && nElectrons == 0 && nPhotons == 0)
+        // loop over all components (photon, electron, muons) -> NO HADRONIC COMPONENT
+        for (int component = ePhotonTrace; component <= eMuonTrace; component++)
         {
-          ldfFileMisses << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " " << nMuons << " " << nElectrons << " " << nPhotons << std::endl;
-        }
-        else
-        {
-          ldfFileHits << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " " << nMuons << " " << nElectrons << " " << nPhotons << std::endl;
-        }
+          const auto component_trace = recStation.GetPMTTraces((ETraceType)component, PMT);
+          auto CalibratedTrace = VectorWrapper( component_trace.GetVEMComponent() );
 
-        if (std::find(recreatedStationIds.begin(), recreatedStationIds.end(), consideredStationId) != recreatedStationIds.end())
-        {
-          // station participated in the trigger
-          //    -> get injected particles from GenStation
-          //    -> do the rest of the SD reconstruction
-
-          // fetch data from desired station
-          const auto recStation = sdEvent.GetStationById(stationId);
-
-          // loop over all PMTs
-          for (unsigned int PMT = 1; PMT < 4; PMT++)
+          // make sure there exists a component of this type
+          if (CalibratedTrace.values.size() != 0)
           {
-
-            // std::vector<UShort_t> AdcTrace;
-
-            // if (recStation->IsHighGainSaturated())
-            // {
-            //   AdcTrace = recStation->GetLowGainTrace(PMT);
-            //   const auto BaselineLG = (UShort_t)recStation->GetBaselineLG(PMT);
-            //   const auto DynAnRatio = recStation->GetDynodeAnodeRatio(PMT);
-            //   AdcTrace = AdcTrace - BaselineLG;
-
-            //   std::transform(AdcTrace.begin(), AdcTrace.end(), AdcTrace.begin(), std::bind(std::multiplies<UShort_t>(), std::placeholders::_1, DynAnRatio));
-            // }
-            // else
-            // {
-            //   AdcTrace = recStation->GetHighGainTrace(PMT);
-            //   const auto BaselineHG = (UShort_t)recStation->GetBaseline(PMT);
-            //   AdcTrace = AdcTrace - BaselineHG;
-            // }
-            
-            // total trace container
-            VectorWrapper TotalTrace(2048,0);
-
-            // loop over all components (photon, electron, muons) -> NO HADRONIC COMPONENT
-            for (int component = ePhotonTrace; component <= eMuonTrace; component++)
-            {
-              const auto component_trace = recStation->GetPMTTraces((ETraceType)component, PMT);
-              auto CalibratedTrace = VectorWrapper( component_trace.GetVEMComponent() );
-
-              // make sure there exists a component of this type
-              if (CalibratedTrace.values.size() != 0)
-              {
-                const auto vem_peak = component_trace.GetPeak();
-                VectorWrapper UncalibratedTrace = CalibratedTrace * vem_peak;
-                TotalTrace = TotalTrace + UncalibratedTrace;
-              }
-            }
-
-            // Scale up LG traces if HG is saturated
-            TotalTrace *= recStation->IsHighGainSaturated() ? recStation->GetDynodeAnodeRatio(PMT) : 1;
-
-            // write all information to trace file
-            traceFile << stationId << " " << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " " << nMuons << " " << nElectrons << " " << nPhotons << " ";
-
-            // "digitize" component trace...
-            // this used to be converted to VEM
-            const auto signal_start = recStation->GetSignalStartSlot();
-            const auto signal_end = recStation->GetSignalEndSlot();
-            const auto trimmedAdcTrace = TotalTrace.get_trace(signal_start, signal_end);
-
-            // ... and write to disk
-            for (const auto& bin : trimmedAdcTrace)
-            {
-              traceFile << " " << bin;
-            }
-
-            traceFile << "\n";
+            const auto vem_peak = component_trace.GetPeak();
+            VectorWrapper UncalibratedTrace = CalibratedTrace * vem_peak;
+            TotalTrace = TotalTrace + UncalibratedTrace;
           }
         }
+
+        // write all information to trace file
+        traceFile << stationId << " " << SPD << " " << showerEnergy << " " << showerZenith << " " << nMuons << " " << nElectrons << " " << nPhotons << " ";
+
+        // "digitize" component trace...
+        // this used to be converted to VEM
+        const auto signal_start = recStation.GetSignalStartSlot();
+        const auto signal_end = recStation.GetSignalEndSlot();
+        const auto trimmedAdcTrace = TotalTrace.get_trace(signal_start, signal_end);
+
+        // ... and write to disk
+        for (const auto& bin : trimmedAdcTrace)
+        {
+          traceFile << " " << bin;
+        }
+
+        traceFile << "\n";
+      }
     }
 
     traceFile.close();
-    ldfFileHits.close();
-    ldfFileMisses.close();
   }
 }
 
 void DoLtpCalculation(fs::path pathToAdst)
 {
-  // const auto csvTraceFile = pathToAdst.parent_path()/ pathToAdst.filename().replace_extension("csv"); // for testing
-  // const auto energyRange = pathToAdst.string().substr(39, 7);
-  const std::string energyRange = "19_19.5";
-  const std::string csvLtpFileMisses = "/cr/tempdata01/filip/QGSJET-II/LTP/CrossCheck/misses.csv";
-  const std::string csvLtpFileHits = "/cr/tempdata01/filip/QGSJET-II/LTP/CrossCheck/hits.csv";
+  std::string csvTraceFile = "/cr/tempdata01/filip/QGSJET-II/LDF/ADST/" + pathToAdst.filename().replace_extension("csv").string();
 
-    // create csv file streams
-  ofstream ltpFileMisses(csvLtpFileMisses, std::ios_base::app);
-  ofstream ltpFileHits(csvLtpFileHits, std::ios_base::app);
+  // (2) start main loop
+  RecEventFile     recEventFile(pathToAdst.string());
+  RecEvent*        recEvent = nullptr;
+  recEventFile.SetBuffers(&recEvent);
+
+  for (unsigned int i = 0; i < recEventFile.GetNEvents(); ++i) 
+  {
+    // skip if event reconstruction failed
+    if (recEventFile.ReadEvent(i) != RecEventFile::eSuccess){continue;}
+
+    // allocate memory for data
+    const SDEvent& sdEvent = recEvent->GetSDEvent();                              // contains the traces
+    const GenShower& genShower = recEvent->GetGenShower();                        // contains the shower
+    DetectorGeometry detectorGeometry = DetectorGeometry();                       // contains SPDistance
+    recEventFile.ReadDetectorGeometry(detectorGeometry);
+
+    // binaries of the generated shower
+    // const auto SPD = detectorGeometry.GetStationAxisDistance(Id, Axis, Core);  // in m
+    const auto showerZenith = genShower.GetZenith() * (180 / 3.141593);           // in °
+    const auto showerEnergy = genShower.GetEnergy();                              // in eV
+    const auto showerAxis = genShower.GetAxisSiteCS();
+    const auto showerCore = genShower.GetCoreSiteCS();
+    
+    std::vector<int> misses(65, 0);
+    std::vector<int> hits(65, 0);
+
+    // get id of all stations that received any particles (= the ones that were generated)
+    std::vector<int> recreatedStationIds;
+    for (const auto& recStation : sdEvent.GetStationVector()){recreatedStationIds.push_back(recStation.GetId());}
+
+    for (const auto& consideredStationId : consideredStations)
+    {
+      // calculate shower plane distance
+      auto showerPlaneDistance = detectorGeometry.GetStationAxisDistance(consideredStationId, showerAxis, showerCore);
+      const int binIndex = floor(showerPlaneDistance / 100);
+
+      // check if the station ID appears in the generated stations
+      if (std::find(recreatedStationIds.begin(), recreatedStationIds.end(), consideredStationId) != recreatedStationIds.end())
+      {
+        // station was triggered, add to "hits"
+        hits[binIndex] += 1;
+      }
+      else
+      {
+        // station was not triggered, add to "misses"
+        misses[binIndex] += 1;
+      }
+    }
+
+    ofstream saveFile(csvTraceFile, std::ios_base::app);
+    saveFile << "0 " << log10(showerEnergy) << " " << showerZenith << "\n";
+
+    for (int i = 0; i < 65; i++)
+    {
+      // std::cout << "<" << (i+1) * 100 << "m: " << hits[i] << " " << misses[i] << std::endl;
+      saveFile << (i + 1) * 100 << " " << hits[i] << " " << misses[i] << "\n";
+    }
+
+    saveFile.close();
+
+  }
+}
+
+void Compare(fs::path pathToAdst)
+{
+  // const auto csvTraceFile = pathToAdst.parent_path()/ pathToAdst.filename().replace_extension("csv"); // for testing
+  const auto csvADCTraceFile = "/cr/tempdata01/filip/QGSJET-II/COMPARE/ADC/" + pathToAdst.filename().replace_extension("csv").string();
+  const auto csvVEMTraceFile = "/cr/tempdata01/filip/QGSJET-II/COMPARE/VEM/" + pathToAdst.filename().replace_extension("csv").string();
+
+  // create csv file streams
+  ofstream traceADCFile(csvADCTraceFile, std::ios_base::app);
+  ofstream traceVEMFile(csvVEMTraceFile, std::ios_base::app);
 
   // (2) start main loop
   RecEventFile     recEventFile(pathToAdst.string());
@@ -335,120 +333,93 @@ void DoLtpCalculation(fs::path pathToAdst)
     recEventFile.ReadDetectorGeometry(detectorGeometry);
 
     // binaries of the generated shower
-    // const auto SPD = detectorGeometry.GetStationAxisDistance(Id, Axis, Core);  // in m
     const auto showerZenith = genShower.GetZenith() * (180 / 3.141593);           // in °
     const auto showerEnergy = genShower.GetEnergy();                              // in eV
     const auto showerAxis = genShower.GetAxisSiteCS();
-    const auto showerCore = genShower.GetCoreSiteCS();  
+    const auto showerCore = genShower.GetCoreSiteCS();
 
-    // get id of all stations that participated in trigger
-    // get no. of particles that received any particles
-    std::vector<int> recreatedStationIds;
-    std::vector<int> simulatedStationIds;
-
-    for (const auto& recStation : sdEvent.GetStationVector()){recreatedStationIds.push_back(recStation.GetId());}
-    for (const auto& genStation : sdEvent.GetSimStationVector()){simulatedStationIds.push_back(genStation.GetId());}
-
-    Detector detector = Detector();
-
-    // loop over all considered Stations
-    for (const auto& consideredStationId : consideredStations)
+    for (const auto& recStation : sdEvent.GetStationVector())
     {
+      const auto stationId = recStation.GetId();
+      const auto SPD = detectorGeometry.GetStationAxisDistance(stationId, showerAxis, showerCore);  // in m
 
-      const auto genIndex = std::find(simulatedStationIds.begin(), simulatedStationIds.end(), consideredStationId);
-
-      // calculate shower plane distance for considered station
-      const auto showerPlaneDistance = detectorGeometry.GetStationAxisDistance(consideredStationId, showerAxis, showerCore);
-
-      // const auto genIndex = std::find(simulatedStationIds.begin(), simulatedStationIds.end(), consideredStationId);
-      const auto stationId = simulatedStationIds[genIndex - simulatedStationIds.begin()];
       const auto genStation = sdEvent.GetSimStationById(stationId);
-
       const auto nMuons = genStation->GetNumberOfMuons();
       const auto nElectrons = genStation->GetNumberOfElectrons();
       const auto nPhotons = genStation->GetNumberOfPhotons();
 
-      if (std::find(recreatedStationIds.begin(), recreatedStationIds.end(), consideredStationId) != recreatedStationIds.end())
+      // Save trace in ADC/VEM format
+      for (unsigned int PMT = 1; PMT < 4; PMT++)
       {
-        // station participated in the trigger
-        //    -> add station metadata to LtpFileHits
 
-        ltpFileHits << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " " << nMuons << " " << nElectrons << " " << nPhotons << std::endl;
+        // total trace container
+        VectorWrapper TotalTrace(2048,0);
+
+        // loop over all components (photon, electron, muons) -> NO HADRONIC COMPONENT
+        for (int component = ePhotonTrace; component <= eMuonTrace; component++)
+        {
+          const auto component_trace = recStation.GetPMTTraces((ETraceType)component, PMT);
+          auto CalibratedTrace = VectorWrapper( component_trace.GetVEMComponent() );
+
+          // make sure there exists a component of this type
+          if (CalibratedTrace.values.size() != 0)
+          {
+            const auto vem_peak = component_trace.GetPeak();
+            VectorWrapper UncalibratedTrace = CalibratedTrace * vem_peak;
+            TotalTrace = TotalTrace + UncalibratedTrace;
+          }
+        }
+
+        // write all information to trace file
+        traceADCFile << stationId << " " << SPD << " " << showerEnergy << " " << showerZenith << " " << nMuons << " " << nElectrons << " " << nPhotons << " ";
+        traceVEMFile << stationId << " " << SPD << " " << showerEnergy << " " << showerZenith << " " << nMuons << " " << nElectrons << " " << nPhotons << " ";
+
+        // "digitize" component trace...
+        // this used to be converted to VEM
+        const auto signal_start = recStation.GetSignalStartSlot();
+        const auto signal_end = recStation.GetSignalEndSlot();
+        const auto trimmedAdcTrace = TotalTrace.get_trace(signal_start, signal_end);
+        const auto VemTrace = recStation.GetVEMTrace(PMT);
+        const auto trimmedVemTrace = std::vector<float>(VemTrace.begin() + signal_start, VemTrace.begin() + signal_end);
+
+        // ... and write to disk
+        for (const auto& bin : trimmedAdcTrace)
+        {
+          traceADCFile << " " << bin;
+        }
+
+        traceADCFile << "\n";
+
+        for (const auto& bin : trimmedVemTrace)
+        {
+          traceVEMFile << " " << bin;
+        }
+
+        traceVEMFile << "\n";
       }
-      else
-      {
-        // station did not participate in the trigger
-        //    --> add station metadata to LtpFileMisses
-
-        ltpFileMisses << showerPlaneDistance << " " << showerEnergy << " " << showerZenith << " " << nMuons << " " << nElectrons << " " << nPhotons << std::endl;
-      }
-    }    
-  }
-
-  ltpFileHits.close();
-  ltpFileMisses.close();
-}
-
-void DoLtpDenseCalculation(fs::path pathToAdst)
-{
-  const auto energyRange = pathToAdst.string().substr(58, 7);
-  const std::string csvDenseFilePath = "/cr/tempdata01/filip/QGSJET-II/LTP/denseStations/LTP_2000/denseCalculation_" + energyRange + ".csv";
-
-  ofstream ltpDenseFile(csvDenseFilePath, std::ios_base::app);
-
-  // (2) start main loop
-  RecEventFile     recEventFile(pathToAdst.string());
-  RecEvent*        recEvent = nullptr;
-
-  // will be assigned by root
-  recEventFile.SetBuffers(&recEvent);
-
-  float triggeredStations = 0;
-  const int nDenseStations = 12;
-
-  for (unsigned int i = 0; i < recEventFile.GetNEvents(); ++i) 
-  {
-    // skip if event reconstruction failed
-    if (recEventFile.ReadEvent(i) != RecEventFile::eSuccess){continue;}
-
-    // allocate memory for data
-    const SDEvent& sdEvent = recEvent->GetSDEvent();                              // contains the traces
-    const GenShower& genShower = recEvent->GetGenShower();                        // contains the shower
-    DetectorGeometry detectorGeometry = DetectorGeometry();                       // contains SPDistance
-    const auto showerAxis = genShower.GetAxisSiteCS();
-    const auto showerCore = genShower.GetCoreSiteCS();  
-
-    Detector detector = Detector();
-
-    const auto showerZenith = genShower.GetZenith() * (180 / 3.141593);           // in °
-
-    for (const auto& recStation : sdEvent.GetStationVector())
-    {
-      if (recStation.GetId() != 5398)
-      {
-        triggeredStations += 1;
-      } 
     }
-
-    ltpDenseFile << showerZenith << " " << triggeredStations / nDenseStations << "\n";   
   }
+
+  traceADCFile.close();
+  traceVEMFile.close();
 }
 
 int main(int argc, char** argv) 
 {
-  if (std::strcmp(argv[1], "1") == 0)
+  if (std::strcmp(argv[1], "0") == 0)
   {
-    DoLtpDenseCalculation(argv[2]);
+    // type '0' to extract traces from file
+    ExtractDataFromAdstFiles(argv[2]);
+  }
+  else if (std::strcmp(argv[1], "1") == 0)
+  {
+    // type '1' for LTP/LDF fitting
+    DoLtpCalculation(argv[2]);
   }
   else if (std::strcmp(argv[1], "2") == 0)
   {
-    // LDF fitting
+    // type '2' for comparing ADC/VEM extraction
+    Compare(argv[2]);
   }
-  else if (std::strcmp(argv[1], "3") == 0)
-  {
-    // LTP fitting
-    DoLtpCalculation(argv[2]);
-  }
-  // DoLtpDenseCalculation(argv[1]);
   return 0;
 }

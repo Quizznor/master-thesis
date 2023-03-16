@@ -2,7 +2,7 @@
 
 BOOTSTRAP="/cr/users/filip/Simulation/Bootstraps/bootstrap_$4.xml"
 BOOTSTRAP_SRC="/cr/users/filip/Simulation/AugerOffline/bootstrap.xml.in"
-source /cr/users/filip/scripts/auger_env_22.sh
+source /cr/users/filip/Simulation/.env/auger_env.sh
 
 
 # Prepare bootstrap
@@ -26,7 +26,7 @@ then
 fi
 
 # New ADST Component extractor! =)
-/cr/users/filip/Simulation/AdstExtractor/AdstComponentExtractor "$3/root_files/$4.root"
+/cr/users/filip/Simulation/AdstReader/AdstReader 0 "$3/root_files/$4.root"
 
 # Delete root file
 # rm -rf "$3/root_files/$4.root"

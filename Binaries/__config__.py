@@ -73,7 +73,7 @@ def get_fit_function(type : str, energy : str, theta : str) -> np.ndarray :
         raise ValueError(f"Invalid keys: {type = }, {energy = }, {theta = }")
 
 def station_hit_probability(x : np.ndarray, efficiency : float, prob_50 : float, scale : float) -> np.ndarray :
-    return efficiency * (1 - 1 / (1 + np.exp(-scale * (x - prob_50))))
+    return np.clip(efficiency * (1 - 1 / (1 + np.exp(-scale * (x - prob_50)))), 0, 1)
 
 def station_hit_probability_error(x : np.ndarray, pcov : np.ndarray, efficiency : float, prob_50 : float, scale : float) -> np.ndarray :
 
@@ -87,7 +87,7 @@ def station_hit_probability_error(x : np.ndarray, pcov : np.ndarray, efficiency 
         gradient = np.array([d_eff(X), d_prob_50(X), d_scale(X)])
         errors[i] += np.sqrt(gradient.T @ pcov @ gradient)
 
-    return errors
+    return np.clip(errors, 0, 1)
 
 def progress_bar(current_step : int, total_steps : int, start_time : int) -> None : 
      
