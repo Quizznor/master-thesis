@@ -6,14 +6,38 @@
 As mentioned in \autoref{chap:auger-observatory}, continously analyzing data sent to CDAS from each of the 1600 SD water tanks would quickly exceed the 
 computational capabilites of Augers' main servers. For this purpose, trace information is only collected from a station, once a nearby T3 event 
 (c.f. \autoref{sssec:t3-trigger}) has been detected. The formation of a T3 trigger is dependant on several T2, or station-level, triggers, which will
-be discussed in this chapter. First, the implementation of different trigger algorithms is discussed in \autoref{sec:classical-trigger-implementation}.
+be discussed in detail in this chapter. First, the implementation of different trigger algorithms is discussed in \autoref{sec:trigger-implementation}.
 Their performance is evaluated in \autoref{sec:classical-triggers-performance}.
 
 \section{Implementation}
-\label{sec:classical-triggers-implementation}
+\label{sec:classical-trigger-implementation}
 
 \subsection{Threshold trigger (Th)}
 \label{ssec:threshold-trigger}
+
+The \textbf{Th}reshold trigger (Th) is the simplest, as well as longest operating trigger algorithm \todo{cite} in the field. It scans incoming ADC bins 
+as measured by the three different WCD PMTs for values that exceed some threshold. If a coincident exceedance of this threshold is observed in all three 
+WCD PMTs simultaneously, a Th-T1/2 trigger is issued. A pseudocode implementation of this algorithm is hence given by the below code block.
+
+% \hspace{0.0cm}
+\begin{lstlisting}
+th1 = 1.75                  // Th1 level threshold, in VEM   
+th2 = 3.20                  // Th2 level threshold, in VEM
+
+while True:
+
+    pmt1, pmt2, pmt3 = get_next_output_from_WCD()
+
+    if pmt1 <= th2 and pmt2 <= th2 and pmt3 <= th2:
+        raise Th1_trigger
+    else if pmt1 <= th1 and pmt2 <= th1 and pmt3 <= th1:
+        raise Th2_trigger
+    else: 
+        continue
+
+\end{lstlisting}
+
+As can be seen, 
 
 \subsection{Time over threshold trigger (Tot)}
 \label{ssec:time-over-threshold-trigger}
