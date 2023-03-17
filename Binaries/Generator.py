@@ -156,6 +156,7 @@ class Generator(tf.keras.utils.Sequence):
         * *q_peak* (``float``)              -- ADC to VEM conversion factor, for UB <-> UUB
         * *q_charge* (``float``)            -- Conversion factor for the integral trace
         * *n_bins* (``int``)                -- generate a baseline with <trace_length> bins
+        * *floor_trace* (``bool``)          -- floor trace before dividing by q_peak/q_charge
 
         __:Classifier:______________________________________________________________
 
@@ -178,6 +179,7 @@ class Generator(tf.keras.utils.Sequence):
         {
             "window_length"         : kwargs.get("window_length", GLOBAL.window),
             "window_step"           : kwargs.get("window_step", GLOBAL.step),
+            "floor_trace"           : kwargs.get("floor_trace", GLOBAL.floor_trace),
             "simulation_q_peak"     : kwargs.get("q_peak", np.array([GLOBAL.q_peak for _ in range(3)])),
             "simulation_q_charge"   : kwargs.get("q_charge", np.array([GLOBAL.q_charge for _ in range(3)])),
             "apply_downsampling"    : self.apply_downsampling,

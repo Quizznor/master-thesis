@@ -201,6 +201,8 @@ class Classifier():
 
             ACC = ( tp + tn ) / (tp + fp + tn + fn)* 100
 
+            name = self.name if len(self.name) <= 43 else self.name[:40] + "..."
+            dataset = dataset if len(dataset) <= 33 else dataset[:30] + "..."
             print(f"{self.name:<45} {dataset:<35} {tp:7d} {fp:7d} {tn:7d} {fn:7d} -> {ACC = :6.2f}%")
 
             return TP, FP, TN, FN
@@ -337,12 +339,28 @@ class Classifier():
                     target[e - 1][t - 1].append(shower_plane_distance)
 
 
+            if kwargs.get("draw_plot", True):
+                fig, axes = plt.subplots(3,3, sharex = False, sharey = True, figsize = [50, 25])
+                fig.suptitle(f"{self.name} - {dataset}", fontsize = 50)
+                axes[-1][-1].axis("off"), axes[-1][-2].axis("off")
+                plt.ylim(-0.05, 1.05)
+
             # Calculate efficiencies given sorted performances
             # axis 1 = sorted by primary particles' energy
             for e, (hits, misses) in enumerate(zip(hits_sorted, miss_sorted)):
 
-                if kwargs.get("draw_plot", True):
-                    fig = plt.figure()
+                if kwargs.get("draw_plot", True): 
+                    ax = axes[e // 3][e % 3]
+                    ax.axvline(1500, c = "k", ls = "--")
+                    ax.set_xlim(0, 6000),
+                    ax.plot([], [], ls = "solid", c = "k", label = "Extrapolated")
+                    ax.legend(loc = "upper right", title = annotate(e), title_fontsize = 19)
+                    if e >= 4: 
+                        ax.set_xlabel("Shower plane distance / m")
+                        ax.set_xticks([1e3, 2e3, 3e3, 4e3, 5e3])
+                    else:
+                        ax.set_xticks([])
+                    if e % 3 == 0: ax.set_ylabel("Trigger efficiency")
 
                 # axis 2 = sorted by zenith angle
                 for t, (hits, misses) in enumerate(zip(hits, misses)):
@@ -373,183 +391,58 @@ class Classifier():
                     efficiency_err[efficiency_err == 0] = 1e-3                                              # such that residuals are finite
 
                     # perform fit with x_err and y_err
-                    if kwargs.get("perform_fit", True):
-                        popt, pcov = curve_fit(station_hit_probability, bin_center, efficiency, 
-                                                                p0 = [1, 500, 1e-5],
-                                                                bounds = ([1, 0, 0], [np.inf, np.inf, 0.1]),
-                                                                sigma = efficiency_err,
-                                                                absolute_sigma = True,
-                                                                maxfev = 10000)
+                    try:
+                        if kwargs.get("perform_fit", True):
+                            popt, pcov = curve_fit(station_hit_probability, bin_center, efficiency, 
+                                                                    p0 = [1, 500, 1e-5],
+                                                                    bounds = ([0, 0, 0], [np.inf, np.inf, 0.1]),
+                                                                    sigma = efficiency_err,
+                                                                    absolute_sigma = True,
+                                                                    maxfev = 10000)
 
-                        # write fit parameters to disk
-                        file_name = f"{e_labels[e].replace('$','')}_{e_labels[e+1].replace('$','')}__{int(theta_bins[t])}_{int(theta_bins[t+1])}.csv"
+                            # write fit parameters to disk
+                            file_name = f"{e_labels[e].replace('$','')}_{e_labels[e+1].replace('$','')}__{int(theta_bins[t])}_{int(theta_bins[t+1])}.csv"
 
-                        if hasattr(self, "epochs"):
-                            fit_dir = f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/FITPARAM/"
-                        else: fit_dir = f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/FITPARAM/"
-                        
-                        try: os.mkdir(fit_dir)
-                        except FileExistsError: pass
+                            if hasattr(self, "epochs"):
+                                fit_dir = f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/FITPARAM/"
+                            else: fit_dir = f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/FITPARAM/"
+                            
+                            try: os.mkdir(fit_dir)
+                            except FileExistsError: pass
 
-                        with open(fit_dir + file_name, "w") as fit_parameters:
-                            np.savetxt(fit_parameters, popt)
+                            with open(fit_dir + file_name, "w") as fit_parameters:
+                                np.savetxt(fit_parameters, popt)
 
 
-                        if kwargs.get("draw_plot", True):
+                            if kwargs.get("draw_plot", True):
 
-                            X = np.geomspace(1e-3, 6000, 1000)
+                                X = np.geomspace(1e-3, 6000, 1000)
 
-                            efficiency_fit = station_hit_probability(X, *popt)
-                            efficiency_fit_error = station_hit_probability_error(X, pcov, *popt)
-                            bottom = np.clip(efficiency_fit - efficiency_fit_error, 0, 1)
-                            top = np.clip(efficiency_fit + efficiency_fit_error, 0, 1)
-                        
-                            plt.plot(X, station_hit_probability(X, *popt), color = c)
-                            plt.fill_between(X, bottom, top, color = c, alpha = 0.1)
+                                efficiency_fit = station_hit_probability(X, *popt)
+                                efficiency_fit_error = station_hit_probability_error(X, pcov, *popt)
+                                bottom = np.clip(efficiency_fit - efficiency_fit_error, 0, 1)
+                                top = np.clip(efficiency_fit + efficiency_fit_error, 0, 1)
+                            
+                                ax.plot(X, station_hit_probability(X, *popt), color = c)
+                                ax.fill_between(X, bottom, top, color = c, alpha = 0.1)
+                    
+                    except ValueError: pass
 
                     if kwargs.get("draw_plot", True):
                         upper = np.clip(efficiency + efficiency_err, 0, 1)
                         lower = np.clip(efficiency - efficiency_err, 0, 1)
 
-                        plt.axvline(1500, c = "k", ls = ":", lw = 0.5)
-                        plt.errorbar(bin_center, efficiency, yerr = [efficiency - lower, upper - efficiency], color = c, **bar_kwargs)
+                        ax.errorbar(bin_center, efficiency, yerr = [efficiency - lower, upper - efficiency], color = c, **bar_kwargs)
 
-                if kwargs.get("draw_plot", True):
-                    plt.xlim(0, 6000)
-                    plt.ylim(-0.05, 1.05)
-                    plt.plot([], [], ls = "solid", c = "k", label = "Extrapolated")
-                    plt.legend(loc = "upper right", title = annotate(e), title_fontsize = 19)
-                    plt.xlabel("Shower plane distance / m")
-                    plt.ylabel("Trigger efficiency")
+            norm = BoundaryNorm(theta_bins, colormap.N)
+            ax2 = fig.add_axes([0.92, 0.1, 0.01, 0.8])
+            cbar = ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"sec$(\theta)$ - 1")
+            cbar.set_ticks(theta_bins)
+            cbar.set_ticklabels(["0.0", "0.2", "0.4", "0.6", "0.8", "1.4"])
 
-                    norm = BoundaryNorm(theta_bins, colormap.N)
-                    ax2 = fig.add_axes([0.95, 0.1, 0.01, 0.8])
-                    cbar = ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"sec$(\theta)$ - 1")
-                    cbar.set_ticks(theta_bins)
-                    cbar.set_ticklabels(["0.0", "0.2", "0.4", "0.6", "0.8", "1.4"])
+            plt.subplots_adjust(hspace = 0.04, wspace = 0)
 
             warnings.simplefilter("default", RuntimeWarning)
-
-
-
-            # theta_bins = [34, 44, 51, 56, 60, 63, 66]
-            # energy_bins = [10**16.5, 1e17, 10**17.5, 1e18, 10**18.5, 1e19]
-            # ldf_fitparams = np.loadtxt("/cr/tempdata01/filip/QGSJET-II/LDF/fitparams.csv", usecols = [4,5])
-            
-            # 
-            # draw_plot = not kwargs.get("quiet", False)
-
-            # # Prediction structure: [ integral, n_signal, energy, SPD, Theta]
-            # TP, FP, TN, FN = self.load_and_print_performance(dataset)
-            # colormap = cmap.get_cmap("plasma")
-
-            # miss_sorted = [[ [] for t in range(len(theta_bins) + 1) ] for e in range(len(energy_bins) + 1)]
-            # hits_sorted = [[ [] for t in range(len(theta_bins) + 1) ] for e in range(len(energy_bins) + 1)]
-            # e_labels = [r"$16$", r"$16.5$", r"$17$", r"$17.5$", r"$18$", r"$18.5$", r"$19$", r"$19.5$"]
-            # fit_params = [[] for e in range(len(energy_bins) + 1)]
-            # fit_uncertainties = [[] for e in range(len(energy_bins) + 1)]
-
-            # # sort predictions into bins of theta and energy
-            # for source, target in zip([TP, FN], [hits_sorted, miss_sorted]):
-
-            #     SPD, E, T = source[:, 0], source[:, 1], source[:, 2]
-
-            #     # sort misses / hits w.r.t zenith and primary energy
-            #     theta_indices = np.digitize(T, theta_bins)
-            #     energy_indices = np.digitize(E, energy_bins)
-
-            #     for e, t, spd in zip(energy_indices, theta_indices, SPD):
-            #         target[e][t].append(spd)
-
-            # for e, (hits_by_energy, misses_by_energy) in enumerate(zip(hits_sorted, miss_sorted)):
-
-            #     if draw_plot:
-
-            #         fig = plt.figure()
-            #         plt.xlim(0, 3000)
-            #         plt.ylim(-0.05, 1.05)
-            #         plt.plot([], [], ls = ":", c = "k", label = "Simulated")
-            #         plt.plot([], [], ls = "solid", c = "k", label = "Extrapolation")
-            #         plt.legend(loc = "upper right", title = e_labels[e] + r" $\leq$ log($E$ / eV) < " + e_labels[e + 1], title_fontsize = 19)
-
-            #     for t, (hits_by_theta, miss_by_theta) in enumerate(zip(hits_by_energy, misses_by_energy)):
-
-            #         p50, scale = ldf_fitparams[e * 5 + t]
-            #         ldf = lambda x : station_hit_probability(x, 1, p50, scale)
-
-            #         # spd_bins = np.linspace(1, 10000, kwargs.get("n_bins", 30))
-            #         spd_bins = list(np.geomspace(10, 1500, kwargs.get("n_bins", 20)))
-            #         spd_bins += list(np.arange(1500 + np.diff(spd_bins)[-1], 3000, np.diff(spd_bins)[-1]))
-            #         c = colormap(t / len(hits_by_energy))
-
-            #         x_hist, sig = np.histogram(hits_by_theta, bins = spd_bins)
-            #         o_hist, sig = np.histogram(miss_by_theta, bins = spd_bins)
-            #         x_val, y_val, y_err = [], [], []
-
-            #         # draw individual patches
-            #         for i, (x, o) in enumerate(zip(x_hist, o_hist)):
-
-            #             if x == o == 0: continue
-
-            #             # determine x
-            #             left_edge_x, right_edge_x = sig[i], sig[i + 1]
-            #             center_x = 0.5 * (left_edge_x + right_edge_x)
-            #             x_val.append(center_x)
-
-            #             # determine y
-            #             center_y = x / (x + o)
-            #             height = 1/(x+o)**2 * np.sqrt(x * o**2 + o * x**2 + 2 * x*o)
-            #             ldf_left, ldf_right, ldf_center = ldf(left_edge_x), ldf(right_edge_x), ldf(center_x)
-            #             top_left_y, bottom_left_y = (center_y + height) * ldf_left, (center_y - height) * ldf_left
-            #             top_right_y, bottom_right_y = (center_y + height) * ldf_right, (center_y - height) * ldf_right
-            #             center_y *= ldf_center
-            #             y_val.append(center_y)
-            #             y_err.append(height / 2)
-
-            #             coordinates = [[left_edge_x, top_left_y], [right_edge_x, top_right_y], [right_edge_x, bottom_right_y], [left_edge_x, bottom_left_y]]
-
-            #             draw_plot and plt.errorbar(center_x, center_y, color = c, marker = "s", markersize = int(2 * np.log(x+o)), ls = ":")
-            #             # draw_plot and plt.gca().add_patch(Polygon(coordinates, closed = True, color = c, alpha = 0.1, lw = 0))
-
-            #         # perform efficiency fit
-            #         try:
-            #             popt, pcov = curve_fit(station_hit_probability, x_val, y_val, 
-            #                                                   p0 = [y_val[0], p50, scale],
-            #                                                   bounds = ([0, 0, 0], [1, np.inf, np.inf]),
-            #                                                   sigma = y_err,
-            #                                                   absolute_sigma = True)
-            #         except ValueError:
-            #             popt, pcov = curve_fit(station_hit_probability, x_val, y_val, 
-            #                                                   p0 = [y_val[0], p50, scale],
-            #                                                   bounds = ([0, 0, 0], [1, np.inf, np.inf]),
-            #                                                   maxfev = 10000)
-            #         except IndexError:
-            #             pass
-
-            #         finally:
-            #             try:
-            #                 fit_params[e].append(popt)
-            #                 fit_uncertainties[e].append(pcov)
-
-            #                 if draw_plot:
-            #                     X = np.linspace(0, 3000, 100)
-            #                     plt.plot(X, station_hit_probability(X, *popt), c = c, lw = 2)
-            #             except UnboundLocalError:
-            #                 pass
-
-            #     if draw_plot:
-
-
-            # if isinstance(self, NNClassifier): save_dir = f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/fit_params.csv"
-            # elif isinstance(self, HardwareClassifier): save_dir = f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/fit_params.csv"
-
-            # with open(save_dir, "w") as file:
-            #     for energy in fit_params:
-            #         np.savetxt(file, energy)
-
-
-            # warnings.simplefilter("default", RuntimeWarning)
-            # plt.show()
 
         # plot the classifiers efficiency in terms of deposited signal
         def signal_efficiency(self, dataset : str, **kwargs) -> None : 

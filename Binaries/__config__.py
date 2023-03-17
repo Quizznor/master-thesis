@@ -40,7 +40,8 @@ class GLOBAL():
     random_index                = None                                          # this file is used first when creating randoms
     force_inject                = 0                                             # whether or not to force injection of muons
     station                     = None                                          # what station to use for random traces
-    
+    floor_trace                 = True                                          # apply flooring before dividing by q_peak
+
     # use only for quick checks of performance
     baseline_mean               = 0                                             # gaussian mean of the actual baseline
     baseline_std                = 0 # 2                                            # two ADC counts, NOT converted here!

@@ -71,6 +71,7 @@ class Trace(Signal):
         self.baseline_q_charge = trace_options["baseline_q_charge"]
         self.baseline_q_peak = trace_options["baseline_q_peak"]
         self.injected = trace_options["force_inject"]
+        self.floor = trace_options["floor_trace"]
 
         if self.injected:
             self.injections_start, self.injections_end, self.Injected = InjectedBackground(self.injected, self.trace_length)
@@ -131,7 +132,6 @@ class Trace(Signal):
         # average across all PMTs to build integral trace
         # mathematically equivalent to averaging later
         # integral trace is always calculated from full bandwith trace
-
         self.int_1 = np.floor(baseline[0]) / self.simulation_q_charge[0]
         self.int_2 = np.floor(baseline[1]) / self.simulation_q_charge[1]
         self.int_3 = np.floor(baseline[2]) / self.simulation_q_charge[2]
@@ -183,9 +183,10 @@ class Trace(Signal):
             self.trace_length = self.trace_length // 3
 
         # floor pmt component traces
-        self.pmt_1 = np.floor(self.pmt_1)
-        self.pmt_2 = np.floor(self.pmt_2)
-        self.pmt_3 = np.floor(self.pmt_3)
+        if self.floor:
+            self.pmt_1 = np.floor(self.pmt_1)
+            self.pmt_2 = np.floor(self.pmt_2)
+            self.pmt_3 = np.floor(self.pmt_3)
 
         # and finally convert to vem
         self.pmt_1 = self.pmt_1 / self.simulation_q_peak[0]
@@ -358,7 +359,7 @@ class RandomTrace():
             except IndexError:
                 raise RandomTraceError
 
-        print(f"\n[INFO] -- LOADING {self.station.upper()}: {self.random_file}" + 20 * " ", end = "\n")
+        print(f"\r[INFO] -- LOADING {self.station.upper()}: {self.random_file}" + 60 * " ")
 
         these_traces = np.loadtxt(RandomTrace.baseline_dir + self.station + "/" + self.random_file)
 
