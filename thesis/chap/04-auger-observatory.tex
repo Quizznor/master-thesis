@@ -7,7 +7,7 @@ Located on the argentinian high-plains of Pampa Amarilla, the Pierre Auger obser
 energies. With an effective area of \SI{3000}{\kilo\meter\squared} it is by far the largest experiment of its kind \cite{DesignReport}.
 
 Altough first proposed in 1992, it took 18 years until the idea of a large scale experiment to detect cosmic rays matured and construction of the first prototype 
-started near Mendoza \cite{AugerTimeline}. Some further 20 years later, the Pierre Auger collaboration has co-authored over \TODO publications and continues to 
+started near Mendoza \cite{AugerTimeline}. Some further 20 years later, the Pierre Auger collaboration has published over 110 papers \cite{PCollab} and continues to 
 advance research in astroparticle physics.
 
 It does this via a hybrid approach, combining measurements of a \textbf{S}urface \textbf{D}etector (SD) as well as a \textbf{F}louresence \textbf{D}etector (FD). 
@@ -84,7 +84,7 @@ Onboard electronics, the \textbf{U}pgraded \textbf{U}nified \textbf{B}oard (UUB)
 \textbf{H}igh \textbf{G}ain (HG) output. Three FADCs monitor the anode voltage to form the \textbf{L}ow \textbf{G}ain (LG) output, which can be analyzed if the 
 HG output exceeds a value of $2^{10}$ ADC counts and becomes saturated. This effectively enables the measurement of both large ($\geq\mathcal{O}(10^3)$ particles
 hitting the tank) as well as small shower signals ($\mathcal{O}(1)$ particle hitting the tank) with sufficient accuracy \cite{SDReconstruction}. Once an FADC bin 
-has been recorded and checked for possible triggers (c.f. \autoref{ssec:sd-triggers}) it is written to a ring buffer. If a trigger is issued, the corresponding 
+has been recorded and checked for possible triggers (c.f. \autoref{chap:classical-triggers}) it is written to a ring buffer. If a trigger is issued, the corresponding 
 chunk in the ring buffer ($\approx\SI{4.992}{\micro\second}$ (599 bins) before and $\SI{12.07}{\micro\second}$ (1448 bins) after a trigger, $2047 + 1$ bins total),
 the measured trace, can be analyzed in order to calibrate a station in the array (\autoref{ssec:online-calibration}, \autoref{ssec:offline-calibration}) or 
 processed by a higher-level CPU for event reconstruction purposes (see \autoref{sec:event-reconstruction}).
@@ -251,7 +251,7 @@ between ADC counts and VEM$_\text{Peak}$, VEM$_\text{Ch.}$.
 
 Each SD station has an autonomous estimate of its' three WCD PMT baselines. They are defined simply as the mean of all first bins for each trace contained in the 
 respective muon buffers (see \autoref{sssec:offline-vem-calibration}). This baseline estimate is used to set the thresholds of the hardware triggers discussed in 
-\autoref{chap:hardware-triggers}.
+\autoref{chap:classical-triggers}.
 
 \subsubsection{Estimation of \Ipeak and \Qpeak}
 \label{sssec:offline-vem-calibration}
@@ -319,7 +319,7 @@ nominal trigger rate during operation is roughly \SI{100}{\hertz} \cite{FDRecons
 T2 level triggers occur at the same location as T1-type triggers. They are different in their more stringent conditions on the signal size or shape. This for 
 example entails track shape identification for the FD telescopes, where straight tracks (see \autoref{fig:fd-straight-tracks}) of hot pixels are identified. 
 If the resulting pixel track passes an additional quality cut that rejects e.g. lightning signals, the T2 is directly promoted to a T3 trigger ($=\text{Event}$). 
-For the SD, an exact discussion of T2 triggers is given in \autoref{sec:hardware-triggers-implementation}. A single tank on average records T2-type events at a 
+For the SD, an exact discussion of T2 triggers is given in \autoref{sec:classical-trigger-implementation}. A single tank on average records T2-type events at a 
 rate of \SI{20}{\hertz} and forwards this information to the CDAS along with a timestamp. There, incoming information of all tanks is scanned for spatial and 
 temporal correlations, which indicate the presence of an extensive air shower. 
 

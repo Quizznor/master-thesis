@@ -151,11 +151,12 @@ class Generator(tf.keras.utils.Sequence):
         __:VEM traces:______________________________________________________________
 
         * *apply_downsampling* (``bool``)   -- make UUB traces resembel UB traces
-        * *q_peak* (``float``)              -- ADC to VEM conversion factor, for UB <-> UUB
+        * *q_peak* (``float``)              -- ADC to VEM conversion factor, for ADC <-> VEM
         * *q_charge* (``float``)            -- Conversion factor for the integral trace
         * *n_bins* (``int``)                -- generate a baseline with <trace_length> bins
         * *floor_trace* (``bool``)          -- floor trace before dividing by q_peak/q_charge
         * *sigma* (``float``)               -- standard deviation of gaussian baseline
+        * *is_vem* (``bool``)               -- the library contains already calibrated traces
 
         __:Classifier:______________________________________________________________
 
@@ -182,6 +183,7 @@ class Generator(tf.keras.utils.Sequence):
             "floor_trace"           : kwargs.get("floor_trace", GLOBAL.floor_trace),
             "simulation_q_peak"     : kwargs.get("q_peak", np.array([GLOBAL.q_peak for _ in range(3)])),
             "simulation_q_charge"   : kwargs.get("q_charge", np.array([GLOBAL.q_charge for _ in range(3)])),
+            "is_vem"                : kwargs.get("is_vem", GLOBAL.is_vem),
             "apply_downsampling"    : self.apply_downsampling,
             "force_inject"          : self.force_inject,
             "trace_length"          : self.trace_length,
@@ -389,8 +391,7 @@ class Generator(tf.keras.utils.Sequence):
         if self.use_real_background: 
             q_peak, q_charge, baseline = self.RandomTraceBuffer.get()                                       # load random trace baseline
             baseline += np.random.uniform(0, 1, size = baseline.shape)                                      # convert int ADC to float ADC
-        else: 
-            print(f"creating baseline with mean = {GLOBAL.baseline_mean}, sigma = {self.baseline_std}")
+        else:
             baseline = Baseline(GLOBAL.baseline_mean, self.baseline_std, self.trace_length)                 # or create mock gauss. baseline
 
             # TODO this should take into account users choice of q_peak/q_charge
@@ -501,12 +502,13 @@ class Generator(tf.keras.utils.Sequence):
 
         # Charge integral
         ax2.set_title("Deposited signal in tank")
-        ax2.hist(all_integral, histtype = "step", bins = np.geomspace(1e-1, 1e3, 100), label = "All showers")
+        n, _, _ = ax2.hist(all_integral, histtype = "step", bins = np.geomspace(1e-1, 1e3, 100), label = "All showers")
         ax2.hist(sel_integral, histtype = "step", bins = np.geomspace(1e-1, 1e3, 100), label = "Selected showers")
         self.ignore_low_VEM and ax2.axvline(self.ignore_low_VEM, ls = "--", c = "gray")
         ax2.set_ylabel("# of Occurence")
         ax2.set_xlabel("Integral signal / VEM")
         ax2.set_xscale("log")
+        ax2.set_ylim(0, 1.1 * max(n))
         ax2.legend(fontsize = 16)
 
         # SPDistance distribution
@@ -541,11 +543,12 @@ class Generator(tf.keras.utils.Sequence):
         x_sig = np.clip(x_sig, -1, 5)
         x_bkg = np.clip(x_bkg, -1, 5)
         ax5.hist(x_sig, bins = 100, histtype = "step", label = "Signal", color = "steelblue")
-        ax5.hist(x_bkg, bins = 100, histtype = "step", label = "Baseline", color = "orange")
+        n, _, _ = ax5.hist(x_bkg, bins = 100, histtype = "step", label = "Baseline", color = "orange")
         ax5.hist(sel_x_sig, bins = 100, histtype = "step", ls = "--", color = "steelblue")
         ax5.hist(sel_x_bkg, bins = 100, histtype = "step", ls = "--", color = "orange")
         ax5.legend(fontsize = 16)
 
+        ax5.set_ylim(1e1, 1.1 * max(n))
         ax5.set_xlabel("Signal strength / VEM")
         ax5.set_ylabel("Occupation probability")
 

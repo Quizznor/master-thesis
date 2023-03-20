@@ -9,7 +9,7 @@ from matplotlib.colors import BoundaryNorm
 from matplotlib.colorbar import ColorbarBase
 from scipy.stats.mstats import mquantiles
 from scipy.optimize import curve_fit
-# import seaborn as sns                         # causes problems on HTCondor cluster
+# import seaborn as sns                                                         # causes problems on HTCondor cluster
 import tensorflow as tf
 import numpy as np
 import warnings
@@ -42,10 +42,11 @@ class GLOBAL():
     force_inject                = 0                                             # whether or not to force injection of muons
     station                     = None                                          # what station to use for random traces
     floor_trace                 = True                                          # apply flooring before dividing by q_peak
+    is_vem                      = False                                         # provided trace is already calibrated
 
     # use only for quick checks of performance
     baseline_mean               = 0                                             # gaussian mean of the actual baseline
-    baseline_std                = 0 # 2                                            # two ADC counts, NOT converted here!
+    baseline_std                = 2                                             # two ADC counts, NOT converted here!
 
     # Generator details, can be overwritten in __new__ of EventGenerator
     split                       = 0.8                                           # Ratio of the training / validation events
@@ -90,12 +91,13 @@ def lateral_trigger_probability(x : np.ndarray, efficiency : float, prob_50 : fl
 
     # return np.piecewise(x, [x <= prob_50, x > prob_50], [near_core, far_core])
 
+    # use the same fitfunc as for the lateral distribution function
     return lateral_distribution_function(x, efficiency, prob_50, scale)
+
 
 def lateral_trigger_probability_error(x : np.ndarray, pcov : np.ndarray, efficiency : float, prob_50 : float, scale : float, C : float = None) -> np.ndarray : 
 
     # TODO: calculate this when not running in compatibility mode
-
     return lateral_distribution_function_error(x, pcov, efficiency, prob_50, scale)
 
 def lateral_distribution_function(x : np.ndarray, efficiency : float, prob_50 : float, scale : float) -> np.ndarray :

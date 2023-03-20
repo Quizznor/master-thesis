@@ -72,6 +72,7 @@ class Trace(Signal):
         self.baseline_q_peak = trace_options["baseline_q_peak"]
         self.injected = trace_options["force_inject"]
         self.floor = trace_options["floor_trace"]
+        self.is_vem = trace_options["is_vem"]
 
         if self.injected:
             self.injections_start, self.injections_end, self.Injected = InjectedBackground(self.injected, self.trace_length)
@@ -91,6 +92,10 @@ class Trace(Signal):
 
         # build Baseline component
         self.Baseline = baseline_data
+
+        if self.is_vem:
+            self.simulation_q_peak = np.array([1, 1, 1])
+            self.simulation_q_charge = np.array([GLOBAL.q_charge / GLOBAL.q_peak])
 
         # whether or not to apply downsampling
         if self.downsampled:
@@ -182,7 +187,7 @@ class Trace(Signal):
             self.trace_length = self.trace_length // 3
 
         # floor pmt component traces
-        if self.floor:
+        if not self.is_vem:
             self.pmt_1 = np.floor(self.pmt_1)
             self.pmt_2 = np.floor(self.pmt_2)
             self.pmt_3 = np.floor(self.pmt_3)
@@ -192,36 +197,42 @@ class Trace(Signal):
         self.pmt_2 = self.pmt_2 / self.simulation_q_peak[1]
         self.pmt_3 = self.pmt_3 / self.simulation_q_peak[2]
 
-
-    @staticmethod
-    def apply_downsampling(pmt, random_phase) -> np.ndarray :
+    def apply_downsampling(self, pmt : np.ndarray, random_phase : int) -> np.ndarray :
 
         # ensure downsampling works as intended
         # cuts away (at most) the last two bins
-        if len(pmt) % 3 != 0: pmt = pmt[0 : -(len(pmt) % 3)]
+        # if len(pmt) % 3 != 0: pmt = pmt[0 : -(len(pmt) % 3)]
 
-        # see /cr/data01/filip/offline/trunk/Framework/SDetector/UUBDownsampleFilter.h for more information
-        kFirCoefficients = [ 5, 0, 12, 22, 0, -61, -96, 0, 256, 551, 681, 551, 256, 0, -96, -61, 0, 22, 12, 0, 5 ]
-        buffer_length = int(0.5 * len(kFirCoefficients))
-        kFirNormalizationBitShift = 11
-        # kADCsaturation = 4095                             # bit shift not really needed
+        if not self.is_vem:
+            # see /cr/data01/filip/offline/trunk/Framework/SDetector/UUBDownsampleFilter.h for more information
+            kFirCoefficients = [ 5, 0, 12, 22, 0, -61, -96, 0, 256, 551, 681, 551, 256, 0, -96, -61, 0, 22, 12, 0, 5 ]
+            buffer_length = int(0.5 * len(kFirCoefficients))
+            kFirNormalizationBitShift = 11
+            # kADCsaturation = 4095                             # bit shift not really needed
 
-        n_bins_uub      = (len(pmt) // 3) * 3               # original trace length
-        n_bins_ub       = n_bins_uub // 3                   # downsampled trace length
-        sampled_trace   = np.zeros(n_bins_ub)               # downsampled trace container
+            n_bins_uub      = (len(pmt) // 3) * 3               # original trace length
+            n_bins_ub       = n_bins_uub // 3                   # downsampled trace length
+            sampled_trace   = np.zeros(n_bins_ub)               # downsampled trace container
 
-        temp = np.zeros(n_bins_uub + len(kFirCoefficients))
+            temp = np.zeros(n_bins_uub + len(kFirCoefficients))
 
-        temp[0 : buffer_length] = pmt[:: -1][-buffer_length - 1 : -1]
-        temp[-buffer_length - 1: -1] = pmt[:: -1][0 : buffer_length]
-        temp[buffer_length : -buffer_length - 1] = pmt
+            temp[0 : buffer_length] = pmt[:: -1][-buffer_length - 1 : -1]
+            temp[-buffer_length - 1: -1] = pmt[:: -1][0 : buffer_length]
+            temp[buffer_length : -buffer_length - 1] = pmt
 
-        # perform downsampling
-        for j, coeff in enumerate(kFirCoefficients):
-            sampled_trace += [temp[k + j] * coeff for k in range(random_phase, n_bins_uub, 3)]
+            # perform downsampling
+            for j, coeff in enumerate(kFirCoefficients):
+                sampled_trace += [temp[k + j] * coeff for k in range(random_phase, n_bins_uub, 3)]
 
-        # clipping and bitshifting
-        sampled_trace = [int(adc) >> kFirNormalizationBitShift for adc in sampled_trace]
+            # clipping and bitshifting
+            sampled_trace = [int(adc) >> kFirNormalizationBitShift for adc in sampled_trace]
+        
+        # is this correct ???
+        else:
+            sampled_trace = []
+
+            for k in range(random_phase, n_bins_uub, 3):
+                sampled_trace.append(pmt[k])
 
         # # clipping and bitshifting
         # for j, adc in enumerate(sampled_trace):
@@ -295,9 +306,9 @@ class Trace(Signal):
         plt.plot(x, self.pmt_3, c = "green", label = f"PMT #3{' - downsampled' if self.downsampled else ''}, S = {self.deposited_signal[2]:.1f} VEM", lw = 1)
 
 
-        if self.has_signal:
-            plt.axvline(self.signal_start, ls = "--", c = "red", lw = 2)
-            plt.axvline(self.signal_end, ls = "--", c = "red", lw = 2)
+        # if self.has_signal:
+        #     plt.axvline(self.signal_start, ls = "--", c = "red", lw = 2)
+        #     plt.axvline(self.signal_end, ls = "--", c = "red", lw = 2)
 
         if self.has_accidentals:
             for start, stop in zip(self.injections_start, self.injections_end):

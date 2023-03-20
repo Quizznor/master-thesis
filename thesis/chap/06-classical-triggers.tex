@@ -10,7 +10,7 @@ be discussed in detail in this chapter. First, the implementation of different t
 Their performance is evaluated in \autoref{sec:classical-triggers-performance}.
 
 \section{Implementation}
-\label{sec:classical-trigger-implementation}
+\label{sec:trigger-implementation}
 
 \subsection{Threshold trigger (Th)}
 \label{ssec:threshold-trigger}
@@ -84,7 +84,7 @@ A pseudocode example is given below.
      for pmt, buffer in pmts, buffers:
          if pmt <= threshold: buffer[buffer_index] = True
 
-         if count_values(buffer, value = True) < n_bins:
+         if count_values(buffer, value = True) > n_bins:
              count_active_PMTs += 1
 
      if count_active_PMTs >= 2:
@@ -100,19 +100,67 @@ A pseudocode example is given below.
 
 An extension to even lower signal strengths is given by the \textbf{ToT}-\textbf{d}econvoluted trigger (ToTd). As the name implies, the implementation of the 
 algorithm is completely analog to the ToT trigger in \autoref{ssec:time-over-threshold-trigger}. Only the FADC input stream from the three PMTs is altered 
-according to \autoref{eq:trace-deconvolution}. This is to correct for the exponential decay that is visible in a Cherenkov signal due to light reflecting off 
-the tanks inner walls. The parameters $\Delta t$ and $\tau$ are $\SI{25}{\nano\second}$ and \SI{67}{\nano\second} respectively and have been determined in
-\cite{ToTtriggerSetting}.
+according to \autoref{eq:trace-deconvolution}.
 
 \begin{equation}
     \label{eq:trace-deconvolution}
-    d_i /= (a_i - a_{i-1}\cdot e^{-\Delta t/\tau})\,/\,(1 - e^{\Delta t/\tau}) 
+    d_i = (a_i - a_{i-1}\cdot e^{-\Delta t/\tau})\,/\,(1 - e^{\Delta t/\tau}) 
 \end{equation}
+
+In \autoref{eq:trace-deconvolution}, the deconvoluted bin $d_i$ is calculated from the measured FADC values $a_i$ and $a_{i-1}$, where $a_{i-1}$ is scaled 
+according to an exponential decay with mean lifetime $\tau = \SI{67}{\nano\second}$. This reduces the exponential tail of an electromagnetic signal to a 
+series of pulses which in the case of $a_{i-1} < a_i$ exceed the original signal strength. As such, the deconvoluted trace can satisfy the ToT trigger 
+requirements, whereas the original raw FADC values might not have, extending the sensitivity of the ToT trigger to lower signal strengths. The scaling constant 
+$\Delta t = \SI{25}{\nano\second}$ is tied to the sampling rate of UB electronics (c.f. \autoref{ssec:sd-daq}). The choice of the numerical constants $\tau$ and 
+$\Delta t$ is explained in more detail in \cite{ToTtriggerIdea}.
 
 \subsection{Multiplicity of Positive Steps (MoPS)}
 \label{ssec:multiplicity-of-positive-steps}
 
+The \textbf{M}ultiplicity \textbf{o}f \textbf{P}ositive \textbf{S}teps (MoPS) algorithm triggers on positive flanks of an FADC trace, which can be related to the 
+arrival of new particles in the water tank. 
 
+A positive flank in the FADC trace of a single PMT is any combination of at least three bins that are monotonically increasing in value, Once such a positive step 
+has been identified, a (MoPS) trigger veto is applied to the next 
+
+\begin{equation}
+    \label{eq:MoPS-veto}
+    n_\text{skip} = \lfloor \left( \log_2(\Delta y) + 1 \right) - 3\rceil
+\end{equation}
+
+bins, where $\Delta y$ refers to the total vertical increase in the step from first to last bin. Note that in \autoref{eq:MoPS-veto} the notation $\lfloor x \rceil$ 
+is used as shorthand notation to round $x$ to the nearest integer. If $\Delta y$ is bigger than $y_\text{min} = \SI{3}{\ADC}$ (to filter random fluctuations), but 
+does not exceed $y_\text{max} = \SI{31}{\ADC}$ (to prevent triggering on muonic coincidences), it is added to a ledger. If the number of rising flanks in the ledger
+is bigger than $m>4$ for at least two PMTs, a final check regarding the integral of the FADC trace is performed. If this check passes, a MoPS-T2 trigger is issued 
+to CDAS.
+
+It is impossible to accurately recreate the MoPS trigger in simulations. The integral test above compares the sum of the last 250 bins against a threshold 
+($\sum a_i$ > 75). Since not all 250 bin values are available to CDAS, differing results are to be expected when comparing the implementation of the algorithm in 
+the SD field versus its' counterpart in analysis software. 
+
+For this purpose, the MoPs trigger is not considered in the analysis presented in \autoref{chap:neural-network-triggers}. The implications of this choice are layed
+out in \autoref{sec:classical-triggers-performance}.
+
+\subsection{Compatibility mode}
+\label{ssec:compatibility-mode}
+
+\begin{figure}
+	\begin{subfigure}[b]{0.5\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{./plots/time_trace_UUB.png}
+		\caption{\textbf{UUB time trace}}
+		\label{fig:gamma-interactions}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.5\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{./plots/time_trace_UB.png}
+		\caption{\textbf{UB time trace}}
+		\label{fig:electron-interactions}
+	\end{subfigure}
+	\caption{\textbf{(a)}  TODO. \textbf{(b)}  increase font size.}
+	\label{fig:ionization-losses}
+\end{figure}
 
 \section{Performance}
 \label{sec:classical-triggers-performance}
