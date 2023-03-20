@@ -365,7 +365,7 @@ class Classifier():
                 # axis 2 = sorted by zenith angle
                 for t, (hits, misses) in enumerate(zip(hits, misses)):
 
-                    LDF = get_fit_function("/cr/tempdata01/filip/QGSJET-II/LDF/", e, t)
+                    LDF, (LDF_efficiency, LDF_prob_50, LDF_scale) = get_fit_function("/cr/tempdata01/filip/QGSJET-II/LDF/", e, t)
 
                     c = colormap(t / (len(theta_bins) - 1))
                     all_data = hits + misses
@@ -393,38 +393,52 @@ class Classifier():
                     # perform fit with x_err and y_err
                     try:
                         if kwargs.get("perform_fit", True):
-                            popt, pcov = curve_fit(station_hit_probability, bin_center, efficiency, 
-                                                                    p0 = [1, 500, 1e-5],
-                                                                    bounds = ([0, 0, 0], [np.inf, np.inf, 0.1]),
-                                                                    sigma = efficiency_err,
-                                                                    absolute_sigma = True,
-                                                                    maxfev = 10000)
 
-                            # write fit parameters to disk
-                            file_name = f"{e_labels[e].replace('$','')}_{e_labels[e+1].replace('$','')}__{int(theta_bins[t])}_{int(theta_bins[t+1])}.csv"
+                            try:
+                                # # lateral_trigger_probability(x : np.ndarray, efficiency : float, prob_50, scale : float, C : float)
+                                # popt, pcov = curve_fit(lateral_trigger_probability, bin_center, efficiency, 
+                                #                                         p0 = [efficiency[0], bin_center[np.argmin(abs(efficiency - 50))], LDF_scale, 2 * LDF_scale],
+                                #                                         bounds = ([0, 0, 0, 0], [1, np.inf, 1, 0.5]),
+                                #                                         sigma = efficiency_err,
+                                #                                         absolute_sigma = True,
+                                #                                         maxfev = 10000)
 
-                            if hasattr(self, "epochs"):
-                                fit_dir = f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/FITPARAM/"
-                            else: fit_dir = f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/FITPARAM/"
+                                # When running in compatibility mode (i.e. using lateral_distribution_function under the hood)
+                                # lateral_distribution_function(x : np.ndarray, efficiency : float, prob_50 : float, scale : float)
+                                popt, pcov = curve_fit(lateral_trigger_probability, bin_center, efficiency, 
+                                                                        p0 = [efficiency[0], bin_center[np.argmin(abs(efficiency - 50))], LDF_scale],
+                                                                        bounds = ([0, 0, 0], [np.inf, np.inf, 1]),
+                                                                        sigma = efficiency_err,
+                                                                        absolute_sigma = True,
+                                                                        maxfev = 10000)
+
+                                # write fit parameters to disk
+                                file_name = f"{e_labels[e].replace('$','')}_{e_labels[e+1].replace('$','')}__{int(theta_bins[t])}_{int(theta_bins[t+1])}.csv"
+
+                                if hasattr(self, "epochs"):
+                                    fit_dir = f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/FITPARAM/"
+                                else: fit_dir = f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/FITPARAM/"
+                                
+                                try: os.mkdir(fit_dir)
+                                except FileExistsError: pass
+
+                                with open(fit_dir + file_name, "w") as fit_parameters:
+                                    np.savetxt(fit_parameters, popt)
+
+
+                                if kwargs.get("draw_plot", True):
+
+                                    X = np.geomspace(1e-3, 6000, 1000)
+
+                                    efficiency_fit = lateral_trigger_probability(X, *popt)
+                                    efficiency_fit_error = lateral_trigger_probability_error(X, pcov, *popt)
+                                    bottom = np.clip(efficiency_fit - efficiency_fit_error, 0, 1)
+                                    top = np.clip(efficiency_fit + efficiency_fit_error, 0, 1)
+                                
+                                    ax.plot(X, efficiency_fit, color = c)
+                                    ax.fill_between(X, bottom, top, color = c, alpha = 0.1)
                             
-                            try: os.mkdir(fit_dir)
-                            except FileExistsError: pass
-
-                            with open(fit_dir + file_name, "w") as fit_parameters:
-                                np.savetxt(fit_parameters, popt)
-
-
-                            if kwargs.get("draw_plot", True):
-
-                                X = np.geomspace(1e-3, 6000, 1000)
-
-                                efficiency_fit = station_hit_probability(X, *popt)
-                                efficiency_fit_error = station_hit_probability_error(X, pcov, *popt)
-                                bottom = np.clip(efficiency_fit - efficiency_fit_error, 0, 1)
-                                top = np.clip(efficiency_fit + efficiency_fit_error, 0, 1)
-                            
-                                ax.plot(X, station_hit_probability(X, *popt), color = c)
-                                ax.fill_between(X, bottom, top, color = c, alpha = 0.1)
+                            except IndexError: pass
                     
                     except ValueError: pass
 
@@ -660,7 +674,9 @@ class NNClassifier(Classifier):
                     if self.current_patience >= self.patience: raise EarlyStoppingError
 
         def on_train_begin(self, logs : dict = None) -> None : self.__reset__()
-        def on_epoch_end(self, epoch, logs : dict = None) -> None : self.__reset__()
+        def on_epoch_end(self, epoch, logs : dict = None) -> None : 
+            self.__reset__()
+            print()
 
     # Collection of different network architectures
     class Architectures():
@@ -830,11 +846,12 @@ class NNClassifier(Classifier):
             try:
                 self.model = tf.keras.Sequential()
                 self.models[set_architecture](self.Architectures, self.model)
-                self.epochs = 0
                 self.model.build()
             # ValueError is raised for LSTM due to different initialization
             except TypeError:
                 self.model = self.models[set_architecture](self.Architectures)
+
+            self.epochs = 0
 
         self.model.compile(loss = 'categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy'], run_eagerly = True)
 
@@ -848,8 +865,16 @@ class NNClassifier(Classifier):
 
     def train(self, Datasets : tuple, epochs : int) -> None :
         
+        try:
+            os.mkdir(f"/cr/data01/filip/models/{self.name}")
+        except FileExistsError: pass
+
         training_status = "normally"
         TrainingSet, ValidationSet = Datasets
+
+        print("Creating physics information for both datasets...")
+        TrainingSet.physics_test(n_showers = int(0.1 * TrainingSet.__len__()), save_dir = f"/cr/data01/filip/models/{self.name}/training_set_physics_test.png")
+        ValidationSet.physics_test(n_showers = int(0.4 * ValidationSet.__len__()), save_dir = f"/cr/data01/filip/models/{self.name}/validation_set_physics_test.png")
 
         try:
 

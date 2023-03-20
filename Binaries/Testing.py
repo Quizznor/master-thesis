@@ -6,6 +6,8 @@ from .Classifier import *
 # plot the estimated confidence range of provided classifiers
 def confidence_comparison(confidence_level, *args, **kwargs):
 
+    raise NotImplementedError("Calculation of arbitrary p_x needs to be altered to reflect new LTP fitfunc")
+
     y_max = kwargs.get("ymax", 2500)
     labels = kwargs.get("labels", None)
     energy_labels = ["16_16.5", "16.5_17", "17_17.5", "17.5_18", "18_18.5", "18.5_19", "19_19.5"]

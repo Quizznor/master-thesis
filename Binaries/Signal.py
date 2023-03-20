@@ -155,7 +155,6 @@ class Trace(Signal):
         # convert Baseline from "real" q_peak/charge to simulated
         # simulate a floating point baseline for realistic bin overflow
         conversion_factor = self.simulation_q_peak / self.baseline_q_peak
-        self.Baseline += np.random.uniform(size = self.Baseline.shape)
         self.Baseline = np.array([pmt * c for c, pmt in zip(conversion_factor, self.Baseline)])
 
         self.pmt_1, self.pmt_2, self.pmt_3 = np.zeros((3, 2048) )

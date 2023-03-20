@@ -1,5 +1,3 @@
-import tensorflow as tf
-
 from .__config__ import *
 from .Signal import *
 
@@ -157,6 +155,7 @@ class Generator(tf.keras.utils.Sequence):
         * *q_charge* (``float``)            -- Conversion factor for the integral trace
         * *n_bins* (``int``)                -- generate a baseline with <trace_length> bins
         * *floor_trace* (``bool``)          -- floor trace before dividing by q_peak/q_charge
+        * *sigma* (``float``)               -- standard deviation of gaussian baseline
 
         __:Classifier:______________________________________________________________
 
@@ -175,6 +174,7 @@ class Generator(tf.keras.utils.Sequence):
         self.trace_length = kwargs.get("trace_length", GLOBAL.trace_length)
         self.force_inject = kwargs.get("force_inject", GLOBAL.force_inject)
         self.apply_downsampling = kwargs.get("apply_downsampling", GLOBAL.downsampling)
+        self.baseline_std = kwargs.get("sigma", GLOBAL.baseline_std)
         self.trace_options = \
         {
             "window_length"         : kwargs.get("window_length", GLOBAL.window),
@@ -386,9 +386,12 @@ class Generator(tf.keras.utils.Sequence):
     # create a baseline according to options set in __init__
     def build_baseline(self) -> np.ndarray :
 
-        if self.use_real_background: q_peak, q_charge, baseline = self.RandomTraceBuffer.get()              # load random trace baseline
+        if self.use_real_background: 
+            q_peak, q_charge, baseline = self.RandomTraceBuffer.get()                                       # load random trace baseline
+            baseline += np.random.uniform(0, 1, size = baseline.shape)                                      # convert int ADC to float ADC
         else: 
-            baseline = Baseline(GLOBAL.baseline_mean, GLOBAL.baseline_std, self.trace_length)               # or create mock gauss. baseline
+            print(f"creating baseline with mean = {GLOBAL.baseline_mean}, sigma = {self.baseline_std}")
+            baseline = Baseline(GLOBAL.baseline_mean, self.baseline_std, self.trace_length)                 # or create mock gauss. baseline
 
             # TODO this should take into account users choice of q_peak/q_charge
             q_charge = np.array([GLOBAL.q_charge for _ in range(3)])
@@ -412,7 +415,7 @@ class Generator(tf.keras.utils.Sequence):
         return n_sig, n_bkg, n_int, n_prt
 
     # run some diagnostics on physical variables
-    def physics_test(self, n_showers : int = None) -> None :
+    def physics_test(self, n_showers : int = None, save_dir : str = None) -> None :
 
         if n_showers is None: n_showers = self.__len__()
         temp, self.for_training = self.for_training, False
@@ -556,7 +559,10 @@ class Generator(tf.keras.utils.Sequence):
         
         self.for_training = temp
         
-        plt.show()
+        if save_dir is not None:
+            plt.savefig(save_dir)
+        else:
+            plt.show()
 
     # run some dignostics for training purposes
     def training_test(self, n_showers : int = None) -> None :

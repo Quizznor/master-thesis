@@ -9,7 +9,8 @@ from matplotlib.colors import BoundaryNorm
 from matplotlib.colorbar import ColorbarBase
 from scipy.stats.mstats import mquantiles
 from scipy.optimize import curve_fit
-import seaborn as sns
+# import seaborn as sns                         # causes problems on HTCondor cluster
+import tensorflow as tf
 import numpy as np
 import warnings
 import sys, os
@@ -71,19 +72,40 @@ def get_fit_function(root_path : str, e : int, t : int) -> np.ndarray :
     checksum = lambda x : sum([10*float(c(x,0)), 10*float(c(x,1)), float(c(x,3))/10, float(c(x,4)[:-4])/10])
     ldf_files = np.array(os.listdir(root_path + "FITPARAM/"))[np.argsort([checksum(file) for file in os.listdir(root_path + "FITPARAM/")])]
     ldf_files = [root_path + "FITPARAM/" + ldf_file for ldf_file in ldf_files]
-    ldf_parameters = np.loadtxt(ldf_files[e * 5 + t])
+    fit_parameters = np.loadtxt(ldf_files[e * 5 + t])
     
-    return lambda x : station_hit_probability(x, *ldf_parameters)
+    if "LDF" in root_path or "LTP" in root_path:
+        fit_function = lambda x : lateral_distribution_function(x, *fit_parameters)
+    else:
+        fit_function =  lambda x : lateral_trigger_probability(x, *fit_parameters)
 
+    return fit_function, fit_parameters
 
-def station_hit_probability(x : np.ndarray, efficiency : float, prob_50 : float, scale : float) -> np.ndarray :
+def lateral_trigger_probability(x : np.ndarray, efficiency : float, prob_50 : float, scale : float, C : float = None) -> np.ndarray : 
+
+    # # see https://www.sciencedirect.com/sdfe/reader/pii/S0927650511001526/pdf p.7 for full form
+    # # To ensure we have a continously differentiable function, we would need to restrict C = 2 * scale
+    # near_core = lambda x : efficiency / (1 + np.exp(scale * (x - prob_50)))
+    # far_core = lambda x : efficiency/2 * np.exp(-C * (x - prob_50))
+
+    # return np.piecewise(x, [x <= prob_50, x > prob_50], [near_core, far_core])
+
+    return lateral_distribution_function(x, efficiency, prob_50, scale)
+
+def lateral_trigger_probability_error(x : np.ndarray, pcov : np.ndarray, efficiency : float, prob_50 : float, scale : float, C : float = None) -> np.ndarray : 
+
+    # TODO: calculate this when not running in compatibility mode
+
+    return lateral_distribution_function_error(x, pcov, efficiency, prob_50, scale)
+
+def lateral_distribution_function(x : np.ndarray, efficiency : float, prob_50 : float, scale : float) -> np.ndarray :
     return np.clip(efficiency * (1 - 1 / (1 + np.exp(-scale * (x - prob_50)))), 0, 1)
 
-def station_hit_probability_error(x : np.ndarray, pcov : np.ndarray, efficiency : float, prob_50 : float, scale : float) -> np.ndarray :
+def lateral_distribution_function_error(x : np.ndarray, pcov : np.ndarray, efficiency : float, prob_50 : float, scale : float) -> np.ndarray :
 
     errors = np.zeros_like(x)
 
-    d_eff = lambda u : station_hit_probability(u, efficiency, prob_50, scale) / efficiency
+    d_eff = lambda u : lateral_distribution_function(u, efficiency, prob_50, scale) / efficiency
     d_prob_50 = lambda u : efficiency * scale * np.exp(scale * (u + prob_50)) / (np.exp(prob_50 * scale) + np.exp(scale * u))**2
     d_scale = lambda u : efficiency * (prob_50 - u) * np.exp(scale * (prob_50 + u)) / (np.exp(prob_50 * scale) + np.exp(scale * u))**2
 
@@ -91,7 +113,7 @@ def station_hit_probability_error(x : np.ndarray, pcov : np.ndarray, efficiency 
         gradient = np.array([d_eff(X), d_prob_50(X), d_scale(X)])
         errors[i] += np.sqrt(gradient.T @ pcov @ gradient)
 
-    return np.clip(errors, 0, 1)
+    return errors
 
 def progress_bar(current_step : int, total_steps : int, start_time : int) -> None : 
      
