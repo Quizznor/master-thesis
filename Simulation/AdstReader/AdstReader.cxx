@@ -404,6 +404,102 @@ void Compare(fs::path pathToAdst)
   traceVEMFile.close();
 }
 
+void ExtendLowSPD(fs::path pathToAdst)
+{
+  // const auto csvTraceFile = pathToAdst.parent_path()/ pathToAdst.filename().replace_extension("csv"); // for testing
+  const auto csvTraceFile = pathToAdst.parent_path().parent_path() / pathToAdst.filename().replace_extension("csv");
+
+  // (2) start main loop
+  RecEventFile     recEventFile(pathToAdst.string());
+  RecEvent*        recEvent = nullptr;
+
+  // will be assigned by root
+  recEventFile.SetBuffers(&recEvent);
+
+  for (unsigned int i = 0; i < recEventFile.GetNEvents(); ++i) 
+  {
+    // skip if event reconstruction failed
+    if (recEventFile.ReadEvent(i) != RecEventFile::eSuccess){continue;}
+
+    // allocate memory for data
+    const SDEvent& sdEvent = recEvent->GetSDEvent();                              // contains the traces
+    const GenShower& genShower = recEvent->GetGenShower();                        // contains the shower
+    DetectorGeometry detectorGeometry = DetectorGeometry();                       // contains SPDistance
+    recEventFile.ReadDetectorGeometry(detectorGeometry);
+
+    // create csv file streams
+    ofstream traceFile(csvTraceFile.string(), std::ios_base::app);
+
+    // binaries of the generated shower
+    // const auto SPD = detectorGeometry.GetStationAxisDistance(Id, Axis, Core);  // in m
+    const auto showerZenith = genShower.GetZenith() * (180 / 3.141593);           // in °
+    const auto showerEnergy = genShower.GetEnergy();                              // in eV
+    const auto showerAxis = genShower.GetAxisSiteCS();
+    const auto showerCore = genShower.GetCoreSiteCS();  
+
+    Detector detector = Detector();
+
+    // loop over all triggered stations
+    for (const auto& recStation : sdEvent.GetStationVector())
+    {
+      const auto stationId = recStation.GetId();
+      const auto SPD = detectorGeometry.GetStationAxisDistance(stationId, showerAxis, showerCore);  // in m
+      const bool isClose = SPD < 1800;
+
+      if (!isClose){continue;}
+
+      std::cout << SPD << " " << isClose << std::endl;
+
+      const auto genStation = sdEvent.GetSimStationById(stationId);
+      const auto nMuons = genStation->GetNumberOfMuons();
+      const auto nElectrons = genStation->GetNumberOfElectrons();
+      const auto nPhotons = genStation->GetNumberOfPhotons();
+
+      // Save trace in ADC/VEM format
+      for (unsigned int PMT = 1; PMT < 4; PMT++)
+      {
+
+        // total trace container
+        VectorWrapper TotalTrace(2048,0);
+
+        // loop over all components (photon, electron, muons) -> NO HADRONIC COMPONENT
+        for (int component = ePhotonTrace; component <= eMuonTrace; component++)
+        {
+          const auto component_trace = recStation.GetPMTTraces((ETraceType)component, PMT);
+          auto CalibratedTrace = VectorWrapper( component_trace.GetVEMComponent() );
+
+          // make sure there exists a component of this type
+          if (CalibratedTrace.values.size() != 0)
+          {
+            const auto vem_peak = component_trace.GetPeak();
+            VectorWrapper UncalibratedTrace = CalibratedTrace * vem_peak;
+            TotalTrace = TotalTrace + UncalibratedTrace;
+          }
+        }
+
+        // write all information to trace file
+        traceFile << stationId << " " << SPD << " " << showerEnergy << " " << showerZenith << " " << nMuons << " " << nElectrons << " " << nPhotons << " ";
+
+        // "digitize" component trace...
+        // this used to be converted to VEM
+        const auto signal_start = recStation.GetSignalStartSlot();
+        const auto signal_end = recStation.GetSignalEndSlot();
+        const auto trimmedAdcTrace = TotalTrace.get_trace(signal_start, signal_end);
+
+        // ... and write to disk
+        for (const auto& bin : trimmedAdcTrace)
+        {
+          traceFile << " " << bin;
+        }
+
+        traceFile << "\n";
+      }
+    }
+
+    traceFile.close();
+  }
+}
+
 int main(int argc, char** argv) 
 {
   if (std::strcmp(argv[1], "0") == 0)
@@ -420,6 +516,12 @@ int main(int argc, char** argv)
   {
     // type '2' for comparing ADC/VEM extraction
     Compare(argv[2]);
+  }
+    else if (std::strcmp(argv[1], "3") == 0)
+  {
+    // type '3' for extending dataset to low energies
+    // same as '0' but only save stations w/ <1800m SPD
+    ExtendLowSPD(argv[2]);
   }
   return 0;
 }

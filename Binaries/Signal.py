@@ -95,7 +95,7 @@ class Trace(Signal):
 
         if self.is_vem:
             self.simulation_q_peak = np.array([1, 1, 1])
-            self.simulation_q_charge = np.array([GLOBAL.q_charge / GLOBAL.q_peak])
+            self.simulation_q_charge = np.array([GLOBAL.q_charge / GLOBAL.q_peak for _ in range(3)])
 
         # whether or not to apply downsampling
         if self.downsampled:
@@ -199,9 +199,13 @@ class Trace(Signal):
 
     def apply_downsampling(self, pmt : np.ndarray, random_phase : int) -> np.ndarray :
 
+        n_bins_uub      = (len(pmt) // 3) * 3               # original trace length
+        n_bins_ub       = n_bins_uub // 3                   # downsampled trace length
+        sampled_trace   = np.zeros(n_bins_ub)               # downsampled trace container
+
         # ensure downsampling works as intended
         # cuts away (at most) the last two bins
-        # if len(pmt) % 3 != 0: pmt = pmt[0 : -(len(pmt) % 3)]
+        if len(pmt) % 3 != 0: pmt = pmt[0 : -(len(pmt) % 3)]
 
         if not self.is_vem:
             # see /cr/data01/filip/offline/trunk/Framework/SDetector/UUBDownsampleFilter.h for more information
@@ -210,9 +214,7 @@ class Trace(Signal):
             kFirNormalizationBitShift = 11
             # kADCsaturation = 4095                             # bit shift not really needed
 
-            n_bins_uub      = (len(pmt) // 3) * 3               # original trace length
-            n_bins_ub       = n_bins_uub // 3                   # downsampled trace length
-            sampled_trace   = np.zeros(n_bins_ub)               # downsampled trace container
+
 
             temp = np.zeros(n_bins_uub + len(kFirCoefficients))
 
@@ -229,10 +231,9 @@ class Trace(Signal):
         
         # is this correct ???
         else:
-            sampled_trace = []
 
             for k in range(random_phase, n_bins_uub, 3):
-                sampled_trace.append(pmt[k])
+                sampled_trace[k // 3] = pmt[k]
 
         # # clipping and bitshifting
         # for j, adc in enumerate(sampled_trace):

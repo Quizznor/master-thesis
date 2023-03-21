@@ -65,39 +65,7 @@ class EventGenerator():
             np.random.seed(seed)                                                    # numpy docs says this is legacy, maybe revisit?
 
         # get all signal files
-        if isinstance(datasets, str):
-            try: data = EventGenerator.libraries[datasets]
-            except KeyError:
-                if ":" in datasets:
-                    all_energies = ["16_16.5", "16.5_17", "17_17.5", "17.5_18", "18_18.5", "18.5_19", "19_19.5"]
-                    low, high = datasets.split(":")
-                    data = []
-
-                    low = all_energies.index(low) if low else 0
-                    high = all_energies.index(high) if high else -1
-
-                    for energy in all_energies[low : high]:
-                        data.append(EventGenerator.libraries[energy])
-
-                elif datasets == "all": data = [*EventGenerator.libraries.values()]
-                else: sys.exit("Couldn't construct a valid dataset from inputs")
-        
-        elif isinstance(datasets, list):
-            try: data = [EventGenerator.libraries[key] for key in datasets]
-            except KeyError: sys.exit("Couldn't construct a valid dataset from inputs")
-
-        # isinstance(datasets, NNClassifier) would be more convenient, but this isn't defined yet
-        elif hasattr(datasets, "name") and hasattr(datasets, "epochs"):
-            with open(f"/cr/data01/filip/models/{datasets.name}/model_{datasets.epochs}/validation_files.csv", "r") as validation_file:
-                lines = validation_file.readlines()
-                lines = [line.strip("\n") for line in lines]
-
-            return Generator(lines, **kwargs)
-
-        all_files = [[os.path.abspath(os.path.join(library, p)) for p in os.listdir(library)] for library in data]
-        all_files = [item for sublist in all_files for item in sublist if not item.endswith("root_files")]        
-        
-        random.shuffle(all_files)
+        all_files = self.get_signal_files(datasets)
 
         # split files into training and testing set (if needed)
         if split in [0,1]:
@@ -113,8 +81,49 @@ class EventGenerator():
             TrainingSet = Generator(training_files, **kwargs)
             TestingSet = Generator(validation_files, **kwargs)
 
-            return TrainingSet, TestingSet 
+            return TrainingSet, TestingSet
+        
+    @staticmethod
+    # TODO: support splitting for zenith?
+    def get_signal_files(user_choice : typing.Union[list[str], str]) -> list[str] :
 
+        libraries = ["16_16.5", "16.5_17", "17_17.5", "17.5_18", "18_18.5", "18.5_19", "19_19.5"]
+
+        if isinstance(user_choice, str):
+            if user_choice in libraries: data = [EventGenerator.libraries[user_choice]]                     # add single energy library
+            elif ":" in user_choice:                                                                        # support slicing of energies
+
+                data = []
+                low, high = user_choice.split(':')
+                low = libraries.index(low) if low else 0
+                high = libraries.index(high) if high else -1
+
+                for energy in libraries[low : high]:
+                        data.append(EventGenerator.libraries[energy])
+
+            elif user_choice == "all": data = [*EventGenerator.libraries.values()]                          # add every available library
+            elif os.path.isdir(user_choice): data = [user_choice]                                           # add a custom directory
+
+            else: raise NotImplementedError(f"input {user_choice} is not supported as argument for 'dataset'")
+
+            all_files = [[os.path.abspath(os.path.join(library, p)) for p in os.listdir(library)] for library in data]
+            all_files = [item for sublist in all_files for item in sublist if item.endswith(".csv")]
+
+        elif isinstance(user_choice, list):                                                                 # support list input
+            all_files = []
+
+            for item in user_choice:
+                all_files.append(EventGenerator.get_signal_files(item))
+
+        else:
+
+            # isinstance(datasets, NNClassifier) would be more convenient, but this isn't defined yet
+            if hasattr(user_choice, "epochs"): all_files =  user_choice.get_files("validation")             # add validation files from classifier
+
+            else: raise NotImplementedError(f"input {type(user_choice)} is not supported as argument for 'dataset'")
+        
+        random.shuffle(all_files)
+        return all_files
 
 # Actual generator class that generates training data on the fly
 # See this website for help on a working example: shorturl.at/fFI09

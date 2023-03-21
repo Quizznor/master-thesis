@@ -38,7 +38,9 @@ try: os.makedirs(target_path)
 except FileExistsError: pass
 
 for energy in args.e:
-    try: os.makedirs(target_path + "/" + energy)
+    try: 
+        os.makedirs(target_path + "/" + energy)
+        os.makedirs(target_path + "/" + energy + "/root_files/")
     except FileExistsError: pass
 
         # for theta in ["0_44", "44_56", "56_65"]:
