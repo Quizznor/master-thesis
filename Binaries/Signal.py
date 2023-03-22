@@ -296,16 +296,16 @@ class Trace(Signal):
     def __plot__(self) -> None :
 
         x = range(self.trace_length)
-        
-        try:
-            plt.title(f"Station #{self.StationID} - {np.mean(self.deposited_signal):.2f} VEM")
-        except AttributeError:
-            plt.title(f"Background trace - {self.deposited_signal:.2f} VEM")
-            
-        plt.plot(x, self.pmt_1, c = "steelblue", label = f"PMT #1{' - downsampled' if self.downsampled else ''}, S = {self.deposited_signal[0] :.1f} VEM", lw = 1)
-        plt.plot(x, self.pmt_2, c = "orange", label = f"PMT #2{' - downsampled' if self.downsampled else ''}, S = {self.deposited_signal[1]:.1f} VEM", lw = 1)
-        plt.plot(x, self.pmt_3, c = "green", label = f"PMT #3{' - downsampled' if self.downsampled else ''}, S = {self.deposited_signal[2]:.1f} VEM", lw = 1)
+        sig = lambda x : f"$S={x:.1f}\,\\mathrm{{VEM}}_\\mathrm{{Peak}}$"
 
+        try:
+            plt.title(f"Station {self.StationID} - {sig(np.mean(self.deposited_signal))}", pad = 20)
+        except AttributeError:
+            plt.title(f"Background trace - {sig(self.deposited_signal)}", pad = 20)
+
+        plt.plot(x, self.pmt_1, c = "steelblue", label = f"PMT 1{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[0])}", lw = 1)
+        plt.plot(x, self.pmt_2, c = "orange", label = f"PMT 2{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[1])}", lw = 1)
+        plt.plot(x, self.pmt_3, c = "green", label = f"PMT 3{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[2])}", lw = 1)
 
         # if self.has_signal:
         #     plt.axvline(self.signal_start, ls = "--", c = "red", lw = 2)
@@ -318,10 +318,9 @@ class Trace(Signal):
 
         plt.xlim(0, self.trace_length)
         plt.ylabel("Signal strength / VEM")
-        plt.xlabel("Bin / 25 ns" if self.downsampled else "Bin / 8.3 ns")
+        plt.xlabel("Bin / 25 ns" if self.downsampled else "Bin / $8.3\,\mathrm{ns}$")
         plt.legend()
         plt.show()
-
 
 # container for reading signal files
 class SignalBatch():

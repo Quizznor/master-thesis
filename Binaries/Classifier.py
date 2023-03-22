@@ -149,6 +149,26 @@ class Classifier():
 
         Dataset.for_training = temp
 
+    # combine multiple results from self.make_signal_dataset to one
+    def combine_data(self, save_dir : str, *args) -> None : 
+
+        if self.name == "HardwareClassifier":  root_path = "/cr/data01/filip/models/HardwareClassifier/ROC_curve/"
+        else: root_path = "/cr/data01/filip/models/" + self.name + f"/model_{self.epochs}/ROC_curve/"
+
+        os.mkdir(root_path + save_dir)
+        warnings.simplefilter("ignore", UserWarning)
+        
+        for prediction in ["true_positives.csv", "true_negatives.csv", "false_positives.csv", "false_negatives.csv"]:
+
+            os.system(f"touch {root_path}/{save_dir}/{prediction}")
+            with open(root_path + save_dir + "/" + prediction, "a") as target:
+                for dataset in args:
+                    with open(root_path + dataset + "/" + prediction , "r") as source:
+                        for line in source.readlines():
+                            target.write(line)
+
+        warnings.simplefilter("default", UserWarning)
+
     # Performance visualizers #######################################################################
     if True:                                              # So this can be collapsed in the editor =)
         # load a specific dataset (e.g. 'validation_data', 'real_background', etc.) and print performance

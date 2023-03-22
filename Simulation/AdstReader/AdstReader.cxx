@@ -134,7 +134,7 @@ struct VectorWrapper
 // should ensure complete containment in most cases. Might not be true for highly inclined showers. Should in any case be a fair first estimate
 std::vector<int> consideredStations{
 
-             // 4 rings with 5398 in center
+             // 4 crowns with 5398 in center
               4049, 4050, 4051, 4052, 4053,
             4006, 4007, 4008, 4009, 4010, 4011,
         5480, 5481, 5482, 5483, 5484, 5485, 5486,
@@ -264,10 +264,11 @@ void DoLtpCalculation(fs::path pathToAdst)
     const auto showerAxis = genShower.GetAxisSiteCS();
     const auto showerCore = genShower.GetCoreSiteCS();
     
+    // container for hits / misses, binned in 100m SPD
     std::vector<int> misses(65, 0);
     std::vector<int> hits(65, 0);
 
-    // get id of all stations that received any particles (= the ones that were generated)
+    // get id of all stations that triggered (for LDF, the triggers must be switched to super low threshold)
     std::vector<int> recreatedStationIds;
     for (const auto& recStation : sdEvent.GetStationVector()){recreatedStationIds.push_back(recStation.GetId());}
 
@@ -277,7 +278,7 @@ void DoLtpCalculation(fs::path pathToAdst)
       auto showerPlaneDistance = detectorGeometry.GetStationAxisDistance(consideredStationId, showerAxis, showerCore);
       const int binIndex = floor(showerPlaneDistance / 100);
 
-      // check if the station ID appears in the generated stations
+      // check if the station ID appears in the triggered stations
       if (std::find(recreatedStationIds.begin(), recreatedStationIds.end(), consideredStationId) != recreatedStationIds.end())
       {
         // station was triggered, add to "hits"
@@ -290,6 +291,8 @@ void DoLtpCalculation(fs::path pathToAdst)
       }
     }
 
+    // save shower metadata to intermediate file. Put "0" in first 
+    // column such that row 0 has the same shape as later rows
     ofstream saveFile(csvTraceFile, std::ios_base::app);
     saveFile << "0 " << log10(showerEnergy) << " " << showerZenith << "\n";
 
@@ -408,6 +411,29 @@ void ExtendLowSPD(fs::path pathToAdst)
 {
   // const auto csvTraceFile = pathToAdst.parent_path()/ pathToAdst.filename().replace_extension("csv"); // for testing
   const auto csvTraceFile = pathToAdst.parent_path().parent_path() / pathToAdst.filename().replace_extension("csv");
+  const auto energyRange = pathToAdst.parent_path().parent_path().filename().string();
+
+  int spdThreshold;
+
+  switch(std::stoi(energyRange))
+  {
+    // catches 16-17 log(E / eV)
+    case 16: 
+      spdThreshold = 500;
+      break;
+    // catches 17-18 log(E / eV)
+    case 17: 
+      spdThreshold = 800;
+      break;
+    // catches 18-19 log(E / eV)
+    case 18:
+      spdThreshold = 1100;
+      break;
+    // catches 19-19.5 log(E / eV)
+    case 19:
+      spdThreshold = 1700;
+      break;
+  }
 
   // (2) start main loop
   RecEventFile     recEventFile(pathToAdst.string());
@@ -444,11 +470,9 @@ void ExtendLowSPD(fs::path pathToAdst)
     {
       const auto stationId = recStation.GetId();
       const auto SPD = detectorGeometry.GetStationAxisDistance(stationId, showerAxis, showerCore);  // in m
-      const bool isClose = SPD < 1800;
+      const bool isClose = SPD < spdThreshold;
 
       if (!isClose){continue;}
-
-      std::cout << SPD << " " << isClose << std::endl;
 
       const auto genStation = sdEvent.GetSimStationById(stationId);
       const auto nMuons = genStation->GetNumberOfMuons();
@@ -479,6 +503,7 @@ void ExtendLowSPD(fs::path pathToAdst)
 
         // write all information to trace file
         traceFile << stationId << " " << SPD << " " << showerEnergy << " " << showerZenith << " " << nMuons << " " << nElectrons << " " << nPhotons << " ";
+        // std::cout << stationId << " " << SPD << " " << showerEnergy << " " << showerZenith << " " << nMuons << " " << nElectrons << " " << nPhotons << std::endl;
 
         // "digitize" component trace...
         // this used to be converted to VEM

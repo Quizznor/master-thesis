@@ -23,8 +23,9 @@ class SignalError(Exception): pass
 class RandomTraceError(Exception): pass
 class ElectronicsError(Exception): pass
 
-plt.rcParams.update({'font.size': 22})
+plt.rcParams["font.size"] = 40
 plt.rcParams['figure.figsize'] = [30, 15]
+plt.rcParams["text.usetex"] = True
 
 @dataclass
 class GLOBAL():
