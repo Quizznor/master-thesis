@@ -1,0 +1,14 @@
+JobBatchName    = CrossCheck_18.5_19
+Executable      = /cr/users/filip/Simulation/LTP_cross_check/submit.py
+
+error           = /cr/users/filip/Simulation/condor/errors-$(Process).err
+# output          = /cr/users/filip/Simulation/condor/output-$(Process).log
+
+arguments       = $(Process)   
+# arguments       = $(Item)
+request_memory  = 1G
+max_idle        = 150                            
+
+Requirements	= (OpSysName == "Ubuntu" && OpSysMajorVer == 22  && TARGET.Machine != "crc2.ikp.kit.edu" && TARGET.Machine != "crc1.ikp.kit.edu" && TARGET.Machine != "crcds99.iap.kit.edu")
+
+queue 999
