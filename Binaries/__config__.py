@@ -126,5 +126,5 @@ def progress_bar(current_step : int, total_steps : int, start_time : int) -> Non
     eta = strftime('%H:%M:%S', gmtime(time_spent * (total_steps - current_step)/(current_step + 1) ))
     percentage = int((current_step + 1) / total_steps * 100)
     
-    print(f"Step {current_step + 1}/{total_steps} | {elapsed} elapsed ||{'-' * (percentage // 5):20}|| {percentage}% -- {ms_per_iteration:.3f} ms/step, ETA: {eta}", end = f"{' ' * len(str(total_steps))}\r")
-    if current_step + 2 == total_steps: print()
+    end = f"{' ' * len(str(total_steps))}\r" if current_step != total_steps - 1 else "\n"
+    print(f"Step {current_step + 1}/{total_steps} | {elapsed} elapsed ||{'-' * (percentage // 5):20}|| {percentage}% -- {ms_per_iteration:.3f} ms/step, ETA: {eta}", end = end)

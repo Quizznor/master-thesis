@@ -169,11 +169,15 @@ window size of the ToT-trigger have been determined in studies (\cite{bertou2006
 
 These studies were conducted using the predecessor, the \textbf{U}nified \textbf{B}oard (UB), of the hardware that is being installed during the AugerPrime upgrade 
 of the observatory. Most importantly, the \textbf{U}pgraded \textbf{U}nified \textbf{B}oard (UUB) has a sampling rate that is three times larger
-(\SI{120}{\mega\hertz}) than that of UB electronics (\SI{40}{\mega\hertz}). The effect this has on measured data is visualized in \autoref{fig:uub-ub-comparison}. 
-Whereas a new FADC bin is measured every \SI{25}{\nano\second} in a UB station, the triggers would receive a new input every $\approx\SI{8.3}{\nano\second}$ in a 
-UUB setting. This drastically reduces the efficiency (in particular for ToT-like triggers) of the above discussed algorithms.
+(\SI{120}{\mega\hertz}) than that of UB electronics (\SI{40}{\mega\hertz}). Not only does this raise the number of bins in a standard time trace from 682 to 
+$2^{11} = 2048$, but also drastically reduces the efficiency (in particular for ToT-like triggers) of the above discussed algorithms. Whereas a new FADC bin is 
+measured every \SI{25}{\nano\second} in a UB station, the triggers would receive a new input every $\approx\SI{8.3}{\nano\second}$ in a UUB setting.
 
-One way to circumvent this problem is adjusting the hyperparameters 
+The modus operandi elected by the Pierre Auger collaboration to circumvent this problem is to emulate UB electronics using the UUB electronics. This means that 
+measured FADC bins are to be filtered and downsampled before any trigger runs over them. A python implementation of \todo{continue}
+
+
+he effect this has on measured data is visualized in \autoref{fig:uub-ub-comparison}. 
 
 \section{Performance}
 \label{sec:classical-triggers-performance}

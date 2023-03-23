@@ -1,3 +1,54 @@
-WARNING:absl:<keras.layers.recurrent.LSTMCell object at 0x14fea1bc85e0> has the same name 'LSTMCell' as a built-in Keras object. Consider renaming <class 'keras.layers.recurrent.LSTMCell'> to avoid naming conflicts when loading with `tf.keras.models.load_model`. If renaming is not possible, pass the object in the `custom_objects` parameter of the load function.
-WARNING:absl:<keras.layers.recurrent.LSTMCell object at 0x14fea1bdd7b0> has the same name 'LSTMCell' as a built-in Keras object. Consider renaming <class 'keras.layers.recurrent.LSTMCell'> to avoid naming conflicts when loading with `tf.keras.models.load_model`. If renaming is not possible, pass the object in the `custom_objects` parameter of the load function.
-WARNING:absl:<keras.layers.recurrent.LSTMCell object at 0x14fe9be20280> has the same name 'LSTMCell' as a built-in Keras object. Consider renaming <class 'keras.layers.recurrent.LSTMCell'> to avoid naming conflicts when loading with `tf.keras.models.load_model`. If renaming is not possible, pass the object in the `custom_objects` parameter of the load function.
+Traceback (most recent call last):
+  File "/home/tmp/condor//dir_2291176/condor_exec.exe", line 8, in <module>
+    Assifier.train(Events, 10)
+  File "/home/tmp/condor/dir_2291176/Binaries/Classifier.py", line 897, in train
+    TrainingSet.physics_test(n_showers = int(0.1 * TrainingSet.__len__()), save_dir = f"/cr/data01/filip/models/{self.name}/training_set_physics_test.png")
+  File "/home/tmp/condor/dir_2291176/Binaries/Generator.py", line 575, in physics_test
+    plt.savefig(save_dir)
+  File "/usr/lib/python3/dist-packages/matplotlib/pyplot.py", line 958, in savefig
+    res = fig.savefig(*args, **kwargs)
+  File "/usr/lib/python3/dist-packages/matplotlib/figure.py", line 3019, in savefig
+    self.canvas.print_figure(fname, **kwargs)
+  File "/usr/lib/python3/dist-packages/matplotlib/backend_bases.py", line 2319, in print_figure
+    result = print_method(
+  File "/usr/lib/python3/dist-packages/matplotlib/backend_bases.py", line 1648, in wrapper
+    return func(*args, **kwargs)
+  File "/usr/lib/python3/dist-packages/matplotlib/_api/deprecation.py", line 412, in wrapper
+    return func(*inner_args, **inner_kwargs)
+  File "/usr/lib/python3/dist-packages/matplotlib/backends/backend_agg.py", line 540, in print_png
+    FigureCanvasAgg.draw(self)
+  File "/usr/lib/python3/dist-packages/matplotlib/backends/backend_agg.py", line 436, in draw
+    self.figure.draw(self.renderer)
+  File "/usr/lib/python3/dist-packages/matplotlib/artist.py", line 73, in draw_wrapper
+    result = draw(artist, renderer, *args, **kwargs)
+  File "/usr/lib/python3/dist-packages/matplotlib/artist.py", line 50, in draw_wrapper
+    return draw(artist, renderer)
+  File "/usr/lib/python3/dist-packages/matplotlib/figure.py", line 2810, in draw
+    mimage._draw_list_compositing_images(
+  File "/usr/lib/python3/dist-packages/matplotlib/image.py", line 132, in _draw_list_compositing_images
+    a.draw(renderer)
+  File "/usr/lib/python3/dist-packages/matplotlib/artist.py", line 50, in draw_wrapper
+    return draw(artist, renderer)
+  File "/usr/lib/python3/dist-packages/matplotlib/axes/_base.py", line 3046, in draw
+    self._update_title_position(renderer)
+  File "/usr/lib/python3/dist-packages/matplotlib/axes/_base.py", line 2996, in _update_title_position
+    if title.get_window_extent(renderer).ymin < top:
+  File "/usr/lib/python3/dist-packages/matplotlib/text.py", line 910, in get_window_extent
+    bbox, info, descent = self._get_layout(self._renderer)
+  File "/usr/lib/python3/dist-packages/matplotlib/text.py", line 309, in _get_layout
+    _, lp_h, lp_d = renderer.get_text_width_height_descent(
+  File "/usr/lib/python3/dist-packages/matplotlib/backends/backend_agg.py", line 259, in get_text_width_height_descent
+    w, h, d = texmanager.get_text_width_height_descent(
+  File "/usr/lib/python3/dist-packages/matplotlib/texmanager.py", line 338, in get_text_width_height_descent
+    page, = dvi
+  File "/usr/lib/python3/dist-packages/matplotlib/dviread.py", line 237, in __iter__
+    while self._read():
+  File "/usr/lib/python3/dist-packages/matplotlib/dviread.py", line 316, in _read
+    self._dtable[byte](self, byte)
+  File "/usr/lib/python3/dist-packages/matplotlib/dviread.py", line 166, in wrapper
+    return method(self, *[f(self, byte-min) for f in get_args])
+  File "/usr/lib/python3/dist-packages/matplotlib/dviread.py", line 467, in _fnt_def
+    self._fnt_def_real(k, c, s, d, a, l)
+  File "/usr/lib/python3/dist-packages/matplotlib/dviread.py", line 474, in _fnt_def_real
+    raise FileNotFoundError("missing font metrics file: %s" % fontname)
+FileNotFoundError: missing font metrics file: cmss17

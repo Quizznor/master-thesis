@@ -3,6 +3,7 @@ Executable      = /cr/users/filip/Trigger/NetworkTraining/train_model.py
 
 error           = /cr/users/filip/Trigger/NetworkTraining/train.err
 output          = /cr/users/filip/Trigger/NetworkTraining/train.out
+log             = /cr/users/filip/Trigger/NetworkTraining/train.log
 
 arguments       = $(Process)   
 # arguments       = $(Item)

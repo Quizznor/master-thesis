@@ -208,13 +208,11 @@ class Trace(Signal):
         if len(pmt) % 3 != 0: pmt = pmt[0 : -(len(pmt) % 3)]
 
         if not self.is_vem:
-            # see /cr/data01/filip/offline/trunk/Framework/SDetector/UUBDownsampleFilter.h for more information
+            # see Framework/SDetector/UUBDownsampleFilter.h in Offline main branch for more information
             kFirCoefficients = [ 5, 0, 12, 22, 0, -61, -96, 0, 256, 551, 681, 551, 256, 0, -96, -61, 0, 22, 12, 0, 5 ]
             buffer_length = int(0.5 * len(kFirCoefficients))
             kFirNormalizationBitShift = 11
-            # kADCsaturation = 4095                             # bit shift not really needed
-
-
+            kADCsaturation = 4095
 
             temp = np.zeros(n_bins_uub + len(kFirCoefficients))
 
@@ -235,12 +233,11 @@ class Trace(Signal):
             for k in range(random_phase, n_bins_uub, 3):
                 sampled_trace[k // 3] = pmt[k]
 
-        # # clipping and bitshifting
-        # for j, adc in enumerate(sampled_trace):
-        #     # sampled_trace[i,j] = np.clip(int(adc) >> kFirNormalizationBitShift, a_min = -20, a_max = None)              # why clip necessary, why huge negative values?
-        # sampled_trace[j] = int(adc) >> kFirNormalizationBitShift
+        # Simulate saturation of PMTs at 4095 ADC counts ~ 19 VEM <- same for HG/LG? I doubt it
+        # return np.clip(np.array(sampled_trace), a_min = 0, a_max = kADCsaturation / GLOBAL.q_peak if self.is_vem else kADCsaturation)
 
-        return np.array(sampled_trace)
+        return np.array(sampled_trace)        
+
 
     # make this class an iterable
     def __iter__(self) -> typing.Union[tuple, StopIteration] : 

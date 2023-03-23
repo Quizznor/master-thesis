@@ -2,6 +2,7 @@
 
 from Binaries import *
 
-Assifier = NNClassifier("120_LSTM_FullBandwidth_NoCuts", "simple_LSTM")
-Events = EventGenerator("all")
+Events = EventGenerator("all", ignore_particles = 1, particle_type = "mu", apply_downsampling = True)
+Assifier = NNClassifier("120_LSTM_Downsampled_1Muon", "simple_LSTM")
+
 Assifier.train(Events, 10)

@@ -209,6 +209,8 @@ class Generator(tf.keras.utils.Sequence):
         self.ignore_particles = kwargs.get("ignore_particles", GLOBAL.ignore_particles)                     # particle in tank cut threshold
         self.particle_type = kwargs.get("particle_type", GLOBAL.particle_type)                              # type of particles that count
 
+        if isinstance(self.particle_type, str): self.particle_type = [self.particle_type]
+
         if self.use_real_background:
             self.RandomTraceBuffer = RandomTrace(station = station, index = random_index)
 
@@ -506,7 +508,7 @@ class Generator(tf.keras.utils.Sequence):
         ax1.set_title("Zenith distribution")
         ax1.hist(all_zenith, histtype = "step", bins = np.linspace(0, 90, 100), label = "All showers")
         ax1.hist(sel_zenith, histtype = "step", bins = np.linspace(0, 90, 100), label =" Selected showers")
-        ax1.set_xlabel("Zenith / °")
+        ax1.set_xlabel("Zenith / $^\circ$")
         ax1.legend(fontsize = 16)
 
         # Charge integral
@@ -514,8 +516,7 @@ class Generator(tf.keras.utils.Sequence):
         n, _, _ = ax2.hist(all_integral, histtype = "step", bins = np.geomspace(1e-1, 1e3, 100), label = "All showers")
         ax2.hist(sel_integral, histtype = "step", bins = np.geomspace(1e-1, 1e3, 100), label = "Selected showers")
         self.ignore_low_VEM and ax2.axvline(self.ignore_low_VEM, ls = "--", c = "gray")
-        ax2.set_ylabel("# of Occurence")
-        ax2.set_xlabel("Integral signal / VEM")
+        ax2.set_xlabel("Integral signal / $\mathrm{{VEM}}_\mathrm{{Ch.}}$")
         ax2.set_xscale("log")
         ax2.set_ylim(0, 1.1 * max(n))
         ax2.legend(fontsize = 16)
@@ -539,7 +540,7 @@ class Generator(tf.keras.utils.Sequence):
         ax4.hist(sel_electrons, histtype = "step", bins = particle_bins, color = "orange", ls = "--")
         ax4.hist(sel_photons, histtype = "step", bins = particle_bins, color = "green", ls = "--")
         ax4.plot([],[], c = "k", ls = "--", label = "selected")   
-        ax4.set_xlabel("Number of particles")
+        ax4.set_xlabel("\# of particles")
         ax4.set_xscale("log")
         ax4.set_yscale("log")
         ax4.legend(fontsize = 16)
@@ -559,7 +560,6 @@ class Generator(tf.keras.utils.Sequence):
 
         ax5.set_ylim(1e1, 1.1 * max(n))
         ax5.set_xlabel("Signal strength / VEM")
-        ax5.set_ylabel("Occupation probability")
 
         plt.subplots_adjust(
             top=0.93,

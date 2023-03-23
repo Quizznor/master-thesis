@@ -168,65 +168,65 @@ class Classifier():
                             target.write(line)
 
         warnings.simplefilter("default", UserWarning)
+    
+    # load a specific dataset (e.g. 'validation_data', 'real_background', etc.) and print performance
+    def load_and_print_performance(self, dataset : str) -> tuple : 
+
+        try:
+            if header_was_called: pass
+
+        except NameError:
+            self.__header__()
+
+        print(f"Fetching predictions for: {self.name} -> {dataset}", end = "\r")
+
+        # load dataset in it's completeness
+        if self.name == "HardwareClassifier":
+            save_files = \
+            {
+                "TP" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/true_positives.csv",
+                "TN" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/true_negatives.csv",
+                "FP" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/false_positives.csv",
+                "FN" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/false_negatives.csv"
+            }
+        else:
+            save_files = \
+            {
+                "TP" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/true_positives.csv",
+                "TN" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/true_negatives.csv",
+                "FP" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/false_positives.csv",
+                "FN" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/false_negatives.csv"
+            }
+
+        if os.stat(save_files['TN']).st_size:
+            TN = np.loadtxt(save_files['TN'], usecols = [2, 3, 4, 5, 6, 7])
+        else: TN = np.array([])
+
+        if os.stat(save_files['FP']).st_size:
+            FP = np.loadtxt(save_files['FP'], usecols = [2, 3, 4, 5, 6, 7])
+        else: FP = np.array([])
+
+        if os.stat(save_files['TP']).st_size:
+            TP = np.loadtxt(save_files['TP'], usecols = [2, 3, 4, 5, 6, 7])
+        else: TP = np.array([])
+        
+        if os.stat(save_files['FN']).st_size:
+            FN = np.loadtxt(save_files['FN'], usecols = [2, 3, 4, 5, 6, 7])
+        else: FN = np.array([])
+
+        tp, fp = len(TP), len(FP)
+        tn, fn = len(TN), len(FN)
+
+        ACC = ( tp + tn ) / (tp + fp + tn + fn)* 100
+
+        name = self.name if len(self.name) <= 43 else self.name[:40] + "..."
+        dataset = dataset if len(dataset) <= 33 else dataset[:30] + "..."
+        print(f"{name:<45} {dataset:<35} {tp:7d} {fp:7d} {tn:7d} {fn:7d} -> {ACC = :6.2f}%")
+
+        return TP, FP, TN, FN
 
     # Performance visualizers #######################################################################
     if True:                                              # So this can be collapsed in the editor =)
-        # load a specific dataset (e.g. 'validation_data', 'real_background', etc.) and print performance
-        def load_and_print_performance(self, dataset : str) -> tuple : 
-
-            try:
-                if header_was_called: pass
-
-            except NameError:
-                self.__header__()
-
-            print(f"Fetching predictions for: {self.name} -> {dataset}", end = "\r")
-
-            # load dataset in it's completeness
-            if self.name == "HardwareClassifier":
-                save_files = \
-                {
-                    "TP" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/true_positives.csv",
-                    "TN" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/true_negatives.csv",
-                    "FP" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/false_positives.csv",
-                    "FN" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/false_negatives.csv"
-                }
-            else:
-                save_files = \
-                {
-                    "TP" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/true_positives.csv",
-                    "TN" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/true_negatives.csv",
-                    "FP" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/false_positives.csv",
-                    "FN" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/false_negatives.csv"
-                }
-
-            if os.stat(save_files['TN']).st_size:
-                TN = np.loadtxt(save_files['TN'], usecols = [2, 3, 4, 5, 6, 7])
-            else: TN = np.array([])
-
-            if os.stat(save_files['FP']).st_size:
-                FP = np.loadtxt(save_files['FP'], usecols = [2, 3, 4, 5, 6, 7])
-            else: FP = np.array([])
-
-            if os.stat(save_files['TP']).st_size:
-                TP = np.loadtxt(save_files['TP'], usecols = [2, 3, 4, 5, 6, 7])
-            else: TP = np.array([])
-            
-            if os.stat(save_files['FN']).st_size:
-                FN = np.loadtxt(save_files['FN'], usecols = [2, 3, 4, 5, 6, 7])
-            else: FN = np.array([])
-
-            tp, fp = len(TP), len(FP)
-            tn, fn = len(TN), len(FN)
-
-            ACC = ( tp + tn ) / (tp + fp + tn + fn)* 100
-
-            name = self.name if len(self.name) <= 43 else self.name[:40] + "..."
-            dataset = dataset if len(dataset) <= 33 else dataset[:30] + "..."
-            print(f"{self.name:<45} {dataset:<35} {tp:7d} {fp:7d} {tn:7d} {fn:7d} -> {ACC = :6.2f}%")
-
-            return TP, FP, TN, FN
-
         # plot the ROC curve for a specific dataset (e.g. 'validation_data', 'real_background', etc.) over signal strength (VEM_charge)
         def ROC(self, dataset, **kwargs) -> None :
 
@@ -337,7 +337,7 @@ class Classifier():
             }
             
             e_labels = [r"$16$", r"$16.5$", r"$17$", r"$17.5$", r"$18$", r"$18.5$", r"$19$", r"$19.5$"]            
-            annotate = lambda e : e_labels[e] + r" $\leq$ log($E$ / eV) < " + e_labels[e + 1]
+            annotate = lambda e : e_labels[e] + r" $\leq$ log($E$ / eV) $<$ " + e_labels[e + 1]
 
             energy_bins = [10**16, 10**16.5, 10**17, 10**17.5, 10**18, 10**18.5, 10**19, 10**19.5]      # uniform in log(E)
             theta_bins =  [0.0000, 33.5600, 44.4200, 51.3200, 56.2500, 65.3700]                         # pseudo-uniform in sec(θ)
@@ -374,7 +374,7 @@ class Classifier():
                     ax.axvline(1500, c = "k", ls = "--")
                     ax.set_xlim(0, 6000),
                     ax.plot([], [], ls = "solid", c = "k", label = "Extrapolated")
-                    ax.legend(loc = "upper right", title = annotate(e), title_fontsize = 19)
+                    ax.legend(loc = "upper right", title = annotate(e))
                     if e >= 4: 
                         ax.set_xlabel("Shower plane distance / m")
                         ax.set_xticks([1e3, 2e3, 3e3, 4e3, 5e3])
@@ -745,7 +745,8 @@ class NNClassifier(Classifier):
                 # # instead use LSTM for each PMT
                 input = tf.keras.layers.Input(kwargs.get("input_shape"))
                 unstacked = tf.keras.layers.Lambda(lambda x: tf.unstack(x, axis=1))(input)
-                dense_outputs = [tf.keras.layers.LSTM(kwargs.get("d_LSTM", 1), activation = "relu")(x) for x in unstacked]
+                lstm = tf.keras.layers.LSTM(kwargs.get("d_LSTM", 1), activation = "relu")
+                dense_outputs = [lstm(x) for x in unstacked]
                 merged = tf.keras.layers.Lambda(lambda x: tf.stack(x, axis=1))(dense_outputs)
                 merged_flatten = tf.keras.layers.Flatten()(merged)
 
