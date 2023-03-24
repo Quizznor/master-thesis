@@ -174,14 +174,53 @@ $2^{11} = 2048$, but also drastically reduces the efficiency (in particular for 
 measured every \SI{25}{\nano\second} in a UB station, the triggers would receive a new input every $\approx\SI{8.3}{\nano\second}$ in a UUB setting.
 
 The modus operandi elected by the Pierre Auger collaboration to circumvent this problem is to emulate UB electronics using the UUB electronics. This means that 
-measured FADC bins are to be filtered and downsampled before any trigger runs over them. The implementation 
+measured FADC bins are to be filtered and downsampled before any trigger runs over them. Software implementations by which this is achieved are listed in 
+\autoref{app:filter-and-downsample}. The effect the filtering and downsampling has on measured data is visualized in \autoref{fig:uub-ub-comparison}. 
 
-
-he effect this has on measured data is visualized in \autoref{fig:uub-ub-comparison}. 
+\todo{comment on accuracy fo this method}
 
 \section{Performance}
 \label{sec:classical-triggers-performance}
 
+The performance of a trigger can be evaluated in many different ways. In the most general consideration, a confusion matrix holds information about the ability of 
+a classifier to discern between different types, or classes, $\mathcal{C}$. With the example at hand there exist two types of events one wishes to distinguish, a 
+signal event $\mathcal{C}_1$ in the form of an extensive air shower, versus background $\mathcal{C}_0$. The confusion matrix thus becomes:
 
+\begingroup
+\renewcommand{\arraystretch}{1.5}
+\begin{center}
+	\begin{tabular}{@{}cc c|c@{}}
+		\multicolumn{1}{c}{} &\multicolumn{1}{c}{} &\multicolumn{2}{c}{\scriptsize Predicted $\mathcal{C}$ \normalsize} \\ 
+		\multicolumn{1}{c}{} & 
+		\multicolumn{1}{c}{} & 
+		\multicolumn{1}{c}{$\mathcal{C}_1$} & 
+		\multicolumn{1}{c}{$\mathcal{C}_0$} \\ 
+		\cline{2-4}
+		\multirow[c]{2}{*}{\rotatebox[origin=tr]{90}{\scriptsize True $\mathcal{C}$ \normalsize}}
+		& $\mathcal{C}_1$  & True positive (TP) & False negative (FN)   \\
+		\cline{3-4}
+		& $\mathcal{C}_0$  & False positive (TP) & True negative (TN) \\ 
+		\cline{2-4}
+	\end{tabular}
+\end{center}
+\endgroup
 
+From this, other potentially interesting variables can be derived. Of particular interest for the Auger observatory are the sensitivity and \textbf{F}alse 
+\textbf{D}iscovery \textbf{R}ate (FDR). The former is the probability that a signal event will be classified correctly, i.e. an extensive air shower hits a 
+water tank and raises a T2 trigger. The sensitivity - in the following also called the trigger efficiency $\epsilon$ - is defined as
 
+\begin{equation}
+	\label{eq:statistics-efficiency}
+	\epsilon = \frac{\text{TP}}{\text{TP} + \text{FN}}.
+\end{equation}
+
+The latter is a measure of how readily the triggers (wrongly) identify background events like stray cosmic muons as extensive air showers. It is imperative 
+for any trigger algorithm operating in the SD to minimize this probability. Simply due to the number of operating stations in the field, a small increase in 
+$\text{FDR}$ drastically raise the amount of potential events and hence load on the central analysis server of the observbatory.
+
+\begin{equation}
+	\label{eq:statistics-efficiency}
+	\text{FDR} = \frac{\text{FP}}{\text{TP} + \text{FP}}.
+\end{equation}
+
+\todo{continue writing about performance}

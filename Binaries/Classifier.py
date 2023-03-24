@@ -426,7 +426,7 @@ class Classifier():
                                 # When running in compatibility mode (i.e. using lateral_distribution_function under the hood)
                                 # lateral_distribution_function(x : np.ndarray, efficiency : float, prob_50 : float, scale : float)
                                 popt, pcov = curve_fit(lateral_trigger_probability, bin_center, efficiency, 
-                                                                        p0 = [efficiency[0], bin_center[np.argmin(abs(efficiency - 50))], LDF_scale],
+                                                                        p0 = [1, bin_center[np.argmin(abs(efficiency - 50))], LDF_scale],
                                                                         bounds = ([0, 0, 0], [np.inf, np.inf, 1]),
                                                                         sigma = efficiency_err,
                                                                         absolute_sigma = True,
@@ -582,7 +582,7 @@ class Classifier():
 
                 energy_and_theta = np.random.randint(0, len(fitparams))
                 energy, t = energy_and_theta // 5, energy_and_theta % 5
-                fit_function = lambda spd : station_hit_probability(x, *fitparams[energy_and_theta])
+                fit_function = lambda spd : lateral_trigger_probability(x, *fitparams[energy_and_theta])
 
                 # choose theta, phi at random, calculate shower_plane_distance
                 theta = np.radians(np.random.uniform(theta_bins[t], theta_bins[t + 1]))
@@ -1141,7 +1141,8 @@ class HardwareClassifier(Classifier):
         pmt1_active = list(pmt_1 > threshold).count(True)
         pmt2_active = list(pmt_2 > threshold).count(True)
         pmt3_active = list(pmt_3 > threshold).count(True)
-        ToT_trigger = [pmt1_active >= 13, pmt2_active >= 13, pmt3_active >= 13]
+        # ToT_trigger = [pmt1_active >= 13, pmt2_active >= 13, pmt3_active >= 13]
+        ToT_trigger = [pmt1_active >= 39, pmt2_active >= 39, pmt3_active >= 39]
 
         if ToT_trigger.count(True) >= 2:
             return True

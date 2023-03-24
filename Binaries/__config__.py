@@ -94,16 +94,16 @@ def get_fit_function(root_path : str, e : int, t : int) -> np.ndarray :
 
     return fit_function, fit_parameters
 
-def lateral_trigger_probability(x : np.ndarray, efficiency : float, prob_50 : float, scale : float, C : float = None) -> np.ndarray : 
+def lateral_trigger_probability(x : np.ndarray, efficiency : float, prob_50 : float, scale : float) -> np.ndarray : 
 
     # # see https://www.sciencedirect.com/sdfe/reader/pii/S0927650511001526/pdf p.7 for full form
     # # To ensure we have a continously differentiable function, we would need to restrict C = 2 * scale
-    # near_core = lambda x : efficiency / (1 + np.exp(scale * (x - prob_50)))
-    # far_core = lambda x : efficiency/2 * np.exp(-C * (x - prob_50))
+    # near_core = lambda x : 1 / (1 + np.exp(scale * (x - prob_50)))
+    # far_core = lambda x : 1 / 2 * np.exp(-efficiency * (x - prob_50))
 
     # return np.piecewise(x, [x <= prob_50, x > prob_50], [near_core, far_core])
 
-    # use the same fitfunc as for the lateral distribution function
+    # # use the same fitfunc as for the lateral distribution function
     return lateral_distribution_function(x, efficiency, prob_50, scale)
 
 

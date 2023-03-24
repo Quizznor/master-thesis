@@ -25,6 +25,7 @@
 \usepackage[all]{nowidow}
 \usepackage{lscape}
 \usepackage{multicol}
+\usepackage{multirow}
 \usepackage{longtable}
 
 % LANGUAGE
