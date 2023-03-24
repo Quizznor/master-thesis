@@ -742,11 +742,10 @@ class NNClassifier(Classifier):
                 # doesn't work, since data is 2-dimensional
                 # model.add(tf.keras.layers.LSTM(**kwargs))
 
-                # # instead use LSTM for each PMT
+                # instead use LSTM for each PMT
                 input = tf.keras.layers.Input(kwargs.get("input_shape"))
                 unstacked = tf.keras.layers.Lambda(lambda x: tf.unstack(x, axis=1))(input)
-                lstm = tf.keras.layers.LSTM(kwargs.get("d_LSTM", 1), activation = "relu")
-                dense_outputs = [lstm(x) for x in unstacked]
+                dense_outputs = [tf.keras.layers.LSTM(kwargs.get("d_LSTM", 1), activation = "relu")(x) for x in unstacked]
                 merged = tf.keras.layers.Lambda(lambda x: tf.stack(x, axis=1))(dense_outputs)
                 merged_flatten = tf.keras.layers.Flatten()(merged)
 
@@ -894,8 +893,8 @@ class NNClassifier(Classifier):
         TrainingSet, ValidationSet = Datasets
 
         print("Creating physics information for both datasets...")
-        TrainingSet.physics_test(n_showers = int(0.1 * TrainingSet.__len__()), save_dir = f"/cr/data01/filip/models/{self.name}/training_set_physics_test.png")
-        ValidationSet.physics_test(n_showers = int(0.4 * ValidationSet.__len__()), save_dir = f"/cr/data01/filip/models/{self.name}/validation_set_physics_test.png")
+        TrainingSet.physics_test(n_showers = int(0.05 * TrainingSet.__len__()), save_dir = f"/cr/data01/filip/models/{self.name}/training_set_physics_test.png")
+        ValidationSet.physics_test(n_showers = int(0.2 * ValidationSet.__len__()), save_dir = f"/cr/data01/filip/models/{self.name}/validation_set_physics_test.png")
 
         try:
 

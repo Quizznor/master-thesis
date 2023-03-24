@@ -23,9 +23,20 @@ class SignalError(Exception): pass
 class RandomTraceError(Exception): pass
 class ElectronicsError(Exception): pass
 
+pgf_with_latex = \
+    {
+        "pgf.preamble": "\n".join([
+        r"\usepackage[utf8]{inputenc}",
+        r"\usepackage[T1]{fontenc}",
+        r"\usepackage[detect-all]{siunitx}",
+        r"\usepackage{upgreek}",
+        ])
+    }
+
+plt.rcParams["pgf.preamble"] = pgf_with_latex
+plt.rcParams["text.usetex"] = True
 plt.rcParams["font.size"] = 40
 plt.rcParams['figure.figsize'] = [30, 15]
-plt.rcParams["text.usetex"] = True
 
 @dataclass
 class GLOBAL():

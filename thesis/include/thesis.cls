@@ -115,7 +115,7 @@
 \definecolor{backcolour}{rgb}{0.95,0.95,0.92}
 
 \usepackage{listings}
-\lstdefinestyle{mystyle}{
+\lstdefinestyle{intextstyle}{
     backgroundcolor=\color{backcolour},
     commentstyle=\color{codegreen},
     keywordstyle=\color{magenta},
@@ -135,4 +135,23 @@
     tabsize=2
 }
 
-\lstset{style=mystyle}
+\lstdefinestyle{appendixstyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\tiny,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2
+}
+
+\lstset{style=intextstyle}

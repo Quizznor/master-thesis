@@ -9,3 +9,123 @@
 ...
 001 (53797.000.000) 2023-03-23 13:54:47 Job executing on host: <141.52.67.91:9618?addrs=141.52.67.91-9618+[2a00-1398-4-b001-ae1f-6bff-feab-1e1e]-9618&alias=crc1&noUDP&sock=startd_1565_09ce>
 ...
+006 (53797.000.000) 2023-03-23 16:25:50 Image size of job updated: 1
+	0  -  MemoryUsage of job (MB)
+	0  -  ResidentSetSize of job (KB)
+...
+004 (53797.000.000) 2023-03-23 16:25:50 Job was evicted.
+	(0) CPU times
+		Usr 0 02:23:44, Sys 0 00:04:44  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+	0  -  Run Bytes Sent By Job
+	476258  -  Run Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :     1.01        1         1 
+	   Disk (KB)            :  2920      100000   3049891 
+	   Gpus (Average)       :                           0 
+	   Memory (MB)          :     0        5120      5120 
+	   xCpus                :                           1 
+...
+009 (53797.000.000) 2023-03-23 16:25:50 Job was aborted.
+	via condor_rm (by user filip)
+...
+036 (53797.-01.000) 2023-03-23 16:25:50 Cluster removed
+	Materialized 1 jobs from 0 items.	Incomplete
+...
+035 (53805.-01.000) 2023-03-23 17:08:51 Cluster submitted from host: <141.52.67.162:9618?addrs=141.52.67.162-9618+[2a00-1398-4-b001-a236-9fff-fec1-b818]-9618&alias=crcws02.iap.kit.edu&noUDP&sock=schedd_1519820_af6d>
+...
+000 (53805.000.000) 2023-03-23 17:08:51 Job submitted from host: <141.52.67.162:9618?addrs=141.52.67.162-9618+[2a00-1398-4-b001-a236-9fff-fec1-b818]-9618&alias=crcws02.iap.kit.edu&noUDP&sock=schedd_1519820_af6d>
+...
+040 (53805.000.000) 2023-03-23 17:08:52 Started transferring input files
+	Transferring to host: <141.52.67.91:9618?addrs=141.52.67.91-9618+[2a00-1398-4-b001-ae1f-6bff-feab-1e1e]-9618&alias=crc1&noUDP&sock=slot1_1_2100_63ce_12413>
+...
+040 (53805.000.000) 2023-03-23 17:08:52 Finished transferring input files
+...
+001 (53805.000.000) 2023-03-23 17:08:53 Job executing on host: <141.52.67.91:9618?addrs=141.52.67.91-9618+[2a00-1398-4-b001-ae1f-6bff-feab-1e1e]-9618&alias=crc1&noUDP&sock=startd_1565_09ce>
+...
+006 (53805.000.000) 2023-03-23 17:17:58 Image size of job updated: 1
+	0  -  MemoryUsage of job (MB)
+	0  -  ResidentSetSize of job (KB)
+...
+040 (53805.000.000) 2023-03-23 17:17:58 Started transferring output files
+...
+040 (53805.000.000) 2023-03-23 17:17:58 Finished transferring output files
+...
+005 (53805.000.000) 2023-03-23 17:17:58 Job terminated.
+	(1) Normal termination (return value 1)
+		Usr 0 00:07:19, Sys 0 00:00:39  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:07:19, Sys 0 00:00:39  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	273728  -  Run Bytes Sent By Job
+	476562  -  Run Bytes Received By Job
+	273728  -  Total Bytes Sent By Job
+	476562  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :     0.99        1         1 
+	   Disk (KB)            :   753      100000   3049891 
+	   Gpus (Average)       :                           0 
+	   Memory (MB)          :     0        5120      5120 
+	   xCpus                :                           1 
+
+	Job terminated of its own accord at 2023-03-23T17:17:58Z with exit-code 1.
+...
+036 (53805.-01.000) 2023-03-23 17:17:58 Cluster removed
+	Materialized 1 jobs from 0 items.	Complete
+...
+035 (53806.-01.000) 2023-03-23 17:20:26 Cluster submitted from host: <141.52.67.162:9618?addrs=141.52.67.162-9618+[2a00-1398-4-b001-a236-9fff-fec1-b818]-9618&alias=crcws02.iap.kit.edu&noUDP&sock=schedd_1519820_af6d>
+...
+000 (53806.000.000) 2023-03-23 17:20:26 Job submitted from host: <141.52.67.162:9618?addrs=141.52.67.162-9618+[2a00-1398-4-b001-a236-9fff-fec1-b818]-9618&alias=crcws02.iap.kit.edu&noUDP&sock=schedd_1519820_af6d>
+...
+040 (53806.000.000) 2023-03-23 17:20:27 Started transferring input files
+	Transferring to host: <141.52.67.91:9618?addrs=141.52.67.91-9618+[2a00-1398-4-b001-ae1f-6bff-feab-1e1e]-9618&alias=crc1&noUDP&sock=slot1_1_2100_63ce_12414>
+...
+040 (53806.000.000) 2023-03-23 17:20:27 Finished transferring input files
+...
+001 (53806.000.000) 2023-03-23 17:20:28 Job executing on host: <141.52.67.91:9618?addrs=141.52.67.91-9618+[2a00-1398-4-b001-ae1f-6bff-feab-1e1e]-9618&alias=crc1&noUDP&sock=startd_1565_09ce>
+...
+035 (53807.-01.000) 2023-03-23 17:33:48 Cluster submitted from host: <141.52.67.162:9618?addrs=141.52.67.162-9618+[2a00-1398-4-b001-a236-9fff-fec1-b818]-9618&alias=crcws02.iap.kit.edu&noUDP&sock=schedd_1519820_af6d>
+...
+000 (53807.000.000) 2023-03-23 17:33:48 Job submitted from host: <141.52.67.162:9618?addrs=141.52.67.162-9618+[2a00-1398-4-b001-a236-9fff-fec1-b818]-9618&alias=crcws02.iap.kit.edu&noUDP&sock=schedd_1519820_af6d>
+...
+040 (53807.000.000) 2023-03-23 17:33:49 Started transferring input files
+	Transferring to host: <141.52.67.91:9618?addrs=141.52.67.91-9618+[2a00-1398-4-b001-ae1f-6bff-feab-1e1e]-9618&alias=crc1&noUDP&sock=slot1_2_2100_63ce_12415>
+...
+040 (53807.000.000) 2023-03-23 17:33:49 Finished transferring input files
+...
+001 (53807.000.000) 2023-03-23 17:33:50 Job executing on host: <141.52.67.91:9618?addrs=141.52.67.91-9618+[2a00-1398-4-b001-ae1f-6bff-feab-1e1e]-9618&alias=crc1&noUDP&sock=startd_1565_09ce>
+...
+035 (53808.-01.000) 2023-03-23 17:47:46 Cluster submitted from host: <141.52.67.162:9618?addrs=141.52.67.162-9618+[2a00-1398-4-b001-a236-9fff-fec1-b818]-9618&alias=crcws02.iap.kit.edu&noUDP&sock=schedd_1519820_af6d>
+...
+000 (53808.000.000) 2023-03-23 17:47:46 Job submitted from host: <141.52.67.162:9618?addrs=141.52.67.162-9618+[2a00-1398-4-b001-a236-9fff-fec1-b818]-9618&alias=crcws02.iap.kit.edu&noUDP&sock=schedd_1519820_af6d>
+...
+040 (53808.000.000) 2023-03-23 17:47:46 Started transferring input files
+	Transferring to host: <141.52.67.91:9618?addrs=141.52.67.91-9618+[2a00-1398-4-b001-ae1f-6bff-feab-1e1e]-9618&alias=crc1&noUDP&sock=slot1_3_2100_63ce_12416>
+...
+040 (53808.000.000) 2023-03-23 17:47:46 Finished transferring input files
+...
+001 (53808.000.000) 2023-03-23 17:47:47 Job executing on host: <141.52.67.91:9618?addrs=141.52.67.91-9618+[2a00-1398-4-b001-ae1f-6bff-feab-1e1e]-9618&alias=crc1&noUDP&sock=startd_1565_09ce>
+...
+006 (53806.000.000) 2023-03-24 07:58:05 Image size of job updated: 1
+	0  -  MemoryUsage of job (MB)
+	0  -  ResidentSetSize of job (KB)
+...
+004 (53806.000.000) 2023-03-24 07:58:05 Job was evicted.
+	(0) CPU times
+		Usr 0 13:58:09, Sys 0 00:27:34  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+	0  -  Run Bytes Sent By Job
+	476599  -  Run Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :     1.02        1         1 
+	   Disk (KB)            : 10737      100000   3049891 
+	   Gpus (Average)       :                           0 
+	   Memory (MB)          :     0        5120      5120 
+	   xCpus                :                           1 
+...
+009 (53806.000.000) 2023-03-24 07:58:05 Job was aborted.
+	via condor_rm (by user filip)
+...
+036 (53806.-01.000) 2023-03-24 07:58:05 Cluster removed
+	Materialized 1 jobs from 0 items.	Complete
+...

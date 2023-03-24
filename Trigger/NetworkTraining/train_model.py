@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 
 from Binaries import *
-# plt.rcParams["text.usetex"] = False                 # causes Problems on HTCondor
+plt.rcParams["text.usetex"] = False
 
-Events = EventGenerator("all", ignore_particles = 1, particle_type = "mu", apply_downsampling = True)
-Assifier = NNClassifier("120_LSTM_Downsampled_1Muon", "simple_LSTM")
+Events = EventGenerator("all", real_background = True, ignore_particles = 1, particle_type = "mu")
+Assifier = NNClassifier("120_LSTM_DistinctLayers_FullBandwidth_1Muon_DifferentL", "simple_LSTM")
 
 Assifier.train(Events, 10)

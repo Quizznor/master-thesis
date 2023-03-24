@@ -212,7 +212,7 @@ class Trace(Signal):
             kFirCoefficients = [ 5, 0, 12, 22, 0, -61, -96, 0, 256, 551, 681, 551, 256, 0, -96, -61, 0, 22, 12, 0, 5 ]
             buffer_length = int(0.5 * len(kFirCoefficients))
             kFirNormalizationBitShift = 11
-            kADCsaturation = 4095
+            kADCsaturation = 4095 * 32                      # theoretical HG bin for LG saturation
 
             temp = np.zeros(n_bins_uub + len(kFirCoefficients))
 
@@ -234,9 +234,7 @@ class Trace(Signal):
                 sampled_trace[k // 3] = pmt[k]
 
         # Simulate saturation of PMTs at 4095 ADC counts ~ 19 VEM <- same for HG/LG? I doubt it
-        # return np.clip(np.array(sampled_trace), a_min = 0, a_max = kADCsaturation / GLOBAL.q_peak if self.is_vem else kADCsaturation)
-
-        return np.array(sampled_trace)        
+        return np.clip(np.array(sampled_trace), a_min = 0, a_max = kADCsaturation / GLOBAL.q_peak if self.is_vem else kADCsaturation)
 
 
     # make this class an iterable

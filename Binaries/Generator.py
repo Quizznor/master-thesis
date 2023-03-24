@@ -532,7 +532,7 @@ class Generator(tf.keras.utils.Sequence):
         ax4.set_title("Particle distribution")
         particle_bins = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         particle_bins += list(np.geomspace(10, 1e4, 40))
-        self.ignore_particles and ax4.axvline(self.ignore_particles, ls = "--", color = "gray")
+        self.ignore_particles and ax4.axvline(self.ignore_particles + 1, ls = "--", color = "gray")
         ax4.hist(all_muons, histtype = "step", bins = particle_bins, label = "Muons", color = "steelblue")
         ax4.hist(all_electrons, histtype = "step", bins = particle_bins, label = "Electrons", color = "orange")
         ax4.hist(all_photons, histtype = "step", bins = particle_bins, label = "Photons", color = "green")
@@ -559,6 +559,7 @@ class Generator(tf.keras.utils.Sequence):
         ax5.legend(fontsize = 16)
 
         ax5.set_ylim(1e1, 1.1 * max(n))
+        ax5.set_xlim(-0.2, 5)
         ax5.set_xlabel("Signal strength / VEM")
 
         plt.subplots_adjust(
