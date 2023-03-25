@@ -234,7 +234,7 @@ class Trace(Signal):
                 sampled_trace[k // 3] = pmt[k]
 
         # Simulate saturation of PMTs at 4095 ADC counts ~ 19 VEM <- same for HG/LG? I doubt it
-        return np.clip(np.array(sampled_trace), a_min = 0, a_max = kADCsaturation / GLOBAL.q_peak if self.is_vem else kADCsaturation)
+        return np.clip(np.array(sampled_trace), a_min = -10, a_max = kADCsaturation / GLOBAL.q_peak if self.is_vem else kADCsaturation)
 
 
     # make this class an iterable
@@ -291,7 +291,7 @@ class Trace(Signal):
     def __plot__(self) -> None :
 
         x = range(self.trace_length)
-        sig = lambda x : f"$S={x:.1f}\,\\mathrm{{VEM}}_\\mathrm{{Peak}}$"
+        sig = lambda x : f"$S={x:.1f}\,\\mathrm{{VEM}}_\\mathrm{{Ch.}}$"
 
         try:
             plt.title(f"Station {self.StationID} - {sig(np.mean(self.deposited_signal))}", pad = 20)
@@ -315,7 +315,7 @@ class Trace(Signal):
         plt.ylabel("Signal strength / VEM")
         plt.xlabel("Bin / 25 ns" if self.downsampled else "Bin / $8.3\,\mathrm{ns}$")
         plt.legend()
-        plt.show()
+        # plt.show()
 
 # container for reading signal files
 class SignalBatch():
