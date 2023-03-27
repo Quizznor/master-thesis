@@ -3,3 +3,35 @@
 \chapter{Neural network training data}
 \label{chap:neural-network-data}
 
+Over their relatively brief existance, neural networks have been shown to perform increasingly impressive tasks (e.g.  \cite{openai2019dota}, \cite{openai2023gpt4}, 
+and many more). However, they learn by example. The performance of a neural network is directly linked to the input data it receives during training. If the 
+training data is not an accurate example of real world information a network later operates on, insight gained from it is at best an approximation, and at worst
+completely randomly generated data. 
+
+As such, it is not a question \textit{if} some neural network architecture can learn to identify an extensive air shower from WCD data, but rather which 
+implementation, fed with which information, does. For this purpose, this chapter explains the procedure with which training data is generated. As stated above, this
+must occur with a focus on being representative of data actually measured in the SD array. The elected approach to create time traces is modularized. The structure
+of this chapter reflects this. First, general comments about the characteristics of background data (i.e. the WCD detector response in the absence of an extensive 
+air shower) are made in \autoref{sec:background-dataset}. Next, the process to extract signal originating from CRs is detailed in \autoref{sec:signal-dataset}.
+Lastly, building the time trace from the aforementioned modules and drawing samples from it for a neural network to train on is done in 
+\autoref{sec:sliding-window-analysis}.
+
+\section{Background dataset}
+\label{sec:background-dataset}
+
+\subsection{Random traces}
+\label{ssec:random-traces}
+
+
+
+\subsection{Accidental muons}
+\label{ssec:accidental-muons}
+
+
+
+\section{Signal dataset}
+\label{sec:signal-dataset}
+
+
+\section{Trace building \& Sliding window analysis}
+\label{sec:sliding-window-analysis}

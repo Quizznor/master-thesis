@@ -35,7 +35,7 @@
     <configLink
       id         = "EventGenerator"
       type       = "XML"
-      xlink:href = "/cr/users/filip/Simulation/TestDownsampling/EventGenerator.xml"/>
+      xlink:href = "/cr/users/filip/Simulation/.src/EventGenerator.xml"/>
 
    <configLink
        id         = "SStationListXMLManager"

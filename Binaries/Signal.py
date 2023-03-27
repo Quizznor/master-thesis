@@ -50,7 +50,7 @@ class Signal():
 
         self.Signal = np.zeros((3, trace_length))
         # self.signal_start = np.random.randint(0, trace_length - len(pmt_data[0]))
-        self.signal_start = 660                                                     # use same latch bin as offline
+        self.signal_start = int(0.333 * trace_length)                               # use same latch bin as offline
         self.signal_end = self.signal_start + len(pmt_data[0])
 
         for i, PMT in enumerate(pmt_data):
@@ -162,7 +162,7 @@ class Trace(Signal):
         conversion_factor = self.simulation_q_peak / self.baseline_q_peak
         self.Baseline = np.array([pmt * c for c, pmt in zip(conversion_factor, self.Baseline)])
 
-        self.pmt_1, self.pmt_2, self.pmt_3 = np.zeros((3, 2048) )
+        self.pmt_1, self.pmt_2, self.pmt_3 = np.zeros((3, self.trace_length) )
 
         for component in [self.Baseline, self.Injected, self.Signal]:
             if component is None: continue
@@ -202,6 +202,7 @@ class Trace(Signal):
         n_bins_uub      = (len(pmt) // 3) * 3               # original trace length
         n_bins_ub       = n_bins_uub // 3                   # downsampled trace length
         sampled_trace   = np.zeros(n_bins_ub)               # downsampled trace container
+        kADCsaturation = 4095                               # HG max saturation bin value
 
         # ensure downsampling works as intended
         # cuts away (at most) the last two bins
@@ -212,7 +213,6 @@ class Trace(Signal):
             kFirCoefficients = [ 5, 0, 12, 22, 0, -61, -96, 0, 256, 551, 681, 551, 256, 0, -96, -61, 0, 22, 12, 0, 5 ]
             buffer_length = int(0.5 * len(kFirCoefficients))
             kFirNormalizationBitShift = 11
-            kADCsaturation = 4095 * 32                      # theoretical HG bin for LG saturation
 
             temp = np.zeros(n_bins_uub + len(kFirCoefficients))
 
@@ -375,13 +375,13 @@ class RandomTrace():
         if "nuria" in self.station:
             self.q_peak = np.array([180.23, 182.52, 169.56]) * (1 - 11.59/100)
             self.q_charge = np.array([3380.59, 3508.69, 3158.88])      # scaling factor ???
-        elif "lo_qui_don" in self.random_file:
+        elif "lo_qui_don" in self.station:
             self.q_peak = np.array([163.79, 162.49, 173.71]) * (1 - 10.99/100)
             self.q_charge = np.array([2846.67, 2809.48, 2979.65])      # scaling factor ???
-        elif "jaco" in self.random_file:
+        elif "jaco" in self.station:
             self.q_peak = np.array([189.56, 156.48, 168.20])
             self.q_charge = np.array([3162.34, 2641.25, 2840.97])
-        elif "peru" in self.random_file:
+        elif "peru" in self.station:
             self.q_peak = np.array([164.02, 176.88, 167.37])
             self.q_charge = np.array([2761.37, 3007.72, 2734.63])
         else:

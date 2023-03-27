@@ -124,7 +124,7 @@ struct VectorWrapper
   vector<float> get_trace(int start, int end)
   {
     // the end bin should be values.begin() + end + 1 ? Keeping this for continuity
-    const auto trace = std::vector<float>(values.begin() + start, values.begin() + end);
+    const auto trace = std::vector<float>(values.begin() + start, values.begin() + end + 1);
     return trace;
   }
 
@@ -153,7 +153,7 @@ std::vector<double> multiply(std::vector<short unsigned int> vector, double fact
   return result;
 }
 
-void ExtractUB(fs::path pathToAdst)
+void ExtractUB(const char* uubFlag, fs::path pathToAdst)
 {
   // const auto csvTraceFile = pathToAdst.parent_path()/ pathToAdst.filename().replace_extension("csv"); // for testing
   const auto csvTraceFile = pathToAdst.parent_path().parent_path() / pathToAdst.filename().replace_extension("csv");
@@ -202,32 +202,81 @@ void ExtractUB(fs::path pathToAdst)
       const auto nElectrons = genStation->GetNumberOfElectrons();
       const auto nPhotons = genStation->GetNumberOfPhotons();
 
-      // Save trace in ADC/VEM format
-      for (int i_PMT = 1; i_PMT < 4; i_PMT++)
+      // Save trace in VEM format (UB)
+      if (std::strcmp(uubFlag, "0") == 0)
       {
-        // write all information to trace file
-        traceFile << stationId << " " << SPD << " " << showerEnergy << " " << showerZenith << " " << nMuons << " " << nElectrons << " " << nPhotons << " ";
-        
-        const auto signal_start = recStation.GetSignalStartSlot();
-        const auto signal_end = recStation.GetSignalEndSlot();
+        std::cout << "writing VEM for UB" << std::endl;
+        for (int i_PMT = 1; i_PMT < 4; i_PMT++)
+        {
+          // write all information to trace file
+          traceFile << stationId << " " << SPD << " " << showerEnergy << " " << showerZenith << " " << nMuons << " " << nElectrons << " " << nPhotons << " ";
+          
+          const auto signal_start = recStation.GetSignalStartSlot();
+          const auto signal_end = recStation.GetSignalEndSlot();
 
-        const auto trace = recStation.GetVEMTrace(i_PMT);
+          const auto trace = recStation.GetVEMTrace(i_PMT);
 
-        // the end bin should be values.begin() + end + 1 ? Keeping this for continuity
-        const auto traceSliced = std::vector<float>(trace.begin() + signal_start, trace.begin() + signal_end + 1);
+          // the end bin should be values.begin() + end + 1 ? Keeping this for continuity
+          const auto traceSliced = std::vector<float>(trace.begin() + signal_start, trace.begin() + signal_end + 1);
 
-        for (const auto& bin : traceSliced){traceFile << " " << bin;}
+          for (const auto& bin : traceSliced){traceFile << " " << bin;}
 
-        traceFile << "\n";
+          traceFile << "\n";
+        }
+
+      }
+      
+      // Save trace in ADC format (UUB)
+      else if (std::strcmp(uubFlag, "1") == 0)
+      {
+        std::cout << "writing ADC for UUB" << std::endl;
+        for (unsigned int PMT = 1; PMT < 4; PMT++)
+        {
+
+          // total trace container
+          VectorWrapper TotalTrace(2048,0);
+
+          // loop over all components (photon, electron, muons) -> NO HADRONIC COMPONENT
+          for (int component = ePhotonTrace; component <= eMuonTrace; component++)
+          {
+            const auto component_trace = recStation.GetPMTTraces((ETraceType)component, PMT);
+            auto CalibratedTrace = VectorWrapper( component_trace.GetVEMComponent() );
+
+            // make sure there exists a component of this type
+            if (CalibratedTrace.values.size() != 0)
+            {
+              const auto vem_peak = component_trace.GetPeak();
+              VectorWrapper UncalibratedTrace = CalibratedTrace * vem_peak;
+              TotalTrace = TotalTrace + UncalibratedTrace;
+            }
+          }
+
+          // write all information to trace file
+          traceFile << stationId << " " << SPD << " " << showerEnergy << " " << showerZenith << " " << nMuons << " " << nElectrons << " " << nPhotons << " ";
+
+          // "digitize" component trace...
+          // this used to be converted to VEM
+          const auto signal_start = recStation.GetSignalStartSlot();
+          const auto signal_end = recStation.GetSignalEndSlot();
+          const auto trimmedAdcTrace = TotalTrace.get_trace(signal_start, signal_end);
+
+          // ... and write to disk
+          for (const auto& bin : trimmedAdcTrace)
+          {
+            traceFile << " " << bin;
+          }
+
+          traceFile << "\n";
+        }
       }
     }
 
-    // traceFile.close();
+    traceFile.close();
   }
 }
 
 int main(int argc, char** argv) 
 {
-  ExtractUB(argv[1]);
+  ExtractUB(argv[1], argv[2]);
   return 0;
 }
