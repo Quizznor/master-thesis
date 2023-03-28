@@ -36,7 +36,10 @@ class Classifier():
 
                 if self.__call__(window):
 
-                    if (n_total_triggered := n_total_triggered + 1) < 100: self.plot_trace_window(window, n_total_triggered, start_time, downsample)
+                    n_total_triggered += 1
+
+                    if n_total_triggered < 100: 
+                        self.plot_trace_window(window, n_total_triggered, start_time, downsample)
 
                     # perhaps skipping the entire trace isn't exactly accurate
                     # but then again just skipping one window seems wrong also
@@ -1120,7 +1123,8 @@ class HardwareClassifier(Classifier):
             return np.array([self.__call__(t) for t in trace])
 
     # method to check for (coincident) absolute signal threshold
-    def Th(self, signal : np.ndarray) -> bool : 
+    @staticmethod
+    def Th(signal : np.ndarray) -> bool : 
 
         # Threshold of 3.2 immediately gets promoted to T2
         # Threshold of 1.75 if a T3 has already been issued

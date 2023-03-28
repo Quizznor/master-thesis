@@ -227,7 +227,6 @@ class Trace(Signal):
             # clipping and bitshifting
             sampled_trace = [int(adc) >> kFirNormalizationBitShift for adc in sampled_trace]
         
-        # is this correct ???
         else:
 
             for k in range(random_phase, n_bins_uub, 3):

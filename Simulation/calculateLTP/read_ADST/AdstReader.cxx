@@ -87,7 +87,10 @@ void DoLtpCalculation(fs::path pathToAdst)
     const auto showerCore = genShower.GetCoreSiteCS();
     
     std::vector<int> misses(65, 0);
-    std::vector<int> hits(65, 0);
+    std::vector<int> all_hits(65, 0);
+    std::vector<int> th_hits(65, 0);
+    std::vector<int> tot_hits(65, 0);
+    std::vector<int> totd_hits(65, 0);
 
     // get id of all stations that received any particles (= the ones that were generated)
     std::vector<int> recreatedStationIds;
@@ -103,7 +106,12 @@ void DoLtpCalculation(fs::path pathToAdst)
       if (std::find(recreatedStationIds.begin(), recreatedStationIds.end(), consideredStationId) != recreatedStationIds.end())
       {
         // station was triggered, add to "hits"
-        hits[binIndex] += 1;
+        const auto station = sdEvent.GetStationById(consideredStationId);
+
+        all_hits[binIndex] += 1;
+        th_hits[binIndex] += station->IsT2Threshold();
+        tot_hits[binIndex] += station->IsTOT();
+        totd_hits[binIndex] += station->IsTOTd();
       }
       else
       {
@@ -113,16 +121,15 @@ void DoLtpCalculation(fs::path pathToAdst)
     }
 
     ofstream saveFile(csvTraceFile, std::ios_base::app);
-    saveFile << "0 " << log10(showerEnergy) << " " << showerZenith << "\n";
+    saveFile << "0 " << log10(showerEnergy) << " " << showerZenith << " 0 0 0\n";
 
     for (int i = 0; i < 65; i++)
     {
       // std::cout << "<" << (i+1) * 100 << "m: " << hits[i] << " " << misses[i] << std::endl;
-      saveFile << (i + 1) * 100 << " " << hits[i] << " " << misses[i] << "\n";
+      saveFile << (i + 1) * 100 << " " << all_hits[i] << " " << misses[i] << " " << th_hits[i] << " " << tot_hits[i] << " " << totd_hits[i] << "\n";
     }
 
     saveFile.close();
-
   }
 }
 

@@ -7,7 +7,7 @@ ADST = root + "ADST/"
 move_from = root + "temp/"
 move_to = root + "temp_processed/"
 
-# print("moving everything from source to temp")
+print("moving everything from source to temp")
 os.system(f"mkdir {move_from} {move_to} {ADST}")
 os.system(f"mv {source + '/*'} {move_from}")
 while True:
