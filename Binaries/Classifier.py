@@ -1100,21 +1100,31 @@ class Ensemble(NNClassifier):
 # Information on magic numbers comes from Davids Mail on 10.03.22 @ 12:30pm
 class HardwareClassifier(Classifier):
 
-    def __init__(self, name : str = False) : 
+    def __init__(self, triggers : list = ["th", "tot", "totd", "mops"], name : str = False) : 
         super().__init__(name or "HardwareClassifier")
+        self.triggers = []
+
+        if "th" in triggers: self.triggers.append(self.Th)
+        if "tot" in triggers: self.triggers.append(self.ToT)
+        if "totd" in triggers: self.triggers.append(self.ToTd)
+        if "mops" in triggers: self.triggers.append(self.MoPS)
 
     def __call__(self, trace : np.ndarray) -> bool : 
         
-        # Threshold of 3.2 immediately gets promoted to T2
-        # Threshold of 1.75 if a T3 has already been issued
-
         try:
-            return self.Th(3.2, trace) or self.ToT(trace) or self.ToTd(trace) or self.MoPS(trace)
+            for trigger in self.triggers:
+                if trigger(trace): return True
+            else: return False
+
         except ValueError:
             return np.array([self.__call__(t) for t in trace])
 
     # method to check for (coincident) absolute signal threshold
-    def Th(self, threshold : float, signal : np.ndarray) -> bool : 
+    def Th(self, signal : np.ndarray) -> bool : 
+
+        # Threshold of 3.2 immediately gets promoted to T2
+        # Threshold of 1.75 if a T3 has already been issued
+        threshold = 3.2
 
         pmt_1, pmt_2, pmt_3 = signal
 
@@ -1131,9 +1141,11 @@ class HardwareClassifier(Classifier):
         return False
 
     # method to check for elevated baseline threshold trigger
-    def ToT(self, signal : np.ndarray) -> bool : 
+    @staticmethod
+    def ToT(signal : np.ndarray) -> bool : 
 
-        threshold     = 0.2      # bins above this threshold are 'active'
+        threshold     = 0.2                                                         # bins above this threshold are 'active'
+        n_bins        = 13                                                          # minimum number of bins above threshold
 
         pmt_1, pmt_2, pmt_3 = signal
 
@@ -1141,8 +1153,7 @@ class HardwareClassifier(Classifier):
         pmt1_active = list(pmt_1 > threshold).count(True)
         pmt2_active = list(pmt_2 > threshold).count(True)
         pmt3_active = list(pmt_3 > threshold).count(True)
-        # ToT_trigger = [pmt1_active >= 13, pmt2_active >= 13, pmt3_active >= 13]
-        ToT_trigger = [pmt1_active >= 39, pmt2_active >= 39, pmt3_active >= 39]
+        ToT_trigger = [pmt1_active >= n_bins, pmt2_active >= n_bins, pmt3_active >= n_bins]
 
         if ToT_trigger.count(True) >= 2:
             return True
@@ -1151,7 +1162,8 @@ class HardwareClassifier(Classifier):
 
     # method to check for elevated baseline of deconvoluted signal
     # note that this only ever gets applied to UB-like traces, with 25 ns binning
-    def ToTd(self, signal : np.ndarray) -> bool : 
+    @staticmethod
+    def ToTd(signal : np.ndarray) -> bool : 
 
         # for information on this see GAP note 2018-01
         dt      = 25                                                                # UB bin width
@@ -1163,10 +1175,11 @@ class HardwareClassifier(Classifier):
             deconvoluted_pmt = [(pmt[i] - pmt[i-1] * decay)/(1 - decay) for i in range(1,len(pmt))]
             deconvoluted_trace.append(deconvoluted_pmt)
  
-        return self.ToT(np.array(deconvoluted_trace))
+        return HardwareClassifier.ToT(np.array(deconvoluted_trace))
 
     # method to count positive flanks in an FADC trace
-    def MoPS(self, signal : np.ndarray) -> bool : 
+    @staticmethod
+    def MoPS(signal : np.ndarray) -> bool : 
 
         # as per GAP note 2018-01; an exact offline reconstruction of the trigger is not possible
         # Can this be fixed in some way? perhaps with modified integration threshold INT?
