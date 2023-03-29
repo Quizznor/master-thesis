@@ -1,0 +1,12 @@
+JobBatchName    = create_LTP_csv
+Executable      = /cr/users/filip/Trigger/OfflineComparison/make_CSVs/submit.py 
+
+
+arguments       = $(Process)   
+# arguments       = $(Item)
+request_memory  = 1G
+max_idle        = 500
+
+Requirements	= (OpSysName == "Ubuntu" && OpSysMajorVer == 22  && TARGET.Machine != "crc2.ikp.kit.edu" && TARGET.Machine != "crc1.ikp.kit.edu" && TARGET.Machine != "crcds99.iap.kit.edu")
+
+queue 4999
