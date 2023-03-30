@@ -35,17 +35,51 @@ make these events unsuitable for analysis. Stray muons, even though they origina
 
 The rate at which such particles traverse a WCD tank is $f_\text{Acc.}\approx\SI{4.665}{\kilo\hertz}$ \cite{DavidInjectionFrequency}. Their arrival time is 
 Poisson-distributed. This implies that generally, one in 14 time traces contains signal from a low-energy background event. Coincidences of two accidental 
-muons occur on a sub-percent level. Any higher order of coincidences is likely originating from a single air shower process.
+muons occur on a sub-percent level. Any higher order of coincidences is likely originating from a single air shower process. The typical signal recorded by the 
+surface detector from a single muon is presented in \autoref{fig:muon-response}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.8\textwidth]{./plots/muon_response.png}
+	\caption{The simulated time trace from a single muon. The maximum peak of the time trace corresponds roughly to \SI{1}{\Peak}, wheras the integrated signal 
+    $S$ per PMT sums up to \SI{1}{\Charge}.}
+	\label{fig:muon-response}
+\end{figure}
 
 \subsection{Electronic noise}
 \label{ssec:electronic-noise}
 
-Electronic noise is the umbrella term given to the distortions that some signal is subject to from creation to digital readout. In the electronics of the SD array,
-this noise is assumed to be Gaussian. \todo{RMS monitoring}
+Electronic noise is the umbrella term given to the distortions that some signal is subject to during digital readout. Such noise can have many different origins.
+An illustrative example is given by the \textbf{L}aser \textbf{I}nterferometer \textbf{G}ravitational wave \textbf{O}bservatory, which excludes the \SI{60}{\hertz}
+band and its' harmonics from analysis. This is owed to the fact that the DC frequency standard in the United States introduces systematic uncertainties in the
+detector \cite{martynov2016sensitivity}. In the electronics of Pierre Augers' SD array, electronic noise is assumed to be Gaussian. That is to say that the \ADC 
+values of a time trace that was measured while no particle produced signal in the tank are normally distributed around the baseline. The standard deviation can be 
+estimated from monitoring data, as is shown in \autoref{fig:standard-deviation-baseline}. \todo{make this plot}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.8\textwidth]{./plots/standard_deviation_baseline.png}
+	\caption{ .}
+	\label{fig:standard-deviation-baseline}
+\end{figure}
 
 \subsection{Random traces}
 \label{ssec:random-traces}
 
+Both above mentioned phenomena can be simulated, and the simulation results used as background training data for the neural networks discussed in the next chapter.
+A more accurate method, and the approach elected for this work is to utilize directly measured data from the field. Thanks to the work of David Nitz, there exist
+collections of so called random traces that were gathered by forcing DAQ readout via a manually set trigger. In particular, 
+
+\subsubsection{Characteristics}
+\label{ssec:random-trace-characteristics}
+
+
+
+\subsubsection{Calibration}
+\label{ssec:random-trace-calibration}
+
+\todo{citing?}
+\todo{spectral density}
 
 \section{Signal dataset}
 \label{sec:signal-dataset}
