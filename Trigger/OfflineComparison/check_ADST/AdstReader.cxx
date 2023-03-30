@@ -131,7 +131,7 @@ struct VectorWrapper
 
 // all stations that can theoretically be triggered during simulation. Since were throwing the simulated shower anywhere near Station 5398, this 
 // should ensure complete containment in most cases. Might not be true for highly inclined showers. Should in any case be a fair first estimate
-std::vector<int> consideredStations{
+std::vector<uint> consideredStations{
 
              // 4 rings with 5398 in center
               4049, 4050, 4051, 4052, 4053,
@@ -145,9 +145,58 @@ std::vector<int> consideredStations{
               5230, 5231, 5232, 5233, 5234
 };
 
+uint getHottestStation(const SDEvent* sdEvent)
+{
+  uint hottestStationId;
+  Double_t maxSignal = -DBL_MAX;
+
+  for (const auto& recStation : sdEvent->GetStationVector())
+  {
+    const auto depositedSignal = recStation.GetTotalSignal();
+
+    if (depositedSignal > maxSignal)
+    {
+      maxSignal = depositedSignal;
+      hottestStationId = recStation.GetId();
+    }
+  }
+
+  return hottestStationId;
+}
+
+std::vector<uint> getCrowns(uint stationId, DetectorGeometry detectorGeometry, uint nCrowns)
+{
+  std::vector<uint> stationIds(1, stationId);
+  std::vector<uint> lastCrown(1, stationId);
+
+  for (auto nCrown = 1; nCrown <= nCrowns; nCrown++)
+  {
+    std::vector<uint> thisCrown;
+    for (const auto& lastCrownId : lastCrown)
+    {
+
+      for (const auto& id : detectorGeometry.GetHexagon(lastCrownId))
+      {
+        const bool isConsidered= std::find(stationIds.begin(), stationIds.end(), id) != stationIds.end();
+
+        if (!isConsidered)
+        {
+          stationIds.push_back(id);
+          thisCrown.push_back(id);
+        }
+      }
+    }
+    lastCrown = thisCrown;
+  }
+
+  return stationIds;
+}
+
 void DoLtpCalculation(fs::path pathToAdst)
 {
   std::string csvTraceFile = "/cr/tempdata01/filip/QGSJET-II/LTP/ADST/" + pathToAdst.filename().replace_extension("csv").string();
+
+  std::cout << "writing to " + csvTraceFile << std::endl;
 
   // (2) start main loop
   RecEventFile     recEventFile(pathToAdst.string());
@@ -174,9 +223,11 @@ void DoLtpCalculation(fs::path pathToAdst)
     
     std::vector<int> misses(65, 0);
     std::vector<int> all_hits(65, 0);
-    std::vector<int> th_hits(65, 0);
+    std::vector<int> th1_hits(65, 0);
+    std::vector<int> th2_hits(65, 0);
     std::vector<int> tot_hits(65, 0);
     std::vector<int> totd_hits(65, 0);
+    std::vector<int> mops_hits(65, 0);
 
     // get id of all stations that received any particles (= the ones that were generated)
     std::vector<int> recreatedStationIds;
@@ -198,13 +249,15 @@ void DoLtpCalculation(fs::path pathToAdst)
         const auto T2ThFlag = station->IsT2Threshold();
         const auto T2ToTFlag = station->IsTOT();
         const auto T2ToTdFlag = station->IsTOTd();
-
-        std::cout << "Station " << station->GetId() << ": T1ThFlag: " << T1ThFlag << "; Th2 = " << T2ThFlag << "; ToT: " << T2ToTFlag << "; ToTd: " << T2ToTdFlag << std::endl;
+        const auto T2MoPSFlag = station->IsMoPS();
 
         all_hits[binIndex] += 1;
-        th_hits[binIndex] += T2ThFlag;
+        th1_hits[binIndex] += T1ThFlag;
+        th2_hits[binIndex] += T2ThFlag;
         tot_hits[binIndex] += T2ToTFlag;
         totd_hits[binIndex] += T2ToTdFlag;
+        mops_hits[binIndex] += T2MoPSFlag;
+
       }
       else
       {
@@ -212,8 +265,67 @@ void DoLtpCalculation(fs::path pathToAdst)
         misses[binIndex] += 1;
       }
     }
+
+    // save shower metadata to intermediate file. Put "0" in first 
+    // column such that row 0 has the same shape as later rows
+    ofstream saveFile(csvTraceFile, std::ios_base::app);
+    saveFile << "0 " << log10(showerEnergy) << " " << showerZenith << " 0 0 0 0\n";
+
+    for (int i = 0; i < 65; i++)
+    {
+      // std::cout << "<" << (i+1) * 100 << "m: " << hits[i] << " " << misses[i] << std::endl;
+      saveFile << (i + 1) * 100 << " " << all_hits[i] << " " << misses[i] << " " << th1_hits[i] << " " << th2_hits[i] << " " << tot_hits[i] << " " << mops_hits[i] << "\n";
+    }
+
+    saveFile.close();
   }
 }
+
+void DoLtpCalculationQuentin(fs::path pathToAdst)
+{
+  std::string csvTraceFile = "/cr/tempdata01/filip/QGSJET-II/LTP/ADST/" + pathToAdst.filename().replace_extension("csv").string();
+
+  // (2) start main loop
+  RecEventFile     recEventFile(pathToAdst.string());
+  RecEvent*        recEvent = nullptr;
+  recEventFile.SetBuffers(&recEvent);
+
+  for (unsigned int i = 0; i < recEventFile.GetNEvents(); ++i) 
+  {
+    // skip if event reconstruction failed
+    if (recEventFile.ReadEvent(i) != RecEventFile::eSuccess){continue;}
+
+    // allocate memory for data
+    const SDEvent& sdEvent = recEvent->GetSDEvent();                              // contains the traces
+    const GenShower& genShower = recEvent->GetGenShower();                        // contains the shower
+    DetectorGeometry detectorGeometry = DetectorGeometry();                       // contains SPDistance
+    recEventFile.ReadDetectorGeometry(detectorGeometry);
+
+    // binaries of the generated shower
+    // const auto SPD = detectorGeometry.GetStationAxisDistance(Id, Axis, Core);  // in m
+    const auto showerZenith = genShower.GetZenith() * (180 / 3.141593);           // in °
+    const auto showerEnergy = genShower.GetEnergy();                              // in eV
+    const auto showerAxis = genShower.GetAxisSiteCS();
+    const auto showerCore = genShower.GetCoreSiteCS();
+    
+    // get id of all stations that received any particles (= the ones that were generated)
+    for (const auto& station : sdEvent.GetStationVector())
+    {
+      const auto stationId = station.GetId();
+
+      if (stationId >= 90000){continue;}
+
+      // station was triggered, add to "hits"
+      const auto T1ThFlag = station.IsT1Threshold();
+      const auto T2ThFlag = station.IsT2Threshold();
+      const auto T2ToTFlag = station.IsTOT();
+      const auto T2ToTdFlag = station.IsTOTd();
+
+      std::cout << "Station " << stationId << ": Th1: " << T1ThFlag << "; Th2 = " << T2ThFlag << "; ToT: " << T2ToTFlag << "; ToTd: " << T2ToTdFlag << std::endl;
+    }
+  }
+}
+
 
 void ExtractData(fs::path pathToAdst)
 {
@@ -309,7 +421,10 @@ void ExtractData(fs::path pathToAdst)
 
 int main(int argc, char** argv) 
 {
-  ExtractData(argv[1]);
+  DoLtpCalculation(argv[1]);
 
   return 0;
 }
+
+// /cr/tempdata01/filip/QGSJET-II/LTP/16_16.5/DAT031134_000001.root
+// /cr/tempdata01/filip/QGSJET-II/LTP/16_16.5//DAT031134_000001.root

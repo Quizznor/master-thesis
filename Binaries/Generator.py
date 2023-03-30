@@ -239,13 +239,19 @@ class Generator(tf.keras.utils.Sequence):
 
         if self.prior != 0:
 
-            stations = SignalBatch(self.files[index]) if self.prior != 0 else []                                # load this shower file in memory
-            full_traces, traces, labels = [], [], []                                                            # reserve space for return values
+            try:
+                stations = SignalBatch(self.files[index]) if self.prior != 0 else []                            # load this shower file in memory
+                full_traces, traces, labels = [], [], []                                                        # reserve space for return values
+            except Exception as e:
+                sys.exit(f"{e} reading signal data from {self.files[index]}")
 
             for station in stations:
 
                 baseline = self.build_baseline()
-                VEMTrace = Trace(baseline, station, self.trace_options)                                         # create the trace
+                try:
+                    VEMTrace = Trace(baseline, station, self.trace_options)                                     # create the trace
+                except Exception as e:
+                    sys.exit(f"{e} forming trace from {self.files[index]}")
                 full_traces.append(VEMTrace)
 
                 if not self.for_training: continue
@@ -413,6 +419,13 @@ class Generator(tf.keras.utils.Sequence):
         self.trace_options["baseline_q_peak"] = q_peak
 
         return baseline
+
+    # find index of a file in self.files
+    def find(self, filename : str) -> int :
+        
+        if "/" in filename: filename = filename.split('/')[-1]
+        truncated_files = [file.split('/')[-1] for file in self.files]
+        return truncated_files.index(filename)
 
     # getter for __getitem__ statistics during iteration
     def get_train_loop_statistics(self) -> tuple :

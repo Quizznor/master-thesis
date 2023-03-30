@@ -65,12 +65,12 @@ class Classifier():
 
         plt.rcParams["figure.figsize"] = [20, 10]
 
-        plt.plot(range(x), pmt1, label = "PMT #1")
-        plt.plot(range(x), pmt2, label = "PMT #2")
-        plt.plot(range(x), pmt3, label = "PMT #3")
+        plt.plot(range(x), pmt1, label = r"PMT \#1")
+        plt.plot(range(x), pmt2, label = r"PMT \#2")
+        plt.plot(range(x), pmt3, label = r"PMT \#3")
 
         plt.ylabel(r"Signal / VEM$_\mathrm{Peak}$")
-        plt.xlabel("Bin / 8.33 ns" if not downsampled else "Bin / 25 ns")
+        plt.xlabel(r"Bin / $8.33\,\mathrm{ns}$" if not downsampled else r"Bin / $25\,\mathrm{ns}$")
         plt.xlim(0, x)
         plt.legend()
         plt.tight_layout()
@@ -80,6 +80,8 @@ class Classifier():
 
     # calculate performance for a given set of showers
     def make_signal_dataset(self, Dataset : Generator, save_dir : str, n_showers : int = None, save_traces : bool = False) -> None : 
+
+        if save_traces: raise NotImplementedError("Not implemented at the moment due to rework")
 
         temp, Dataset.for_training = Dataset.for_training, False
         if n_showers is None: n_showers = Dataset.__len__()
@@ -101,9 +103,9 @@ class Classifier():
         
         # open all files only once, increases performance
         with open(save_file["TP"], "w") as TP, \
-            open(save_file["TN"], "w") as TN, \
-            open(save_file["FP"], "w") as FP, \
-            open(save_file["FN"], "w") as FN:
+             open(save_file["TN"], "w") as TN, \
+             open(save_file["FP"], "w") as FP, \
+             open(save_file["FN"], "w") as FN:
 
             for batch, traces in enumerate(Dataset):
 
@@ -112,8 +114,6 @@ class Classifier():
                 random_file = f"{'/'.join(random_file.split('/')[-3:])}"
 
                 for trace in traces:
-
-                    stop_iteration = False
 
                     StationID = trace.StationID
                     SPDistance = trace.SPDistance
@@ -124,29 +124,35 @@ class Classifier():
                     n_photons = trace.n_photons
 
                     save_string = f"{random_file} {StationID} {SPDistance} {Energy} {Zenith} {n_muons} {n_electrons} {n_photons} "
+                    max_charge_integral = -np.inf
 
                     for window in trace:
+
+                        # we inherently care more about the situation were we trigger as
+                        # these events are seen by CDAS. Thus handle FP/TP more strictly
+
                         label, integral = Dataset.calculate_label(trace)
+                        has_triggered = self.__call__(window)
 
-                        if label == "SIG":
-                            if self.__call__(window): 
-                                prediction = TP
-                                stop_iteration = True
-                            else: prediction = FN
+                        # we have detected a false positive in the trace
+                        if label != "SIG" and has_triggered:
+                            FP.write(save_string + f"{integral}\n")
+                        
+                        # we have detected a true positive, break loop
+                        elif label == "SIG" and has_triggered:
+                            TP.write(save_string + f"{integral}\n")
+                            break
+
+                        # we haven't seen anything, keep searching
                         else:
-                            if self.__call__(window): 
-                                prediction = FP
-                                stop_iteration = True
-                            else: prediction = TN
+                            if integral > max_charge_integral:
+                                max_charge_integral = integral
 
-                        if save_traces:
-                            for pmt in window:
-                                prediction.write(save_string + f" {integral} ")
-                                prediction.write(" ".join([str(np.round(adc, 4)) for adc in pmt]) + "\n")
-                        else:
-                            prediction.write(save_string + f" {integral} \n")
+                            # TODO: TN handling would go here
 
-                        if stop_iteration: break
+                    # loop didn't break, we didn't see shit
+                    else:
+                        FN.write(save_string + f"{max_charge_integral}\n")
 
                 if batch + 1 >= n_showers: break        
 
@@ -1128,7 +1134,7 @@ class HardwareClassifier(Classifier):
 
         # Threshold of 3.2 immediately gets promoted to T2
         # Threshold of 1.75 if a T3 has already been issued
-        threshold = 3.2
+        threshold = 3.2                                                             # single bin threshold
 
         pmt_1, pmt_2, pmt_3 = signal
 
@@ -1180,14 +1186,53 @@ class HardwareClassifier(Classifier):
             deconvoluted_trace.append(deconvoluted_pmt)
  
         return HardwareClassifier.ToT(np.array(deconvoluted_trace))
-
-    # method to count positive flanks in an FADC trace
+    
+    # count the number of rising flanks in a trace
     @staticmethod
     def MoPS(signal : np.ndarray) -> bool : 
 
-        # as per GAP note 2018-01; an exact offline reconstruction of the trigger is not possible
-        # Can this be fixed in some way? perhaps with modified integration threshold INT?
-        return False 
+        y_min, y_max = 3, 31                                                        # only accept y_rise in this range
+        min_slope_length = 2                                                        # minimum number of increasing bins
+        min_occupancy = 4                                                           # positive steps per PMT for trigger
+        pmt_multiplicity = 2                                                        # required multiplicity for PMTs
+        pmt_active_counter = 0                                                      # actual multiplicity for PMTs
+
+        # assume we're fed 120 bin trace windows
+
+        for pmt in signal:
+            occupancy = 0
+            positive_steps = np.nonzero(np.diff(pmt) > 0)[0]
+            steps_isolated = np.split(positive_steps, np.where(np.diff(positive_steps) != 1)[0] + 1)
+            candidate_flanks = [step for step in steps_isolated if len(step) >= min_slope_length]
+            candidate_flanks = [np.append(flank, flank[-1] + 1) for flank in candidate_flanks]
+
+            for i, flank in enumerate(candidate_flanks):
+
+                # adjust searching area after encountering a positive flank
+                total_y_rise = (pmt[flank[-1]] - pmt[flank[0]]) * GLOBAL.q_peak
+                n_continue_at_index = flank[-1] + max(0, int(np.log2(total_y_rise) - 2))
+
+                for consecutive_flank in candidate_flanks[i + 1:]:
+
+                    if n_continue_at_index <= consecutive_flank[0]: break                                                       # no overlap, no need to do anything
+                    elif consecutive_flank[0] < n_continue_at_index <= consecutive_flank[-1]:                                   # partial overlap, adjust next flank
+                        original_index = candidate_flanks.index(consecutive_flank)
+                        overlap_index = consecutive_flank.index(n_continue_at_index)
+                        candidate_flanks[original_index] = candidate_flanks[original_index][overlap_index:]
+                        if len(candidate_flanks[original_index]) < min_slope_length: _ = candidate_flanks.pop(original_index)
+                        break
+
+                    elif consecutive_flank[-1] < n_continue_at_index:                                                            # complete overlap, discard next flank
+                        original_index = candidate_flanks.index(consecutive_flank)
+                        _ = candidate_flanks.pop(original_index)
+
+                if total_y_rise > y_min and total_y_rise < y_max: occupancy += 1
+
+            if occupancy > min_occupancy: pmt_active_counter += 1
+
+        # final check regarding integral would go here
+
+        return pmt_active_counter >= pmt_multiplicity
 
 
 class BayesianClassifier(Classifier):

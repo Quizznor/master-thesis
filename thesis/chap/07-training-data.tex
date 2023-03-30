@@ -28,11 +28,22 @@ collected inbetween air shower events.
 \label{ssec:accidental-muons}
 
 Most low-energy background particles present in the detector are muons. These are produced in the upper atmosphere during cascading processes analog to 
-\autoref{chap:physical-background}. Due to the low primary energy 
+\autoref{chap:physical-background}. Due to the low primary energy the electromagnetic component of the shower is thermalized before it reaches surface level. The 
+muonic component by itself does not contain enough information to enable an accurate reconstruction of primary energy and origin. This fact, coupled with the high
+flux of events at lower energies ($\Upphi|_{E=\SI{100}{\giga\electronvolt}} \approx \SI[per-mode=power]{1}{\per\meter\per\second}$ \cite{boezio2000measurement}) 
+make these events unsuitable for analysis. Stray muons, even though they originate from extensive air showers, must consequently be considered background events.
+
+The rate at which such particles traverse a WCD tank is $f_\text{Acc.}\approx\SI{4.665}{\kilo\hertz}$ \cite{DavidInjectionFrequency}. Their arrival time is 
+Poisson-distributed. This implies that generally, one in 14 time traces contains signal from one such low-energy background event. Coincidences of two accidental 
+muons occur on a sub-percent level. Any higher order of coincidences is likely originating from a single air shower process.
+
+\subsection{Electronic noise}
+\label{ssec:electronic-noise}
+
+Electronic noise is the umbrella term given to the distortions that some signal is subject to from creation to readout. \todo{continue}
 
 \subsection{Random traces}
 \label{ssec:random-traces}
-
 
 
 \section{Signal dataset}
