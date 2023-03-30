@@ -1,4 +1,4 @@
-JobBatchName    = LTP_16.0_16.5
+JobBatchName    = LTP_16.5_17
 Executable      = /cr/users/filip/Simulation/calculateLTP/run_simulation.py
 
 # error           = /cr/users/filip/Simulation/condor/errors-$(Process).err
