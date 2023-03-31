@@ -18,7 +18,7 @@ Events = EventGenerator("all", apply_downsampling = True, split = 1)
 # Events.physics_test()
 
 Trigger = HardwareClassifier()
-Trigger.make_signal_dataset(Events, "ToT_corrected")
+Trigger.make_signal_dataset(Events, "per_trace_with_mops")
 
 # Events[-1].training_test(n_showers = 1000)
 # Assifier.train(Events, 10)

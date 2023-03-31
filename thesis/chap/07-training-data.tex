@@ -41,8 +41,8 @@ surface detector from a single muon is presented in \autoref{fig:muon-response}
 \begin{figure}
 	\centering
 	\includegraphics[width=0.8\textwidth]{./plots/muon_response.png}
-	\caption{The simulated time trace from a single muon. The maximum peak of the time trace corresponds roughly to \SI{1}{\Peak}, wheras the integrated signal 
-    $S$ per PMT sums up to \SI{1}{\Charge}.}
+	\caption{The simulated time trace from a single muon. The maximum peak of the time trace is equal \SI{1}{\Peak}. The integrated signal $S$ is of comparable
+	magnitude.}
 	\label{fig:muon-response}
 \end{figure}
 
@@ -52,14 +52,15 @@ surface detector from a single muon is presented in \autoref{fig:muon-response}
 Electronic noise is the umbrella term given to the distortions that some signal is subject to during digital readout. Such noise can have many different origins.
 An illustrative example is given by the \textbf{L}aser \textbf{I}nterferometer \textbf{G}ravitational wave \textbf{O}bservatory, which excludes the \SI{60}{\hertz}
 band and its' harmonics from analysis. This is owed to the fact that the DC frequency standard in the United States introduces systematic uncertainties in the
-detector \cite{martynov2016sensitivity}. In the electronics of Pierre Augers' SD array, electronic noise is assumed to be Gaussian. That is to say that the \ADC 
-values of a time trace that was measured while no particle produced signal in the tank are normally distributed around the baseline. The standard deviation can be 
-estimated from monitoring data, as is shown in \autoref{fig:standard-deviation-baseline}. \todo{make this plot}
+detector \cite{martynov2016sensitivity}. In the electronics of Pierre Augers' SD array, electronic noise is assumed to be Gaussian. That is to say that the 
+\SI{}{\ADC} values of a time trace that was measured while no particle produced signal in the tank are normally distributed around the baseline. The standard 
+deviation can be estimated from monitoring data, as is shown in \autoref{fig:standard-deviation-baseline}. \todo{make this plot}
 
 \begin{figure}
 	\centering
 	\includegraphics[width=0.8\textwidth]{./plots/standard_deviation_baseline.png}
-	\caption{ .}
+	\caption{The variance of all UUB stations in the surface detector array. This data is collected from monitoring processes that forward station diagnostics to 
+	CDAS every five minutes. The data shown in this plot was recorded on the 15th Nov. 2022. }
 	\label{fig:standard-deviation-baseline}
 \end{figure}
 

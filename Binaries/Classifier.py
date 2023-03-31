@@ -157,6 +157,7 @@ class Classifier():
                 if batch + 1 >= n_showers: break        
 
         Dataset.for_training = temp
+        Dataset.__reset__()
 
     # combine multiple results from self.make_signal_dataset to one
     def combine_data(self, save_dir : str, *args) -> None : 
@@ -1116,7 +1117,7 @@ class HardwareClassifier(Classifier):
         if "th" in triggers: self.triggers.append(self.Th)
         if "tot" in triggers: self.triggers.append(self.ToT)
         if "totd" in triggers: self.triggers.append(self.ToTd)
-        if "mops" in triggers: self.triggers.append(self.MoPS)
+        if "mops" in triggers: self.triggers.append(self.MoPS_compatibility)
 
     def __call__(self, trace : np.ndarray) -> bool : 
         
@@ -1188,18 +1189,24 @@ class HardwareClassifier(Classifier):
         return HardwareClassifier.ToT(np.array(deconvoluted_trace))
     
     # count the number of rising flanks in a trace
+    # WARNING: THIS IMPLEMENTATION IS NOT CORRECT!
     @staticmethod
-    def MoPS(signal : np.ndarray) -> bool : 
+    def MoPS_compatibility(signal : np.ndarray) -> bool : 
 
+        # assumes we're fed 120 bin trace windows
         y_min, y_max = 3, 31                                                        # only accept y_rise in this range
         min_slope_length = 2                                                        # minimum number of increasing bins
         min_occupancy = 4                                                           # positive steps per PMT for trigger
         pmt_multiplicity = 2                                                        # required multiplicity for PMTs
         pmt_active_counter = 0                                                      # actual multiplicity for PMTs
+        integral_check = 75 * 120/250                                               # integral must pass this threshold
 
-        # assume we're fed 120 bin trace windows
 
         for pmt in signal:
+
+            # check for the modified integral first, computationally easier
+            if sum(pmt) * GLOBAL.q_peak <= integral_check: continue
+            
             occupancy = 0
             positive_steps = np.nonzero(np.diff(pmt) > 0)[0]
             steps_isolated = np.split(positive_steps, np.where(np.diff(positive_steps) != 1)[0] + 1)
@@ -1212,26 +1219,21 @@ class HardwareClassifier(Classifier):
                 total_y_rise = (pmt[flank[-1]] - pmt[flank[0]]) * GLOBAL.q_peak
                 n_continue_at_index = flank[-1] + max(0, int(np.log2(total_y_rise) - 2))
 
-                for consecutive_flank in candidate_flanks[i + 1:]:
+                for j, consecutive_flank in enumerate(candidate_flanks[i + 1:], 0):
 
                     if n_continue_at_index <= consecutive_flank[0]: break                                                       # no overlap, no need to do anything
                     elif consecutive_flank[0] < n_continue_at_index <= consecutive_flank[-1]:                                   # partial overlap, adjust next flank
-                        original_index = candidate_flanks.index(consecutive_flank)
-                        overlap_index = consecutive_flank.index(n_continue_at_index)
-                        candidate_flanks[original_index] = candidate_flanks[original_index][overlap_index:]
-                        if len(candidate_flanks[original_index]) < min_slope_length: _ = candidate_flanks.pop(original_index)
+                        overlap_index = np.argmin(np.abs(consecutive_flank - n_continue_at_index))
+                        candidate_flanks[i + j] = candidate_flanks[i + j][overlap_index:]
+                        if len(candidate_flanks[i + j]) < min_slope_length: _ = candidate_flanks.pop(i + j)
                         break
 
-                    elif consecutive_flank[-1] < n_continue_at_index:                                                            # complete overlap, discard next flank
-                        original_index = candidate_flanks.index(consecutive_flank)
-                        _ = candidate_flanks.pop(original_index)
+                    elif consecutive_flank[-1] < n_continue_at_index:                                                           # complete overlap, discard next flank
+                        _ = candidate_flanks.pop(i + j)
 
                 if total_y_rise > y_min and total_y_rise < y_max: occupancy += 1
-
             if occupancy > min_occupancy: pmt_active_counter += 1
-
-        # final check regarding integral would go here
-
+            
         return pmt_active_counter >= pmt_multiplicity
 
 
