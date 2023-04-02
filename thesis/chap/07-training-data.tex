@@ -54,15 +54,7 @@ An illustrative example is given by the \textbf{L}aser \textbf{I}nterferometer \
 band and its' harmonics from analysis. This is owed to the fact that the DC frequency standard in the United States introduces systematic uncertainties in the
 detector \cite{martynov2016sensitivity}. In the electronics of Pierre Augers' SD array, electronic noise is assumed to be Gaussian. That is to say that the 
 \SI{}{\ADC} values of a time trace that was measured while no particle produced signal in the tank are normally distributed around the baseline. The standard 
-deviation can be estimated from monitoring data, as is shown in \autoref{fig:standard-deviation-baseline}. \todo{make this plot}
-
-\begin{figure}
-	\centering
-	\includegraphics[width=0.8\textwidth]{./plots/standard_deviation_baseline.png}
-	\caption{Example variance of all UUB stations in the surface detector array. The data shown in this plot was recorded on November 15th 2022 and is collected 
-	regularly via monitoring processes. }
-	\label{fig:standard-deviation-baseline}
-\end{figure}
+deviation can be estimated from monitoring data, as is shown in \autoref{fig:random-traces}.
 
 \subsection{Random traces}
 \label{ssec:random-traces}
@@ -97,17 +89,19 @@ form of the spectral density is compatible with at least two noise models, that 
 \begin{itemize}
 	\item  $\mathbf{| \hat{f}(\xi) | ^{2} \propto \exp\left(\frac{(\xi - \mu)^2}{2\sigma^2}\right)}$. The spectral density is Gaussian. This implies the noise is 
 	Gaussian distributed as well, confirming the assumption in \autoref{ssec:electronic-noise}.
-	\item $\mathbf{| \hat{f}(\xi) | ^{2} \propto} \exp\left(-m\xi + b\right)$. The spectral density is proportional to $\xi^{-n}$ for some power $n$. The case $n = 2$
-	($\SI[per-mode=symbol]{-6}{\deci\bel\per\octave}$ attenuation) seems to describe the observations well, hinting that the generating function could be Brownian.
+	\item $\mathbf{| \hat{f}(\xi) | ^{2} \propto} \exp\left(-m\xi + b\right)$. The spectral density is proportional to $\xi^{-n}$ for some power $n$. The case 
+    $n = 2$ ($\SI[per-mode=symbol]{-6}{\deci\bel\per\octave}$ attenuation) seems to describe the observations well, hinting that the generating function could be 
+    Brownian.
 
 \end{itemize}
 
 \begin{figure}
 	\centering
-	\includegraphics[width=0.8\textwidth]{./plots/random_trace_spectral_density.png}
-	\caption{The random trace spectral density for two stations. Plotted with a dashed black line is reference attenuation curve falling at 
+	\includegraphics[width=0.8\textwidth]{./plots/fft_variance_plot_combined.png}
+	\caption{(\textit{Left}) The random trace spectral density for two stations. Plotted with a dashed black line is reference attenuation curve falling at 
 	$\SI[per-mode=symbol]{-6}{\deci\bel\per\octave}$. The spike at \SI{10}{\mega\hertz} is of unknown origin and represents systematic noise in the UUB 
-	electronics.}
+	electronics. (\textit{Right}) Example variance of all UUB stations in the surface detector array. The data shown in this plot was recorded on November 15th 
+    2022 and is collected regularly via monitoring processes.}
 	\label{fig:random-traces}
 \end{figure}
 
@@ -120,18 +114,52 @@ information, the baseline is substracted from each FADC bin. This is done via th
 \autoref{ssec:online-calibration}). However, the difference is negligible ($<<\,\SI{1}{\ADC}$) for traces that do not contain any signal, which is the case for the 
 vast majority of the dataset.
 
-Next, the baseline-substracted time traces are converted from units of $\SI{}{\ADC}$ to $\SI{}{\Peak}$. This conversion is not straight forward however, as it 
-requires knowledge of \Ipeak at the time of data taking. Each station estimates this value in periodic time intervals in the context of monitoring diagnostics.
+Next, the baseline-substracted time traces are converted from units of $\SI{}{\ADC}$ to $\SI{}{\Peak}$. This conversion is not straight forward, as it requires 
+knowledge of \Ipeak at the time of data taking. Each station estimates this value in periodic time intervals in the context of monitoring diagnostics.
 
 For the second dataset of random traces (taken from 14th-18th November 2022) a UNIX timestamp packaged with each time trace may be related to monitoring data. This 
-reveals that no information regarding \Ipeak was forwarded to CDAS for any station while it recorded random traces. This unfortunately renders the entire dataset 
-useless in the context of this work.
+reveals that no information regarding \Ipeak was forwarded to CDAS for any station while it recorded random traces. As a result, the entire dataset is unfortunately 
+rendered useless for this work.
 
-For the first collection of random traces, monitoring data is available, but there exists no timing information for the individual traces. The elected procedure to 
-evaluate data as accurately as possible is thus to calculate the day average of \Ipeak and \Qpeak
+For the first collection of random traces, monitoring data is available, but there exists no timing information for the individual traces. Only the date of the 
+measurement is known. The elected procedure to evaluate data as accurately as possible is thus to calculate the day average of \Ipeak and \Qpeak and take this as 
+the best (first) estimate for each trace. As can be seen in \autoref{fig:random-trace-diagnostics}, this eliminates half of the remaining dataset, as two of the four 
+stations show a large variance in \Ipeak. The day average in these particular cases is not a good estimator for calibration purposes. For this reason, only random 
+traces from the stations Nuria and Le Qui Don, measured in the March dataset, are used for analysis purposes.
 
-\todo{procedure}
-\todo{rate mismatch}
+To crosscheck that these traces are \todo{continue}
+
+\begin{landscape}
+    \begin{figure*}
+        \centering
+        \begin{subfigure}[b]{0.5\textwidth}
+			\hspace{-4cm}
+            \centering
+            \includegraphics[width=0.7\textheight]{./plots/random_trace_diagnostics_nuria.png}
+        \end{subfigure}
+        % \hfill
+        \begin{subfigure}[b]{0.5\textwidth}  
+            \centering 
+            \includegraphics[width=0.7\textheight]{./plots/random_trace_diagnostics_le_qui_don.png}
+        \end{subfigure}
+        \vskip\baselineskip
+        \begin{subfigure}[b]{0.5\textwidth}
+			\hspace{-4cm} 
+            \centering 
+            \includegraphics[width=0.7\textheight]{./plots/random_trace_diagnostics_peru.png}
+        \end{subfigure}
+        % \hfill
+        \begin{subfigure}[b]{0.5\textwidth}   
+            \centering 
+            \includegraphics[width=0.7\textheight]{./plots/random_trace_diagnostics_jaco.png}
+        \end{subfigure}
+        \caption{Monitoring values for the four stations available in the random trace dataset measured in March '22. The bottom two stations show a large variance
+		in \Ipeak for at least one PMT. The two stations in the first row (Nuria, Le Qui Don) are more stable ($\sigma\,/\,\mu < 1\%$).} 
+        \label{fig:random-trace-diagnostics}
+    \end{figure*}
+\end{landscape}
+
+\todo{rate mismatch new plot}
 
 \section{Signal dataset}
 \label{sec:signal-dataset}

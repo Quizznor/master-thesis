@@ -1,16 +1,16 @@
-JobBatchName    = th2_threshold_test-nuria
+JobBatchName    = production_test-nuria
 Executable      = /cr/users/filip/Trigger/RunProductionTest/run_production_test.py
 
-error           = /cr/users/filip/Trigger/RunProductionTest/output/errors-$(Process).err
-output          = /cr/users/filip/Trigger/RunProductionTest/output/output-$(Process).out
-log             = /cr/users/filip/Trigger/RunProductionTest/output/logfle-$(Process).log
+# error           = /cr/users/filip/Trigger/RunProductionTest/output/errors-$(Process).err
+# output          = /cr/users/filip/Trigger/RunProductionTest/output/output-$(Process).out
+# log             = /cr/users/filip/Trigger/RunProductionTest/output/logfle-$(Process).log
 
 Requirements	= (OpSysName == "Ubuntu" && OpSysMajorVer == 22)
 
 arguments       = $(Process)
 # arguments     = $(Item) $(Process1)
 request_memory  = 2G
-max_idle        = 150
+max_idle        = 500
 
 # NURIA - 798
 # LOQUI - 4000

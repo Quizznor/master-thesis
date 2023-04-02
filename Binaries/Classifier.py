@@ -38,8 +38,8 @@ class Classifier():
 
                     n_total_triggered += 1
 
-                    if n_total_triggered < 100: 
-                        self.plot_trace_window(window, n_total_triggered, start_time, downsample)
+                    # if n_total_triggered < 100: 
+                    #     self.plot_trace_window(window, n_total_triggered, start_time, downsample)
 
                     # perhaps skipping the entire trace isn't exactly accurate
                     # but then again just skipping one window seems wrong also

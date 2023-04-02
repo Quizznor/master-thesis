@@ -122,26 +122,44 @@ class RandomTrace():
 
 class HardwareClassifier():
 
+    def __init__(self, triggers : list = ["th2", "tot", "totd", "mops"], name : str = False) : 
+        self.triggers = []
+
+        if "th" in triggers: self.triggers.append(self.Th1)
+        if "th2" in triggers: self.triggers.append(self.Th2)
+        if "tot" in triggers: self.triggers.append(self.ToT)
+        if "totd" in triggers: self.triggers.append(self.ToTd)
+        if "mops" in triggers: self.triggers.append(self.MoPS_compatibility)
+
     def __call__(self, trace : np.ndarray) -> bool : 
         
-        # Threshold of 3.2 immediately gets promoted to T2
-        # Threshold of 1.75 if a T3 has already been issued
-
         try:
-            return self.Th(3.2, trace) or self.ToT(trace) or self.ToTd(trace) or self.MoPS(trace)
+            for trigger in self.triggers:
+                if trigger(trace): return True
+            else: return False
+
         except ValueError:
             return np.array([self.__call__(t) for t in trace])
 
-    # method to check for (coincident) absolute signal threshold
-    def Th(self, threshold : float, signal : np.ndarray) -> bool : 
+    def Th1(self, signal) -> bool : 
+        return self.Th(signal, 1.7)
 
+    def Th2(self, signal) -> bool : 
+        return self.Th(signal, 3.2)
+
+    # method to check for (coincident) absolute signal threshold
+    @staticmethod
+    def Th(signal : np.ndarray, threshold : float) -> bool : 
+
+        # Threshold of 3.2 immediately gets promoted to T2
+        # Threshold of 1.75 if a T3 has already been issued
         pmt_1, pmt_2, pmt_3 = signal
 
         # hierarchy doesn't (shouldn't?) matter
         for i in range(signal.shape[1]):
-            if pmt_1[i] >= threshold:
-                if pmt_2[i] >= threshold:
-                    if pmt_3[i] >= threshold:
+            if pmt_1[i] > threshold:
+                if pmt_2[i] > threshold:
+                    if pmt_3[i] > threshold:
                         return True
                     else: continue
                 else: continue
@@ -150,9 +168,11 @@ class HardwareClassifier():
         return False
 
     # method to check for elevated baseline threshold trigger
-    def ToT(self, signal : np.ndarray) -> bool : 
+    @staticmethod
+    def ToT(signal : np.ndarray) -> bool : 
 
-        threshold     = 0.2      # bins above this threshold are 'active'
+        threshold     = 0.2                                                         # bins above this threshold are 'active'
+        n_bins        = 13                                                          # minimum number of bins above threshold
 
         pmt_1, pmt_2, pmt_3 = signal
 
@@ -160,7 +180,7 @@ class HardwareClassifier():
         pmt1_active = list(pmt_1 > threshold).count(True)
         pmt2_active = list(pmt_2 > threshold).count(True)
         pmt3_active = list(pmt_3 > threshold).count(True)
-        ToT_trigger = [pmt1_active >= 13, pmt2_active >= 13, pmt3_active >= 13]
+        ToT_trigger = [pmt1_active >= n_bins, pmt2_active >= n_bins, pmt3_active >= n_bins]
 
         if ToT_trigger.count(True) >= 2:
             return True
@@ -169,7 +189,8 @@ class HardwareClassifier():
 
     # method to check for elevated baseline of deconvoluted signal
     # note that this only ever gets applied to UB-like traces, with 25 ns binning
-    def ToTd(self, signal : np.ndarray) -> bool : 
+    @staticmethod
+    def ToTd(signal : np.ndarray) -> bool : 
 
         # for information on this see GAP note 2018-01
         dt      = 25                                                                # UB bin width
@@ -181,61 +202,96 @@ class HardwareClassifier():
             deconvoluted_pmt = [(pmt[i] - pmt[i-1] * decay)/(1 - decay) for i in range(1,len(pmt))]
             deconvoluted_trace.append(deconvoluted_pmt)
  
-        return self.ToT(np.array(deconvoluted_trace))
+        return HardwareClassifier.ToT(np.array(deconvoluted_trace))
+    
+    # count the number of rising flanks in a trace
+    # WARNING: THIS IMPLEMENTATION IS NOT CORRECT!
+    @staticmethod
+    def MoPS_compatibility(signal : np.ndarray) -> bool : 
 
-    # method to count positive flanks in an FADC trace
-    def MoPS(self, signal : np.ndarray) -> bool : 
+        # assumes we're fed 120 bin trace windows
+        y_min, y_max = 3, 31                                                        # only accept y_rise in this range
+        min_slope_length = 2                                                        # minimum number of increasing bins
+        min_occupancy = 4                                                           # positive steps per PMT for trigger
+        pmt_multiplicity = 2                                                        # required multiplicity for PMTs
+        pmt_active_counter = 0                                                      # actual multiplicity for PMTs
+        integral_check = 75 * 120/250                                               # integral must pass this threshold
 
-        # as per GAP note 2018-01; an exact offline reconstruction of the trigger is not possible
-        # Can this be fixed in some way? perhaps with modified integration threshold INT?
-        return False 
+
+        for pmt in signal:
+
+            # check for the modified integral first, computationally easier
+            if sum(pmt) * GLOBAL.q_peak <= integral_check: continue
+            
+            occupancy = 0
+            positive_steps = np.nonzero(np.diff(pmt) > 0)[0]
+            steps_isolated = np.split(positive_steps, np.where(np.diff(positive_steps) != 1)[0] + 1)
+            candidate_flanks = [step for step in steps_isolated if len(step) >= min_slope_length]
+            candidate_flanks = [np.append(flank, flank[-1] + 1) for flank in candidate_flanks]
+
+            for i, flank in enumerate(candidate_flanks):
+
+                # adjust searching area after encountering a positive flank
+                total_y_rise = (pmt[flank[-1]] - pmt[flank[0]]) * GLOBAL.q_peak
+                n_continue_at_index = flank[-1] + max(0, int(np.log2(total_y_rise) - 2))
+
+                for j, consecutive_flank in enumerate(candidate_flanks[i + 1:], 0):
+
+                    if n_continue_at_index <= consecutive_flank[0]: break                                                       # no overlap, no need to do anything
+                    elif consecutive_flank[0] < n_continue_at_index <= consecutive_flank[-1]:                                   # partial overlap, adjust next flank
+                        overlap_index = np.argmin(np.abs(consecutive_flank - n_continue_at_index))
+                        candidate_flanks[i + j] = candidate_flanks[i + j][overlap_index:]
+                        if len(candidate_flanks[i + j]) < min_slope_length: _ = candidate_flanks.pop(i + j)
+                        break
+
+                    elif consecutive_flank[-1] < n_continue_at_index:                                                           # complete overlap, discard next flank
+                        _ = candidate_flanks.pop(i + j)
+
+                if total_y_rise > y_min and total_y_rise < y_max: occupancy += 1
+            if occupancy > min_occupancy: pmt_active_counter += 1
+            
+        return pmt_active_counter >= pmt_multiplicity
 
 
-def apply_downsampling(trace):
+def apply_downsampling(pmt : np.ndarray, random_phase : int) -> np.ndarray :
 
-        # ensure downsampling works as intended
-        # cuts away (at most) the last two bins
-        if trace.shape[-1] % 3 != 0:
-            trace = np.array([pmt[0 : -(trace.shape[-1] % 3)] for pmt in trace])
+    n_bins_uub      = (len(pmt) // 3) * 3               # original trace length
+    n_bins_ub       = n_bins_uub // 3                   # downsampled trace length
+    sampled_trace   = np.zeros(n_bins_ub)               # downsampled trace container
+    kADCsaturation = 4095                               # HG max saturation bin value
 
-        # see /cr/data01/filip/offline/trunk/Framework/SDetector/UUBDownsampleFilter.h for more information
-        kFirCoefficients = [ 5, 0, 12, 22, 0, -61, -96, 0, 256, 551, 681, 551, 256, 0, -96, -61, 0, 22, 12, 0, 5 ]
-        buffer_length = int(0.5 * len(kFirCoefficients))
-        kFirNormalizationBitShift = 11
-        # kADCsaturation = 4095                             # bit shift not really needed
+    # ensure downsampling works as intended
+    # cuts away (at most) the last two bins
+    if len(pmt) % 3 != 0: pmt = pmt[0 : -(len(pmt) % 3)]
 
-        n_bins_uub      = np.shape(trace)[1]                # original trace length
-        n_bins_ub       = int(n_bins_uub / 3)               # downsampled trace length
-        sampled_trace   = np.zeros((3, n_bins_ub))          # downsampled trace container
+    # see Framework/SDetector/UUBDownsampleFilter.h in Offline main branch for more information
+    kFirCoefficients = [ 5, 0, 12, 22, 0, -61, -96, 0, 256, 551, 681, 551, 256, 0, -96, -61, 0, 22, 12, 0, 5 ]
+    buffer_length = int(0.5 * len(kFirCoefficients))
+    kFirNormalizationBitShift = 11
 
-        temp = np.zeros(n_bins_uub + len(kFirCoefficients))
+    temp = np.zeros(n_bins_uub + len(kFirCoefficients))
 
-        for i_pmt, pmt in enumerate(trace):
+    temp[0 : buffer_length] = pmt[:: -1][-buffer_length - 1 : -1]
+    temp[-buffer_length - 1: -1] = pmt[:: -1][0 : buffer_length]
+    temp[buffer_length : -buffer_length - 1] = pmt
 
-            temp[0 : buffer_length] = pmt[:: -1][-buffer_length - 1 : -1]
-            temp[-buffer_length - 1: -1] = pmt[:: -1][0 : buffer_length]
-            temp[buffer_length : -buffer_length - 1] = pmt
+    # perform downsampling
+    for j, coeff in enumerate(kFirCoefficients):
+        sampled_trace += [temp[k + j] * coeff for k in range(random_phase, n_bins_uub, 3)]
 
-            # perform downsampling
-            for j, coeff in enumerate(kFirCoefficients):
-                sampled_trace[i_pmt] += [temp[k + j] * coeff for k in range(0, n_bins_uub, 3)]
+    # clipping and bitshifting
+    sampled_trace = [int(adc) >> kFirNormalizationBitShift for adc in sampled_trace]
 
-        # clipping and bitshifting
-        for i, pmt in enumerate(sampled_trace):
-            for j, adc in enumerate(pmt):
-                sampled_trace[i,j] = np.clip(int(adc) >> kFirNormalizationBitShift, a_min = -20, a_max = None)              # why clip necessary, why huge negative values?
-
-        return sampled_trace
-
-print("test", sys.argv[1])
+    # Simulate saturation of PMTs at 4095 ADC counts ~ 19 VEM <- same for HG/LG? I doubt it
+    return np.clip(np.array(sampled_trace), a_min = -10, a_max =  kADCsaturation)
 
 station = "nuria"
 
 i = int(sys.argv[1])
 trace_duration = GLOBAL.n_bins * GLOBAL.single_bin_duration
 
-window_start = range(0, 682 - 120, 60)
-window_stop = range(120, 682, 60)
+window_start = range(0, 682 - 120, 10)
+window_stop = range(120, 682, 10)
 Trigger = HardwareClassifier()
 
 Buffer = RandomTrace(station = station, index = i)
@@ -243,7 +299,7 @@ n_traces = len(Buffer._these_traces)
 duration = n_traces * trace_duration
 
 percentages = [-16, -14, -13, -12, -11, -8, -6, -4, -2, -1, 0, 1, 2, 4, 8, 16]
-percentages += list(np.arange(-50, -25, 5)) + list(np.arange(20, 101, 5))
+# percentages += list(np.arange(-50, -25, 5)) + list(np.arange(20, 101, 5))
 percentages = np.array(percentages) * 1e-2
 
 # # increments = np.array([-4, -2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20])
@@ -258,33 +314,21 @@ for percentage in percentages:
     for j, trace in enumerate(Buffer._these_traces):
 
         # apply downsampling to trace
-        downsampled_trace = np.array([(apply_downsampling(trace)[k]) / (Buffer.q_peak[k] * (1 + percentage)) for k in range(3)])
+        downsampled_trace = np.array([(apply_downsampling(trace[k], np.random.randint(3))) / (Buffer.q_peak[k] * (1 + percentage)) for k in range(3)])
         # downsampled_trace = np.array([(apply_downsampling(trace)[k] + increment) / Buffer.q_peak[k] for k in range(3)])
 
         # split trigger procedure up into different chunks due to performance
-        if Trigger.Th(3.2, downsampled_trace):
-            n_trigger += 1
-            n_th += 1
-        else:
-            # ToT, ToTd implicitly assumes chunks of 120 bins
-            for (start, stop) in zip(window_start, window_stop):
-                window = downsampled_trace[:, start : stop]
-
-                if Trigger.ToT(window):
-                    n_trigger += 1
-                    n_tot += 1
-                    break
-                
-                elif Trigger.ToTd(window):
-                    n_trigger += 1
-                    n_totd += 1
-                    break
+        for (start, stop) in zip(window_start, window_stop):
+            window = downsampled_trace[:, start : stop]
+            if Trigger(window):
+                n_trigger += 1
+                break
 
     perc_str = str(int(percentage * 100)).replace('-','')
-    print(f"/cr/users/filip/Trigger/RunProductionTest/trigger_output/{station}/{station}_all_triggers_{pm}{perc_str}.csv")
+    print(f"/cr/users/filip/Trigger/RunProductionTest/trigger_output_with_mops/{station}/{station}_all_triggers_with_mops_{pm}{perc_str}.csv")
 
-    with open(f"/cr/users/filip/Trigger/RunProductionTest/trigger_output/{station}/{station}_all_triggers_{pm}{perc_str}.csv", "a") as f:
-        f.write(f"{Buffer.random_file} {n_traces} {duration} {n_trigger} {n_th} {n_tot} {n_totd}\n")
+    with open(f"/cr/users/filip/Trigger/RunProductionTest/trigger_output_with_mops/{station}/{station}_all_triggers_with_mops_{pm}{perc_str}.csv", "a") as f:
+        f.write(f"{Buffer.random_file} {n_traces} {duration} {n_trigger}\n")
 
     # inc_str = str(increment).replace('-','')
     # with open(f"/cr/users/filip/Trigger/RunProductionTest/trigger_output/{station}/trace_increment/{station}_all_triggers_{pm}{inc_str}.csv", "a") as f:

@@ -8,7 +8,7 @@
 # CNN = Ensemble("120_TwoLayer_FullBandwidth_AllEnergies_NoCuts", "two_layer_conv2d")
 # CNN.train(Events, 10)
 
-# # second simulation
+# second simulation
 from Binaries import *
 plt.rcParams["text.usetex"] = False
 
