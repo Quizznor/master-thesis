@@ -257,7 +257,6 @@ void DoLtpCalculation(fs::path pathToAdst)
         tot_hits[binIndex] += T2ToTFlag;
         totd_hits[binIndex] += T2ToTdFlag;
         mops_hits[binIndex] += T2MoPSFlag;
-
       }
       else
       {
@@ -269,12 +268,12 @@ void DoLtpCalculation(fs::path pathToAdst)
     // save shower metadata to intermediate file. Put "0" in first 
     // column such that row 0 has the same shape as later rows
     ofstream saveFile(csvTraceFile, std::ios_base::app);
-    saveFile << "0 " << log10(showerEnergy) << " " << showerZenith << " 0 0 0 0\n";
+    saveFile << "0 " << log10(showerEnergy) << " " << showerZenith << " 0 0 0 0 0\n";
 
     for (int i = 0; i < 65; i++)
     {
       // std::cout << "<" << (i+1) * 100 << "m: " << hits[i] << " " << misses[i] << std::endl;
-      saveFile << (i + 1) * 100 << " " << all_hits[i] << " " << misses[i] << " " << th1_hits[i] << " " << th2_hits[i] << " " << tot_hits[i] << " " << mops_hits[i] << "\n";
+      saveFile << (i + 1) * 100 << " " << all_hits[i] << " " << misses[i] << " " << th1_hits[i] << " " << th2_hits[i] << " " << tot_hits[i] << " " << totd_hits[i] << " " << mops_hits[i] << "\n";
     }
 
     saveFile.close();

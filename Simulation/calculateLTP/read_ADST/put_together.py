@@ -17,17 +17,17 @@ totd_sorted = [[ np.zeros(65) for t in range(len(theta_bins) - 1) ] for e in ran
 mops_sorted = [[ np.zeros(65) for t in range(len(theta_bins) - 1) ] for e in range(len(energy_bins) - 1)]
 files_missed = 0
 
-steps = len(os.listdir(root_path))
+steps = os.listdir(root_path)
 
-for k, file in enumerate(os.listdir(root_path)):
+for k, file in enumerate(steps):
 
-    print(f"Adding file {k}/{steps}: {100 * (k + 1)/steps:.2f}%", end = "\r")
+    print(f"Adding file {k}/{len(steps)}: {100 * (k + 1)/len(steps):.2f}%", end = "\r")
 
-    data = np.loadtxt(root_path + "/" + file, usecols = [1, 2, 3, 4, 5])
+    data = np.loadtxt(root_path + "/" + file, usecols = [1, 2, 3, 4, 5, 6, 7], max_rows = 66)
 
     #   saveFile << (i + 1) * 100 << " " << all_hits[i] << " " << misses[i] << " " << th1_hits[i] << " " << th2_hits[i] << " " << tot_hits[i] << " " << mops_hits[i] << "\n";
-    _, log_e, theta, _, _, _, _ = data[0]
-    hits, misses, th1, th2, tot, totd = data[1:, 0], data[1:, 1], data[1:, 2], data[1:, 3], data[1:, 4]
+    log_e, theta, _, _, _, _, _ = data[0]
+    hits, misses, th1, th2, tot, totd, mops = data[1:, 0], data[1:, 1], data[1:, 2], data[1:, 3], data[1:, 4], data[1:, 5], data[1:, 6]
 
     t, e = np.digitize(theta, theta_bins), np.digitize(log_e, energy_bins)
 
@@ -40,7 +40,7 @@ for k, file in enumerate(os.listdir(root_path)):
         totd_sorted[e - 1][t - 1] += totd
     except IndexError: files_missed += 1
 
-print("files missed:", files_missed)
+print("files missed:                                            ", files_missed)
 
 # save all gathered data
 for e_bin in range(1, len(energy_bins)):

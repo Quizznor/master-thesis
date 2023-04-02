@@ -1,0 +1,52 @@
+lstat(./luatex) failed: ./luatex: No such file or directory
+kpathsea: Can't get directory of program name: ./luatex
+Traceback (most recent call last):
+  File "/home/tmp/condor//dir_193824/condor_exec.exe", line 7, in <module>
+    CNN.train(Events, 10)
+  File "/home/tmp/condor/dir_193824/Binaries/Classifier.py", line 1020, in train
+    instance.train(Datasets, epochs)
+  File "/home/tmp/condor/dir_193824/Binaries/Classifier.py", line 935, in train
+    f, df, n, n_trig, t = self.production_test(60000)
+  File "/home/tmp/condor/dir_193824/Binaries/Classifier.py", line 42, in production_test
+    self.plot_trace_window(window, n_total_triggered, start_time, downsample)
+  File "/home/tmp/condor/dir_193824/Binaries/Classifier.py", line 78, in plot_trace_window
+    plt.tight_layout()
+  File "/usr/lib/python3/dist-packages/matplotlib/pyplot.py", line 2302, in tight_layout
+    return gcf().tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad, rect=rect)
+  File "/usr/lib/python3/dist-packages/matplotlib/figure.py", line 3197, in tight_layout
+    kwargs = get_tight_layout_figure(
+  File "/usr/lib/python3/dist-packages/matplotlib/tight_layout.py", line 320, in get_tight_layout_figure
+    kwargs = _auto_adjust_subplotpars(fig, renderer,
+  File "/usr/lib/python3/dist-packages/matplotlib/tight_layout.py", line 82, in _auto_adjust_subplotpars
+    bb += [ax.get_tightbbox(renderer, for_layout_only=True)]
+  File "/usr/lib/python3/dist-packages/matplotlib/axes/_base.py", line 4619, in get_tightbbox
+    bb_xaxis = self.xaxis.get_tightbbox(
+  File "/usr/lib/python3/dist-packages/matplotlib/axis.py", line 1105, in get_tightbbox
+    self._update_label_position(renderer)
+  File "/usr/lib/python3/dist-packages/matplotlib/axis.py", line 2083, in _update_label_position
+    bboxes, bboxes2 = self._get_tick_boxes_siblings(renderer=renderer)
+  File "/usr/lib/python3/dist-packages/matplotlib/axis.py", line 1881, in _get_tick_boxes_siblings
+    tlb, tlb2 = axis._get_tick_bboxes(ticks_to_draw, renderer)
+  File "/usr/lib/python3/dist-packages/matplotlib/axis.py", line 1085, in _get_tick_bboxes
+    return ([tick.label1.get_window_extent(renderer)
+  File "/usr/lib/python3/dist-packages/matplotlib/axis.py", line 1085, in <listcomp>
+    return ([tick.label1.get_window_extent(renderer)
+  File "/usr/lib/python3/dist-packages/matplotlib/text.py", line 910, in get_window_extent
+    bbox, info, descent = self._get_layout(self._renderer)
+  File "/usr/lib/python3/dist-packages/matplotlib/text.py", line 309, in _get_layout
+    _, lp_h, lp_d = renderer.get_text_width_height_descent(
+  File "/usr/lib/python3/dist-packages/matplotlib/backends/backend_agg.py", line 259, in get_text_width_height_descent
+    w, h, d = texmanager.get_text_width_height_descent(
+  File "/usr/lib/python3/dist-packages/matplotlib/texmanager.py", line 338, in get_text_width_height_descent
+    page, = dvi
+  File "/usr/lib/python3/dist-packages/matplotlib/dviread.py", line 237, in __iter__
+    while self._read():
+  File "/usr/lib/python3/dist-packages/matplotlib/dviread.py", line 316, in _read
+    self._dtable[byte](self, byte)
+  File "/usr/lib/python3/dist-packages/matplotlib/dviread.py", line 166, in wrapper
+    return method(self, *[f(self, byte-min) for f in get_args])
+  File "/usr/lib/python3/dist-packages/matplotlib/dviread.py", line 467, in _fnt_def
+    self._fnt_def_real(k, c, s, d, a, l)
+  File "/usr/lib/python3/dist-packages/matplotlib/dviread.py", line 474, in _fnt_def_real
+    raise FileNotFoundError("missing font metrics file: %s" % fontname)
+FileNotFoundError: missing font metrics file: cmss17

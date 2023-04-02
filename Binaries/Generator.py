@@ -1,5 +1,6 @@
 from .__config__ import *
 from .Signal import *
+from .Classifier import *
 
 # Wrapper for the Generator class
 class EventGenerator():
@@ -115,12 +116,11 @@ class EventGenerator():
             for item in user_choice:
                 all_files.append(EventGenerator.get_signal_files(item))
 
-        else:
+        # check Ensemble first, due to Ensemble.__super__ == NNClassifier evaluating to true
+        elif isinstance(user_choice, Ensemble): all_files = user_choice.models[0].get_files("validation")   # add validation files from ensemble            
+        elif isinstance(user_choice, NNClassifier): all_files =  user_choice.get_files("validation")        # add validation files from classifier
 
-            # isinstance(datasets, NNClassifier) would be more convenient, but this isn't defined yet
-            if hasattr(user_choice, "epochs"): all_files =  user_choice.get_files("validation")             # add validation files from classifier
-
-            else: raise NotImplementedError(f"input {type(user_choice)} is not supported as argument for 'dataset'")
+        else: raise NotImplementedError(f"input {type(user_choice)} is not supported as argument for 'dataset'")
         
         random.shuffle(all_files)
         return all_files

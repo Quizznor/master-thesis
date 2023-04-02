@@ -14,7 +14,7 @@ AWK_CMD=$INPUT$PATTERN$OUTPUT$SEED
 
 # echo $3/$4.root
 
-if [ ! -f "$3/$4_$6.root" ]
+if [ ! -f $3$4_$6.root ]
 then
     # Prepare bootstrap
     awk -v FILE=$2$1 -v PATTERN1="$7" -v PATTERN2="$8" -v NAME=$4 -v ENERGY=$5 -v DSEED=$6 -v PSEED="00000$(( $6 + 1 ))" "$AWK_CMD" $BOOTSTRAP_SRC > $BOOTSTRAP

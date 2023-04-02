@@ -14,23 +14,23 @@ class Classifier():
     def __call__(self) -> int : raise NotImplementedError
 
     # test the trigger rate of the classifier on random traces
-    def production_test(self, n_showers : int = 10000, **kwargs) -> None :
+    def production_test(self, n_traces : int = 10000, **kwargs) -> tuple :
 
         n_total_triggered = 0
-        total_trace_duration = GLOBAL.trace_length * GLOBAL.single_bin_duration * n_showers
+        total_trace_duration = GLOBAL.trace_length * GLOBAL.single_bin_duration * n_traces
         start_time = str(datetime.now()).replace(" ", "-")[:-10]
 
         os.system(f"mkdir -p /cr/users/filip/plots/production_tests/{self.name.replace('/','-')}/{start_time}/")
 
         RandomTraces = EventGenerator(["19_19.5"], split = 1, force_inject = 0, real_background = True, prior = 0, **kwargs)
         downsample = kwargs.get("apply_downsampling", False)
-        RandomTraces.files = np.zeros(n_showers)
+        RandomTraces.files = np.zeros(n_traces)
 
         start = perf_counter_ns()
 
         for batch, trace in enumerate(RandomTraces):
 
-            progress_bar(batch, n_showers, start)
+            progress_bar(batch, n_traces, start)
 
             for window in trace[0]:
 
@@ -51,11 +51,13 @@ class Classifier():
 
         print("\n\nProduction test results:")
         print("")
-        print(f"random traces injected: {n_showers}")
+        print(f"random traces injected: {n_traces}")
         print(f"summed traces duration: {total_trace_duration:.4}s")
         print(f"total T2 trigger found: {n_total_triggered}")
         print(f"*********************************")
         print(f"TRIGGER FREQUENCY = {trigger_frequency:.2f} +- {frequency_error:.2f} Hz")
+
+        return trigger_frequency, frequency_error, n_traces, n_total_triggered, total_trace_duration
 
     # helper function that saves triggered trace windows for production_test()
     def plot_trace_window(self, trace : np.ndarray, index : int, start_time : str, downsampled : bool) -> None : 
@@ -79,7 +81,7 @@ class Classifier():
         plt.cla()
 
     # calculate performance for a given set of showers
-    def make_signal_dataset(self, Dataset : Generator, save_dir : str, n_showers : int = None, save_traces : bool = False) -> None : 
+    def make_signal_dataset(self, Dataset : "Generator", save_dir : str, n_showers : int = None, save_traces : bool = False) -> None : 
 
         if save_traces: raise NotImplementedError("Not implemented at the moment due to rework")
 
@@ -675,8 +677,6 @@ class Classifier():
     
     # Performance visualizers #######################################################################
 
-from .Testing import *
-
 # Wrapper for tf.keras.Sequential model with some additional functionalities
 class NNClassifier(Classifier):
 
@@ -877,6 +877,7 @@ class NNClassifier(Classifier):
                 self.model = tf.keras.Sequential()
                 self.models[set_architecture](self.Architectures, self.model)
                 self.model.build()
+                
             # ValueError is raised for LSTM due to different initialization
             except TypeError:
                 self.model = self.models[set_architecture](self.Architectures)
@@ -902,9 +903,9 @@ class NNClassifier(Classifier):
         training_status = "normally"
         TrainingSet, ValidationSet = Datasets
 
-        print("Creating physics information for both datasets...")
-        TrainingSet.physics_test(n_showers = int(0.05 * TrainingSet.__len__()), save_dir = f"/cr/data01/filip/models/{self.name}/training_set_physics_test.png")
-        ValidationSet.physics_test(n_showers = int(0.2 * ValidationSet.__len__()), save_dir = f"/cr/data01/filip/models/{self.name}/validation_set_physics_test.png")
+        # print("Creating physics information for both datasets...")
+        # TrainingSet.physics_test(n_showers = int(0.05 * TrainingSet.__len__()), save_dir = f"/cr/data01/filip/models/{self.name}/training_set_physics_test.png")
+        # ValidationSet.physics_test(n_showers = int(0.2 * ValidationSet.__len__()), save_dir = f"/cr/data01/filip/models/{self.name}/validation_set_physics_test.png")
 
         try:
 
@@ -928,6 +929,15 @@ class NNClassifier(Classifier):
         # provide some metadata
         print(f"\nTraining exited {training_status}. Onto providing metadata now...")
         self.make_signal_dataset(ValidationSet, f"validation_data")
+
+        # calculate trigger rate on random traces
+        print(f"\ncalculating trigger rate on 1s (~60 000 Hz) of random traces now")
+        f, df, n, n_trig, t = self.production_test(60000)
+
+        with open(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/production_test.csv", "w") as random_file:
+            random_file.write("# f  df  n_traces  n_total_triggered  total_trace_duration")
+            random_file.write(f"{f} {df} {n} {n_trig} {t}")
+
 
     def save(self) -> None : 
         self.model.save(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}")
@@ -978,6 +988,10 @@ class Ensemble(NNClassifier):
         * *early_stopping_patience* (``int``) -- number of batches without improvement before training is stopped
         '''
 
+        try:
+            os.mkdir(f"/cr/data01/filip/models/ENSEMBLES/{name}")
+        except FileExistsError: pass
+
         supress_print = False
         self.models = []
 
@@ -1008,6 +1022,9 @@ class Ensemble(NNClassifier):
             Datasets[0].__reset__()
             Datasets[1].__reset__()
 
+    def save(self) -> None : 
+        for model in self.models: model.save()
+
     def __call__(self, trace : np.ndarray) -> list :
 
         return [model(trace) for model in self.models]
@@ -1025,6 +1042,8 @@ class Ensemble(NNClassifier):
         return predictions
 
     def ROC(self, dataset : str, **kwargs : dict) -> None :
+
+        raise NotImplementedError
 
         warning_orange = '\033[93m'
         end_color_code = '\033[0m'
@@ -1096,6 +1115,8 @@ class Ensemble(NNClassifier):
 
     def PRC(self, dataset : str) -> None :
 
+        raise NotImplementedError
+
         try:
             if header_was_called: pass
 
@@ -1106,15 +1127,21 @@ class Ensemble(NNClassifier):
 
             model.PRC(dataset, title = f"{self.name}", label = f"model instance {i}")
 
-# Wrapper for currently employed station-level triggers (T1, T2, ToT, etc.)
+    def make_signal_dataset(self, Dataset: "Generator", save_dir: str, n_showers: int = None, save_traces: bool = False) -> None:
+        
+        for model in self.models:
+            model.make_signal_dataset(Dataset, save_dir, n_showers, save_traces)
+
+# Wrapper for currently employed station-level triggers (Th1, Th2, ToT, etc.)
 # Information on magic numbers comes from Davids Mail on 10.03.22 @ 12:30pm
 class HardwareClassifier(Classifier):
 
-    def __init__(self, triggers : list = ["th", "tot", "totd", "mops"], name : str = False) : 
+    def __init__(self, triggers : list = ["th2", "tot", "totd", "mops"], name : str = False) : 
         super().__init__(name or "HardwareClassifier")
         self.triggers = []
 
-        if "th" in triggers: self.triggers.append(self.Th)
+        if "th" in triggers: self.triggers.append(self.Th1)
+        if "th2" in triggers: self.triggers.append(self.Th2)
         if "tot" in triggers: self.triggers.append(self.ToT)
         if "totd" in triggers: self.triggers.append(self.ToTd)
         if "mops" in triggers: self.triggers.append(self.MoPS_compatibility)
@@ -1129,14 +1156,18 @@ class HardwareClassifier(Classifier):
         except ValueError:
             return np.array([self.__call__(t) for t in trace])
 
+    def Th1(self, signal) -> bool : 
+        return self.Th(signal, 1.7)
+
+    def Th2(self, signal) -> bool : 
+        return self.Th(signal, 3.2)
+
     # method to check for (coincident) absolute signal threshold
     @staticmethod
-    def Th(signal : np.ndarray) -> bool : 
+    def Th(signal : np.ndarray, threshold : float) -> bool : 
 
         # Threshold of 3.2 immediately gets promoted to T2
         # Threshold of 1.75 if a T3 has already been issued
-        threshold = 3.2                                                             # single bin threshold
-
         pmt_1, pmt_2, pmt_3 = signal
 
         # hierarchy doesn't (shouldn't?) matter

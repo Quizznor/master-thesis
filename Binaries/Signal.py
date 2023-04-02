@@ -346,8 +346,8 @@ class RandomTrace():
     def __init__(self, station : str = None, index : int = None) -> None : 
 
         ## (HOPEFULLY) TEMPORARILY FIXED TO NURIA/LO_QUI_DON DUE TO BAD FLUCTUATIONS IN OTHER STATIONS
-        # self.station = random.choice(["nuria", "lo_qui_don"]) if station is None else station.lower()
-        self.station = "nuria" if station is None else station
+        self.station = random.choice(["nuria", "lo_qui_don"]) if station is None else station.lower()
+        # self.station = "nuria" if station is None else station
         self.index = index
 
         all_files = np.asarray(os.listdir(RandomTrace.baseline_dir + self.station)) # container for all baseline files

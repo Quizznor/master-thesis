@@ -189,3 +189,45 @@
 036 (53807.-01.000) 2023-03-26 21:03:51 Cluster removed
 	Materialized 1 jobs from 0 items.	Complete
 ...
+035 (54596.-01.000) 2023-04-02 08:52:51 Cluster submitted from host: <141.52.67.162:9618?addrs=141.52.67.162-9618+[2a00-1398-4-b001-a236-9fff-fec1-b818]-9618&alias=crcws02.iap.kit.edu&noUDP&sock=schedd_491406_3898>
+...
+000 (54596.000.000) 2023-04-02 08:52:51 Job submitted from host: <141.52.67.162:9618?addrs=141.52.67.162-9618+[2a00-1398-4-b001-a236-9fff-fec1-b818]-9618&alias=crcws02.iap.kit.edu&noUDP&sock=schedd_491406_3898>
+...
+040 (54596.000.000) 2023-04-02 08:59:57 Started transferring input files
+	Transferring to host: <141.52.67.217:9618?addrs=141.52.67.217-9618+[2a00-1398-4-b001-a236-9fff-fed6-55a2]-9618&alias=crc217.iap.kit.edu&noUDP&sock=slot1_54_2898_a72f_12715>
+...
+040 (54596.000.000) 2023-04-02 08:59:57 Finished transferring input files
+...
+001 (54596.000.000) 2023-04-02 08:59:58 Job executing on host: <141.52.67.217:9618?addrs=141.52.67.217-9618+[2a00-1398-4-b001-a236-9fff-fed6-55a2]-9618&alias=crc217.iap.kit.edu&noUDP&sock=startd_2848_11d0>
+...
+006 (54596.000.000) 2023-04-02 09:00:52 Image size of job updated: 1
+	0  -  MemoryUsage of job (MB)
+	0  -  ResidentSetSize of job (KB)
+...
+040 (54596.000.000) 2023-04-02 09:00:52 Started transferring output files
+...
+040 (54596.000.000) 2023-04-02 09:00:52 Finished transferring output files
+...
+005 (54596.000.000) 2023-04-02 09:00:52 Job terminated.
+	(0) Abnormal termination (signal 9)
+	(0) No core file
+		Usr 0 00:00:22, Sys 0 00:00:11  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:00:22, Sys 0 00:00:11  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	481754  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	481754  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :     0.55        1         1 
+	   Disk (KB)            :   490      100000   1467144 
+	   Gpus (Average)       :                           0 
+	   Memory (MB)          :     0        5120      5120 
+	   xCpus                :                           1 
+
+	Job terminated of its own accord at 2023-04-02T09:00:52Z with signal 9.
+...
+036 (54596.-01.000) 2023-04-02 09:00:52 Cluster removed
+	Materialized 1 jobs from 0 items.	Complete
+...

@@ -28,9 +28,9 @@ all three WCD PMTs simultaneously, a Th-T1/2 trigger is issued. A pseudocode imp
      pmt1, pmt2, pmt3 = get_next_output_from_WCD()
 
      if pmt1 <= th2 and pmt2 <= th2 and pmt3 <= th2:
-         raise Th-T1_1trigger
+         raise ThT1_trigger
      else if pmt1 <= th1 and pmt2 <= th1 and pmt3 <= th1:
-         raise Th-T2_trigger
+         raise ThT2_trigger
      else: 
          continue
 \end{lstlisting}
@@ -88,7 +88,7 @@ A pseudocode example is given below.
              count_active_PMTs += 1
 
      if count_active_PMTs >= 2:
-         raise ToT-T2_trigger
+         raise ToTT2_trigger
      else:
          step_count = buffer_index + 1
          continue
@@ -140,6 +140,9 @@ the SD field versus its' counterpart in analysis software.
 
 For this purpose, the MoPs trigger is not considered in the analysis presented in \autoref{chap:neural-network-triggers}. The implications of this choice are layed
 out in \autoref{sec:classical-triggers-performance}.
+
+\todo{correct this}
+\todo{pseudocode?}
 
 \subsection{Compatibility mode}
 \label{ssec:compatibility-mode}
