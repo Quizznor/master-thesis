@@ -28,9 +28,9 @@ all three WCD PMTs simultaneously, a Th-T1/2 trigger is issued. A pseudocode imp
      pmt1, pmt2, pmt3 = get_next_output_from_WCD()
 
      if pmt1 <= th2 and pmt2 <= th2 and pmt3 <= th2:
-         raise Th-T1_1trigger
+         raise ThT1_trigger
      else if pmt1 <= th1 and pmt2 <= th1 and pmt3 <= th1:
-         raise Th-T2_trigger
+         raise ThT2_trigger
      else: 
          continue
 \end{lstlisting}
@@ -88,7 +88,7 @@ A pseudocode example is given below.
              count_active_PMTs += 1
 
      if count_active_PMTs >= 2:
-         raise ToT-T2_trigger
+         raise ToTT2_trigger
      else:
          step_count = buffer_index + 1
          continue
@@ -120,8 +120,8 @@ $\Delta t$ is explained in more detail in \cite{ToTtriggerIdea}.
 The \textbf{M}ultiplicity \textbf{o}f \textbf{P}ositive \textbf{S}teps (MoPS) algorithm triggers on positive flanks of an FADC trace, which can be related to the 
 arrival of new particles in the water tank. 
 
-A positive flank in the FADC trace of a single PMT is any combination of at least three bins that are monotonically increasing in value, Once such a positive step 
-has been identified, a (MoPS) trigger veto is applied to the next 
+A positive flank in the FADC trace of a single PMT is any combination of at least two bins that are monotonically increasing in value, in a window of 120 bins. 
+Once such a positive step has been identified, a (MoPS) trigger veto is applied to the next 
 
 \begin{equation}
     \label{eq:MoPS-veto}
@@ -132,7 +132,7 @@ bins, where $\Delta y$ refers to the total vertical increase in the step from fi
 is used as shorthand notation to round $x$ to the nearest integer. If $\Delta y$ is bigger than $y_\text{min} = \SI{3}{\ADC}$ (to filter random fluctuations), but 
 does not exceed $y_\text{max} = \SI{31}{\ADC}$ (to prevent triggering on muonic coincidences), it is added to a ledger. If the number of rising flanks in the ledger
 is bigger than $m>4$ for at least two PMTs, a final check regarding the integral of the FADC trace is performed. If this check passes, a MoPS-T2 trigger is issued 
-to CDAS.
+to CDAS. An in-depth discussion of the different hyperparameters for this trigger is offered e.g. in \cite{gapMoPS}.
 
 It is impossible to accurately recreate the MoPS trigger in simulations. The integral test above compares the sum of the last 250 bins against a threshold 
 ($\sum a_i$ > 75). Since not all 250 bin values are available to CDAS, differing results are to be expected when comparing the implementation of the algorithm in 
@@ -140,6 +140,9 @@ the SD field versus its' counterpart in analysis software.
 
 For this purpose, the MoPs trigger is not considered in the analysis presented in \autoref{chap:neural-network-triggers}. The implications of this choice are layed
 out in \autoref{sec:classical-triggers-performance}.
+
+\todo{correct this}
+\todo{pseudocode?}
 
 \subsection{Compatibility mode}
 \label{ssec:compatibility-mode}

@@ -14,23 +14,23 @@ class Classifier():
     def __call__(self) -> int : raise NotImplementedError
 
     # test the trigger rate of the classifier on random traces
-    def production_test(self, n_showers : int = 10000, **kwargs) -> None :
+    def production_test(self, n_traces : int = 10000, **kwargs) -> tuple :
 
         n_total_triggered = 0
-        total_trace_duration = GLOBAL.trace_length * GLOBAL.single_bin_duration * n_showers
+        total_trace_duration = GLOBAL.trace_length * GLOBAL.single_bin_duration * n_traces
         start_time = str(datetime.now()).replace(" ", "-")[:-10]
 
         os.system(f"mkdir -p /cr/users/filip/plots/production_tests/{self.name.replace('/','-')}/{start_time}/")
 
         RandomTraces = EventGenerator(["19_19.5"], split = 1, force_inject = 0, real_background = True, prior = 0, **kwargs)
         downsample = kwargs.get("apply_downsampling", False)
-        RandomTraces.files = np.zeros(n_showers)
+        RandomTraces.files = np.zeros(n_traces)
 
         start = perf_counter_ns()
 
         for batch, trace in enumerate(RandomTraces):
 
-            progress_bar(batch, n_showers, start)
+            progress_bar(batch, n_traces, start)
 
             for window in trace[0]:
 
@@ -51,11 +51,13 @@ class Classifier():
 
         print("\n\nProduction test results:")
         print("")
-        print(f"random traces injected: {n_showers}")
+        print(f"random traces injected: {n_traces}")
         print(f"summed traces duration: {total_trace_duration:.4}s")
         print(f"total T2 trigger found: {n_total_triggered}")
         print(f"*********************************")
         print(f"TRIGGER FREQUENCY = {trigger_frequency:.2f} +- {frequency_error:.2f} Hz")
+
+        return trigger_frequency, frequency_error, n_traces, n_total_triggered, total_trace_duration
 
     # helper function that saves triggered trace windows for production_test()
     def plot_trace_window(self, trace : np.ndarray, index : int, start_time : str, downsampled : bool) -> None : 
@@ -65,12 +67,12 @@ class Classifier():
 
         plt.rcParams["figure.figsize"] = [20, 10]
 
-        plt.plot(range(x), pmt1, label = "PMT #1")
-        plt.plot(range(x), pmt2, label = "PMT #2")
-        plt.plot(range(x), pmt3, label = "PMT #3")
+        plt.plot(range(x), pmt1, label = r"PMT \#1")
+        plt.plot(range(x), pmt2, label = r"PMT \#2")
+        plt.plot(range(x), pmt3, label = r"PMT \#3")
 
         plt.ylabel(r"Signal / VEM$_\mathrm{Peak}$")
-        plt.xlabel("Bin / 8.33 ns" if not downsampled else "Bin / 25 ns")
+        plt.xlabel(r"Bin / $8.33\,\mathrm{ns}$" if not downsampled else r"Bin / $25\,\mathrm{ns}$")
         plt.xlim(0, x)
         plt.legend()
         plt.tight_layout()
@@ -79,7 +81,9 @@ class Classifier():
         plt.cla()
 
     # calculate performance for a given set of showers
-    def make_signal_dataset(self, Dataset : Generator, save_dir : str, n_showers : int = None, save_traces : bool = False) -> None : 
+    def make_signal_dataset(self, Dataset : "Generator", save_dir : str, n_showers : int = None, save_traces : bool = False) -> None : 
+
+        if save_traces: raise NotImplementedError("Not implemented at the moment due to rework")
 
         temp, Dataset.for_training = Dataset.for_training, False
         if n_showers is None: n_showers = Dataset.__len__()
@@ -101,9 +105,9 @@ class Classifier():
         
         # open all files only once, increases performance
         with open(save_file["TP"], "w") as TP, \
-            open(save_file["TN"], "w") as TN, \
-            open(save_file["FP"], "w") as FP, \
-            open(save_file["FN"], "w") as FN:
+             open(save_file["TN"], "w") as TN, \
+             open(save_file["FP"], "w") as FP, \
+             open(save_file["FN"], "w") as FN:
 
             for batch, traces in enumerate(Dataset):
 
@@ -112,8 +116,6 @@ class Classifier():
                 random_file = f"{'/'.join(random_file.split('/')[-3:])}"
 
                 for trace in traces:
-
-                    stop_iteration = False
 
                     StationID = trace.StationID
                     SPDistance = trace.SPDistance
@@ -124,33 +126,40 @@ class Classifier():
                     n_photons = trace.n_photons
 
                     save_string = f"{random_file} {StationID} {SPDistance} {Energy} {Zenith} {n_muons} {n_electrons} {n_photons} "
+                    max_charge_integral = -np.inf
 
                     for window in trace:
+
+                        # we inherently care more about the situation were we trigger as
+                        # these events are seen by CDAS. Thus handle FP/TP more strictly
+
                         label, integral = Dataset.calculate_label(trace)
+                        has_triggered = self.__call__(window)
 
-                        if label == "SIG":
-                            if self.__call__(window): 
-                                prediction = TP
-                                stop_iteration = True
-                            else: prediction = FN
+                        # we have detected a false positive in the trace
+                        if label != "SIG" and has_triggered:
+                            FP.write(save_string + f"{integral}\n")
+                        
+                        # we have detected a true positive, break loop
+                        elif label == "SIG" and has_triggered:
+                            TP.write(save_string + f"{integral}\n")
+                            break
+
+                        # we haven't seen anything, keep searching
                         else:
-                            if self.__call__(window): 
-                                prediction = FP
-                                stop_iteration = True
-                            else: prediction = TN
+                            if integral > max_charge_integral:
+                                max_charge_integral = integral
 
-                        if save_traces:
-                            for pmt in window:
-                                prediction.write(save_string + f" {integral} ")
-                                prediction.write(" ".join([str(np.round(adc, 4)) for adc in pmt]) + "\n")
-                        else:
-                            prediction.write(save_string + f" {integral} \n")
+                            # TODO: TN handling would go here
 
-                        if stop_iteration: break
+                    # loop didn't break, we didn't see shit
+                    else:
+                        FN.write(save_string + f"{max_charge_integral}\n")
 
                 if batch + 1 >= n_showers: break        
 
         Dataset.for_training = temp
+        Dataset.__reset__()
 
     # combine multiple results from self.make_signal_dataset to one
     def combine_data(self, save_dir : str, *args) -> None : 
@@ -668,8 +677,6 @@ class Classifier():
     
     # Performance visualizers #######################################################################
 
-from .Testing import *
-
 # Wrapper for tf.keras.Sequential model with some additional functionalities
 class NNClassifier(Classifier):
 
@@ -870,6 +877,7 @@ class NNClassifier(Classifier):
                 self.model = tf.keras.Sequential()
                 self.models[set_architecture](self.Architectures, self.model)
                 self.model.build()
+                
             # ValueError is raised for LSTM due to different initialization
             except TypeError:
                 self.model = self.models[set_architecture](self.Architectures)
@@ -895,9 +903,9 @@ class NNClassifier(Classifier):
         training_status = "normally"
         TrainingSet, ValidationSet = Datasets
 
-        print("Creating physics information for both datasets...")
-        TrainingSet.physics_test(n_showers = int(0.05 * TrainingSet.__len__()), save_dir = f"/cr/data01/filip/models/{self.name}/training_set_physics_test.png")
-        ValidationSet.physics_test(n_showers = int(0.2 * ValidationSet.__len__()), save_dir = f"/cr/data01/filip/models/{self.name}/validation_set_physics_test.png")
+        # print("Creating physics information for both datasets...")
+        # TrainingSet.physics_test(n_showers = int(0.05 * TrainingSet.__len__()), save_dir = f"/cr/data01/filip/models/{self.name}/training_set_physics_test.png")
+        # ValidationSet.physics_test(n_showers = int(0.2 * ValidationSet.__len__()), save_dir = f"/cr/data01/filip/models/{self.name}/validation_set_physics_test.png")
 
         try:
 
@@ -921,6 +929,15 @@ class NNClassifier(Classifier):
         # provide some metadata
         print(f"\nTraining exited {training_status}. Onto providing metadata now...")
         self.make_signal_dataset(ValidationSet, f"validation_data")
+
+        # calculate trigger rate on random traces
+        print(f"\ncalculating trigger rate on 1s (~60 000 Hz) of random traces now")
+        f, df, n, n_trig, t = self.production_test(60000)
+
+        with open(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/production_test.csv", "w") as random_file:
+            random_file.write("# f  df  n_traces  n_total_triggered  total_trace_duration")
+            random_file.write(f"{f} {df} {n} {n_trig} {t}")
+
 
     def save(self) -> None : 
         self.model.save(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}")
@@ -971,6 +988,10 @@ class Ensemble(NNClassifier):
         * *early_stopping_patience* (``int``) -- number of batches without improvement before training is stopped
         '''
 
+        try:
+            os.mkdir(f"/cr/data01/filip/models/ENSEMBLES/{name}")
+        except FileExistsError: pass
+
         supress_print = False
         self.models = []
 
@@ -1001,6 +1022,9 @@ class Ensemble(NNClassifier):
             Datasets[0].__reset__()
             Datasets[1].__reset__()
 
+    def save(self) -> None : 
+        for model in self.models: model.save()
+
     def __call__(self, trace : np.ndarray) -> list :
 
         return [model(trace) for model in self.models]
@@ -1018,6 +1042,8 @@ class Ensemble(NNClassifier):
         return predictions
 
     def ROC(self, dataset : str, **kwargs : dict) -> None :
+
+        raise NotImplementedError
 
         warning_orange = '\033[93m'
         end_color_code = '\033[0m'
@@ -1089,6 +1115,8 @@ class Ensemble(NNClassifier):
 
     def PRC(self, dataset : str) -> None :
 
+        raise NotImplementedError
+
         try:
             if header_was_called: pass
 
@@ -1099,18 +1127,24 @@ class Ensemble(NNClassifier):
 
             model.PRC(dataset, title = f"{self.name}", label = f"model instance {i}")
 
-# Wrapper for currently employed station-level triggers (T1, T2, ToT, etc.)
+    def make_signal_dataset(self, Dataset: "Generator", save_dir: str, n_showers: int = None, save_traces: bool = False) -> None:
+        
+        for model in self.models:
+            model.make_signal_dataset(Dataset, save_dir, n_showers, save_traces)
+
+# Wrapper for currently employed station-level triggers (Th1, Th2, ToT, etc.)
 # Information on magic numbers comes from Davids Mail on 10.03.22 @ 12:30pm
 class HardwareClassifier(Classifier):
 
-    def __init__(self, triggers : list = ["th", "tot", "totd", "mops"], name : str = False) : 
+    def __init__(self, triggers : list = ["th2", "tot", "totd", "mops"], name : str = False) : 
         super().__init__(name or "HardwareClassifier")
         self.triggers = []
 
-        if "th" in triggers: self.triggers.append(self.Th)
+        if "th" in triggers: self.triggers.append(self.Th1)
+        if "th2" in triggers: self.triggers.append(self.Th2)
         if "tot" in triggers: self.triggers.append(self.ToT)
         if "totd" in triggers: self.triggers.append(self.ToTd)
-        if "mops" in triggers: self.triggers.append(self.MoPS)
+        if "mops" in triggers: self.triggers.append(self.MoPS_compatibility)
 
     def __call__(self, trace : np.ndarray) -> bool : 
         
@@ -1122,14 +1156,18 @@ class HardwareClassifier(Classifier):
         except ValueError:
             return np.array([self.__call__(t) for t in trace])
 
+    def Th1(self, signal) -> bool : 
+        return self.Th(signal, 1.7)
+
+    def Th2(self, signal) -> bool : 
+        return self.Th(signal, 3.2)
+
     # method to check for (coincident) absolute signal threshold
     @staticmethod
-    def Th(signal : np.ndarray) -> bool : 
+    def Th(signal : np.ndarray, threshold : float) -> bool : 
 
         # Threshold of 3.2 immediately gets promoted to T2
         # Threshold of 1.75 if a T3 has already been issued
-        threshold = 3.2
-
         pmt_1, pmt_2, pmt_3 = signal
 
         # hierarchy doesn't (shouldn't?) matter
@@ -1180,14 +1218,54 @@ class HardwareClassifier(Classifier):
             deconvoluted_trace.append(deconvoluted_pmt)
  
         return HardwareClassifier.ToT(np.array(deconvoluted_trace))
-
-    # method to count positive flanks in an FADC trace
+    
+    # count the number of rising flanks in a trace
+    # WARNING: THIS IMPLEMENTATION IS NOT CORRECT!
     @staticmethod
-    def MoPS(signal : np.ndarray) -> bool : 
+    def MoPS_compatibility(signal : np.ndarray) -> bool : 
 
-        # as per GAP note 2018-01; an exact offline reconstruction of the trigger is not possible
-        # Can this be fixed in some way? perhaps with modified integration threshold INT?
-        return False 
+        # assumes we're fed 120 bin trace windows
+        y_min, y_max = 3, 31                                                        # only accept y_rise in this range
+        min_slope_length = 2                                                        # minimum number of increasing bins
+        min_occupancy = 4                                                           # positive steps per PMT for trigger
+        pmt_multiplicity = 2                                                        # required multiplicity for PMTs
+        pmt_active_counter = 0                                                      # actual multiplicity for PMTs
+        integral_check = 75 * 120/250                                               # integral must pass this threshold
+
+
+        for pmt in signal:
+
+            # check for the modified integral first, computationally easier
+            if sum(pmt) * GLOBAL.q_peak <= integral_check: continue
+            
+            occupancy = 0
+            positive_steps = np.nonzero(np.diff(pmt) > 0)[0]
+            steps_isolated = np.split(positive_steps, np.where(np.diff(positive_steps) != 1)[0] + 1)
+            candidate_flanks = [step for step in steps_isolated if len(step) >= min_slope_length]
+            candidate_flanks = [np.append(flank, flank[-1] + 1) for flank in candidate_flanks]
+
+            for i, flank in enumerate(candidate_flanks):
+
+                # adjust searching area after encountering a positive flank
+                total_y_rise = (pmt[flank[-1]] - pmt[flank[0]]) * GLOBAL.q_peak
+                n_continue_at_index = flank[-1] + max(0, int(np.log2(total_y_rise) - 2))
+
+                for j, consecutive_flank in enumerate(candidate_flanks[i + 1:], 0):
+
+                    if n_continue_at_index <= consecutive_flank[0]: break                                                       # no overlap, no need to do anything
+                    elif consecutive_flank[0] < n_continue_at_index <= consecutive_flank[-1]:                                   # partial overlap, adjust next flank
+                        overlap_index = np.argmin(np.abs(consecutive_flank - n_continue_at_index))
+                        candidate_flanks[i + j] = candidate_flanks[i + j][overlap_index:]
+                        if len(candidate_flanks[i + j]) < min_slope_length: _ = candidate_flanks.pop(i + j)
+                        break
+
+                    elif consecutive_flank[-1] < n_continue_at_index:                                                           # complete overlap, discard next flank
+                        _ = candidate_flanks.pop(i + j)
+
+                if total_y_rise > y_min and total_y_rise < y_max: occupancy += 1
+            if occupancy > min_occupancy: pmt_active_counter += 1
+            
+        return pmt_active_counter >= pmt_multiplicity
 
 
 class BayesianClassifier(Classifier):

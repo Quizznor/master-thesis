@@ -1,5 +1,6 @@
 from .__config__ import *
 from .Signal import *
+from .Classifier import *
 
 # Wrapper for the Generator class
 class EventGenerator():
@@ -115,12 +116,11 @@ class EventGenerator():
             for item in user_choice:
                 all_files.append(EventGenerator.get_signal_files(item))
 
-        else:
+        # check Ensemble first, due to Ensemble.__super__ == NNClassifier evaluating to true
+        elif isinstance(user_choice, Ensemble): all_files = user_choice.models[0].get_files("validation")   # add validation files from ensemble            
+        elif isinstance(user_choice, NNClassifier): all_files =  user_choice.get_files("validation")        # add validation files from classifier
 
-            # isinstance(datasets, NNClassifier) would be more convenient, but this isn't defined yet
-            if hasattr(user_choice, "epochs"): all_files =  user_choice.get_files("validation")             # add validation files from classifier
-
-            else: raise NotImplementedError(f"input {type(user_choice)} is not supported as argument for 'dataset'")
+        else: raise NotImplementedError(f"input {type(user_choice)} is not supported as argument for 'dataset'")
         
         random.shuffle(all_files)
         return all_files
@@ -239,13 +239,19 @@ class Generator(tf.keras.utils.Sequence):
 
         if self.prior != 0:
 
-            stations = SignalBatch(self.files[index]) if self.prior != 0 else []                                # load this shower file in memory
-            full_traces, traces, labels = [], [], []                                                            # reserve space for return values
+            try:
+                stations = SignalBatch(self.files[index]) if self.prior != 0 else []                            # load this shower file in memory
+                full_traces, traces, labels = [], [], []                                                        # reserve space for return values
+            except Exception as e:
+                sys.exit(f"{e} reading signal data from {self.files[index]}")
 
             for station in stations:
 
                 baseline = self.build_baseline()
-                VEMTrace = Trace(baseline, station, self.trace_options)                                         # create the trace
+                try:
+                    VEMTrace = Trace(baseline, station, self.trace_options)                                     # create the trace
+                except Exception as e:
+                    sys.exit(f"{e} forming trace from {self.files[index]}")
                 full_traces.append(VEMTrace)
 
                 if not self.for_training: continue
@@ -413,6 +419,13 @@ class Generator(tf.keras.utils.Sequence):
         self.trace_options["baseline_q_peak"] = q_peak
 
         return baseline
+
+    # find index of a file in self.files
+    def find(self, filename : str) -> int :
+        
+        if "/" in filename: filename = filename.split('/')[-1]
+        truncated_files = [file.split('/')[-1] for file in self.files]
+        return truncated_files.index(filename)
 
     # getter for __getitem__ statistics during iteration
     def get_train_loop_statistics(self) -> tuple :

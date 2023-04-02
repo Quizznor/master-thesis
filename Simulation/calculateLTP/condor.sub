@@ -1,4 +1,4 @@
-JobBatchName    = LTP_18.5_19
+JobBatchName    = LTP_19.0_19.5
 Executable      = /cr/users/filip/Simulation/calculateLTP/run_simulation.py
 
 # error           = /cr/users/filip/Simulation/condor/errors-$(Process).err
@@ -7,7 +7,7 @@ Executable      = /cr/users/filip/Simulation/calculateLTP/run_simulation.py
 arguments       = $(Process)   
 # arguments       = $(Item)
 request_memory  = 1G
-max_idle        = 150
+max_idle        = 500
                                                             
 # should_transfer_files = YES                                 
 

@@ -292,10 +292,10 @@ class Trace(Signal):
         x = range(self.trace_length)
         sig = lambda x : f"$S={x:.1f}\,\\mathrm{{VEM}}_\\mathrm{{Ch.}}$"
 
-        try:
-            plt.title(f"Station {self.StationID} - {sig(np.mean(self.deposited_signal))}", pad = 20)
-        except AttributeError:
-            plt.title(f"Background trace - {sig(self.deposited_signal)}", pad = 20)
+        # try:
+        #     plt.title(f"Station {self.StationID} - {sig(np.mean(self.deposited_signal))}", pad = 20)
+        # except AttributeError:
+        #     plt.title(f"Background trace - {sig(self.deposited_signal)}", pad = 20)
 
         plt.plot(x, self.pmt_1, c = "steelblue", label = f"PMT 1{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[0])}", lw = 1)
         plt.plot(x, self.pmt_2, c = "orange", label = f"PMT 2{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[1])}", lw = 1)
@@ -346,8 +346,8 @@ class RandomTrace():
     def __init__(self, station : str = None, index : int = None) -> None : 
 
         ## (HOPEFULLY) TEMPORARILY FIXED TO NURIA/LO_QUI_DON DUE TO BAD FLUCTUATIONS IN OTHER STATIONS
-        # self.station = random.choice(["nuria", "lo_qui_don"]) if station is None else station.lower()
-        self.station = "nuria" if station is None else station
+        self.station = random.choice(["nuria", "lo_qui_don"]) if station is None else station.lower()
+        # self.station = "nuria" if station is None else station
         self.index = index
 
         all_files = np.asarray(os.listdir(RandomTrace.baseline_dir + self.station)) # container for all baseline files
