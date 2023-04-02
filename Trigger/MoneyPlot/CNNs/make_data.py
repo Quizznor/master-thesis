@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# # first simulation
+# first simulation
 # from Binaries import *
 # plt.rcParams["text.usetex"] = False
 

@@ -1,6 +1,5 @@
 from .__config__ import *
 from .Signal import *
-from .Classifier import *
 
 # Wrapper for the Generator class
 class EventGenerator():
@@ -655,3 +654,4 @@ class Generator(tf.keras.utils.Sequence):
         self.for_training = temp
         plt.show()
 
+from .Classifier import *

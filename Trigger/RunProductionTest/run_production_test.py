@@ -285,7 +285,7 @@ def apply_downsampling(pmt : np.ndarray, random_phase : int) -> np.ndarray :
     # Simulate saturation of PMTs at 4095 ADC counts ~ 19 VEM <- same for HG/LG? I doubt it
     return np.clip(np.array(sampled_trace), a_min = -10, a_max =  kADCsaturation)
 
-station = "nuria"
+station = "lo_qui_don"
 
 i = int(sys.argv[1])
 trace_duration = GLOBAL.n_bins * GLOBAL.single_bin_duration

@@ -1,9 +1,9 @@
 JobBatchName    = train_NN_model
 Executable      = /cr/users/filip/Trigger/MoneyPlot/CNNs/make_data.py
 
-error           = /cr/users/filip/Trigger/MoneyPlot/train.err
-output          = /cr/users/filip/Trigger/MoneyPlot/train.out
-log             = /cr/users/filip/Trigger/MoneyPlot/train.log
+error           = /cr/users/filip/Trigger/MoneyPlot/train-02.err
+output          = /cr/users/filip/Trigger/MoneyPlot/train-02.out
+log             = /cr/users/filip/Trigger/MoneyPlot/train-02.log
 
 arguments       = $(Process)   
 # arguments       = $(Item)
