@@ -1,5 +1,5 @@
-JobBatchName    = production_test-nuria
-Executable      = /cr/users/filip/Trigger/RunProductionTest/run_production_test.py
+JobBatchName    = production_test-lo_qui_don
+Executable      = /cr/users/filip/Trigger/RunProductionTest/production_test_lo_qui_don.py
 
 # error           = /cr/users/filip/Trigger/RunProductionTest/output/errors-$(Process).err
 # output          = /cr/users/filip/Trigger/RunProductionTest/output/output-$(Process).out
@@ -15,7 +15,7 @@ max_idle        = 150
 # NURIA - 798
 # LOQUI - 4000
 
-queue 800
+queue 2004
 
 # queue 2 in (0, 1, 2, 3, 4)
 #       ^ step     ^ item  (or other way around?)
