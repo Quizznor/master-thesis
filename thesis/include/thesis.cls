@@ -27,6 +27,7 @@
 \usepackage{multicol}
 \usepackage{multirow}
 \usepackage{longtable}
+\usepackage{xspace}
 
 % LANGUAGE
 \usepackage[english]{babel}

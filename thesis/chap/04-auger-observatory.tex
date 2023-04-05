@@ -84,10 +84,10 @@ Onboard electronics, the \textbf{U}pgraded \textbf{U}nified \textbf{B}oard (UUB)
 \textbf{H}igh \textbf{G}ain (HG) output. Three FADCs monitor the anode voltage to form the \textbf{L}ow \textbf{G}ain (LG) output, which can be analyzed if the 
 HG output exceeds a value of $2^{10}$ ADC counts and becomes saturated. This effectively enables the measurement of both large ($\geq\mathcal{O}(10^3)$ particles
 hitting the tank) as well as small shower signals ($\mathcal{O}(1)$ particle hitting the tank) with sufficient accuracy \cite{SDReconstruction}. Once an FADC bin 
-has been recorded and checked for possible triggers (c.f. \autoref{chap:classical-triggers}) it is written to a ring buffer. If a trigger is issued, the corresponding 
-chunk in the ring buffer ($\approx\SI{4.992}{\micro\second}$ (599 bins) before and $\SI{12.07}{\micro\second}$ (1448 bins) after a trigger, $2047 + 1$ bins total),
-the measured trace, can be analyzed in order to calibrate a station in the array (\autoref{ssec:online-calibration}, \autoref{ssec:offline-calibration}) or 
-processed by a higher-level CPU for event reconstruction purposes (see \autoref{sec:event-reconstruction}).
+has been recorded and checked for possible triggers (c.f. \autoref{chap:classical-triggers}) it is written to a ring buffer. If a trigger is issued, the 
+corresponding chunk in the ring buffer ($\approx\SI{4.992}{\micro\second}$ (599 bins) before and $\SI{12.07}{\micro\second}$ (1448 bins) after a trigger, 
+$2047 + 1$ bins total), the measured trace, can be analyzed in order to calibrate a station in the array (\autoref{ssec:online-calibration}, 
+\autoref{ssec:offline-calibration}) or processed by a higher-level CPU for event reconstruction purposes (see \autoref{sec:event-reconstruction}).
 
 While each station is equipped with the same electronics and runs the same analysis software, variables like the position in the field, station age or slight 
 changes in the manufacturing/installation process cause different stations to age differently. Over the lifetime of the array such differences can sum into 
@@ -99,10 +99,11 @@ as \SI{1}{\Charge}. The conversion factor between ADC counts and VEM$_\text{Peak
 estimated from data and continuously updated separately for each station. Note that due to the limited computational resources of the WCD, as well as constraints
 on the amount of data that can be transmitted per station in the SD array (\SI{1200}{\bit\per\second}, \cite{localStationCalib}), a simplified, rate-based approach 
 is implemented for autonomous calibration in the field (Online calibration), this stands in contrast to the more physics-driven histogram method used during event 
-reconstruction (Oflline calibration). In any case, both algorithms are listed in the following subsections and discussed in more detail in the referenced 
-literature.
+reconstruction via the official Auger reconstruction and simulation framework, \Offline \cite{offlineSource}. In any case, both algorithms are listed in the 
+following subsections and 
+discussed in more detail in the referenced literature.
 
-\subsection{Offline calibration}
+\subsection{\Offline calibration}
 \label{ssec:offline-calibration}
 
 \subsubsection{Baseline estimation}

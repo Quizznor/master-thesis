@@ -127,7 +127,10 @@ the best (first) estimate for each trace. As can be seen in \autoref{fig:random-
 stations show a large variance in \Ipeak. The day average in these particular cases is not a good estimator for calibration purposes. For this reason, only random 
 traces from the stations Nuria and Le Qui Don, measured in the March dataset, are used for analysis purposes.
 
-To crosscheck that these traces are \todo{continue}
+As a crosscheck to verify the goodness of the approximation, the T2 trigger rate as reported by the calibration process is related to the trigger rate obtained by
+direct calculation over all (calibrated) random traces. By extension, this also serves as a unit test for the classical triggers as they are implemented in this work. 
+
+\todo{rate mismatch new plot}
 
 \begin{landscape}
     \begin{figure*}
@@ -159,12 +162,15 @@ To crosscheck that these traces are \todo{continue}
     \end{figure*}
 \end{landscape}
 
-\todo{rate mismatch new plot}
-
 \section{Signal dataset}
 \label{sec:signal-dataset}
 
+In the context of this work, a "signal" (as opposed to background) is any detector response caused by extensive air showers as simulated with CORSIKA 
+\cite{heck1998corsika}. Admittedly, this choice of classification is not ideal, as the particle density far from the shower core grows sparse. Time traces recorded 
+at those locations look very similar to ones raised by accidental muons. In any case, ramifications and possible solutions are further discussed in the following 
+chapters. 
 
+In order to isolate the detector response stemming from shower particles only, a custom \Offline simulation using Geant4 is executed for a dataset of \todo{continue}
 
 \section{Trace building \& Sliding window analysis}
 \label{sec:sliding-window-analysis}

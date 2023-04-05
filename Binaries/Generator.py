@@ -248,7 +248,7 @@ class Generator(tf.keras.utils.Sequence):
 
                 baseline = self.build_baseline()
                 try:
-                    VEMTrace = Trace(baseline, station, self.trace_options)                                     # create the trace
+                    VEMTrace = Trace(baseline, station, self.trace_options, self.files[index])                  # create the trace
                 except Exception as e:
                     sys.exit(f"{e} forming trace from {self.files[index]}")
                 full_traces.append(VEMTrace)

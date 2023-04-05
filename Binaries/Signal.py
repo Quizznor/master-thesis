@@ -60,7 +60,7 @@ class Signal():
 # container for the combined trace
 class Trace(Signal):
 
-    def __init__(self, baseline_data : np.ndarray, signal_data : tuple, trace_options : dict) :
+    def __init__(self, baseline_data : np.ndarray, signal_data : tuple, trace_options : dict, event_file = None) :
 
         self.window_length = trace_options["window_length"]
         self.window_step = trace_options["window_step"]
@@ -82,11 +82,13 @@ class Trace(Signal):
             self.has_accidentals = False
 
         # build Signal component
-        if signal_data is not None: 
+        if signal_data is not None:
             super().__init__(signal_data, self.trace_length)
             self.has_signal = True
+            self.EventFile = event_file
         else:
             self.Signal = None
+            self.EventFile = None
             self._iteration_index = 0
             self.has_signal = False
 
@@ -292,10 +294,10 @@ class Trace(Signal):
         x = range(self.trace_length)
         sig = lambda x : f"$S={x:.1f}\,\\mathrm{{VEM}}_\\mathrm{{Ch.}}$"
 
-        # try:
-        #     plt.title(f"Station {self.StationID} - {sig(np.mean(self.deposited_signal))}", pad = 20)
-        # except AttributeError:
-        #     plt.title(f"Background trace - {sig(self.deposited_signal)}", pad = 20)
+        try:
+            plt.title(f"Station {self.StationID} - {sig(np.mean(self.deposited_signal))}", pad = 20)
+        except AttributeError:
+            plt.title(f"Background trace - {sig(self.deposited_signal)}", pad = 20)
 
         plt.plot(x, self.pmt_1, c = "steelblue", label = f"PMT 1{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[0])}", lw = 1)
         plt.plot(x, self.pmt_2, c = "orange", label = f"PMT 2{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[1])}", lw = 1)

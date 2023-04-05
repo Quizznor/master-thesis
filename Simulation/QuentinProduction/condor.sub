@@ -1,0 +1,19 @@
+JobBatchName    = Production_18.0-18.5
+
+Executable      = /cr/users/filip/Simulation/QuentinProduction/submit.py
+
+error           = /cr/users/filip/Simulation/condor/errors-$(Process).err
+# output          = /cr/users/filip/Simulation/condor/output-$(Process).log
+
+arguments       = $(Process)   
+# arguments       = $(Item)
+request_memory  = 1G
+max_idle        = 150                            
+
+Requirements	= (OpSysName == "Ubuntu" && OpSysMajorVer == 22  && TARGET.Machine != "crc2.ikp.kit.edu" && TARGET.Machine != "crc1.ikp.kit.edu" && TARGET.Machine != "crcds99.iap.kit.edu")
+
+# lge19.0-19.5 - 999 files
+# lge18.5-19.0 - 988 files
+# lge18.0-18.5 - 581 files
+
+queue 581

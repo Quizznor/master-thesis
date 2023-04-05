@@ -22,8 +22,11 @@ class Classifier():
 
         os.system(f"mkdir -p /cr/users/filip/plots/production_tests/{self.name.replace('/','-')}/{start_time}/")
 
-        RandomTraces = EventGenerator("19_19.5", split = 1, force_inject = 0, real_background = True, prior = 0, **kwargs)
-        RandomTraces.files = np.zeros(n_traces)
+        window_length = 120
+        window_step = int(window_length / 3)
+
+        # RandomTraces = EventGenerator("19_19.5", split = 1, force_inject = 0, real_background = True, prior = 0, window_length, **kwargs)
+        # RandomTraces.files = np.zeros(n_traces)
 
         start = perf_counter_ns()
 
@@ -400,7 +403,7 @@ class Classifier():
 
                     c = colormap(t / (len(theta_bins) - 1))
                     all_data = hits + misses
-                    n_data_in_bins = 500
+                    n_data_in_bins = int(50 * np.sqrt(e + 1))
 
                     # have at least 7 bins or bins with >50 samples
                     while True:
@@ -902,9 +905,9 @@ class NNClassifier(Classifier):
         training_status = "normally"
         TrainingSet, ValidationSet = Datasets
 
-        print("Creating physics information for both datasets...")
-        TrainingSet.physics_test(n_showers = int(0.05 * TrainingSet.__len__()), save_dir = f"/cr/data01/filip/models/{self.name}/training_set_physics_test.png")
-        ValidationSet.physics_test(n_showers = int(0.2 * ValidationSet.__len__()), save_dir = f"/cr/data01/filip/models/{self.name}/validation_set_physics_test.png")
+        # print("Creating physics information for both datasets...")
+        # TrainingSet.physics_test(n_showers = int(0.05 * TrainingSet.__len__()), save_dir = f"/cr/data01/filip/models/{self.name}/training_set_physics_test.png")
+        # ValidationSet.physics_test(n_showers = int(0.2 * ValidationSet.__len__()), save_dir = f"/cr/data01/filip/models/{self.name}/validation_set_physics_test.png")
 
         try:
 
@@ -1135,7 +1138,7 @@ class Ensemble(NNClassifier):
 # Information on magic numbers comes from Davids Mail on 10.03.22 @ 12:30pm
 class HardwareClassifier(Classifier):
 
-    def __init__(self, triggers : list = ["th2", "tot", "totd", "mops"], name : str = False) : 
+    def __init__(self, triggers : list = ["th2", "tot", "totd"], name : str = False) : 
         super().__init__(name or "HardwareClassifier")
         self.triggers = []
 
