@@ -194,17 +194,16 @@ class Trace(Signal):
             self.pmt_2 = np.floor(self.pmt_2)
             self.pmt_3 = np.floor(self.pmt_3)
 
-        # and finally convert to vem
-        self.pmt_1 = self.pmt_1 / self.simulation_q_peak[0]
-        self.pmt_2 = self.pmt_2 / self.simulation_q_peak[1]
-        self.pmt_3 = self.pmt_3 / self.simulation_q_peak[2]
+        # and finally convert to vem, take saturation into account
+        self.pmt_1 = np.clip(self.pmt_1, -100, 4095) / self.simulation_q_peak[0]
+        self.pmt_2 = np.clip(self.pmt_2, -100, 4095) / self.simulation_q_peak[1]
+        self.pmt_3 = np.clip(self.pmt_3, -100, 4095) / self.simulation_q_peak[2]
 
     def apply_downsampling(self, pmt : np.ndarray, random_phase : int) -> np.ndarray :
 
         n_bins_uub      = (len(pmt) // 3) * 3               # original trace length
         n_bins_ub       = n_bins_uub // 3                   # downsampled trace length
         sampled_trace   = np.zeros(n_bins_ub)               # downsampled trace container
-        kADCsaturation = 4095                               # HG max saturation bin value
 
         # ensure downsampling works as intended
         # cuts away (at most) the last two bins
@@ -235,7 +234,7 @@ class Trace(Signal):
                 sampled_trace[k // 3] = pmt[k]
 
         # Simulate saturation of PMTs at 4095 ADC counts ~ 19 VEM <- same for HG/LG? I doubt it
-        return np.clip(np.array(sampled_trace), a_min = -10, a_max = kADCsaturation / GLOBAL.q_peak if self.is_vem else kADCsaturation)
+        return np.array(sampled_trace)
 
 
     # make this class an iterable
@@ -294,18 +293,18 @@ class Trace(Signal):
         x = range(self.trace_length)
         sig = lambda x : f"$S={x:.1f}\,\\mathrm{{VEM}}_\\mathrm{{Ch.}}$"
 
-        try:
-            plt.title(f"Station {self.StationID} - {sig(np.mean(self.deposited_signal))}", pad = 20)
-        except AttributeError:
-            plt.title(f"Background trace - {sig(self.deposited_signal)}", pad = 20)
+        # try:
+        #     plt.title(f"Station {self.StationID} - {sig(np.mean(self.deposited_signal))}", pad = 20)
+        # except AttributeError:
+        #     plt.title(f"Background trace - {sig(self.deposited_signal)}", pad = 20)
 
-        plt.plot(x, self.pmt_1, c = "steelblue", label = f"PMT 1{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[0])}", lw = 1)
-        plt.plot(x, self.pmt_2, c = "orange", label = f"PMT 2{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[1])}", lw = 1)
-        plt.plot(x, self.pmt_3, c = "green", label = f"PMT 3{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[2])}", lw = 1)
+        plt.plot(x, self.pmt_1, c = "steelblue", label = f"PMT \#1{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[0])}", lw = 1)
+        plt.plot(x, self.pmt_2, c = "orange", label = f"PMT \#2{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[1])}", lw = 1)
+        plt.plot(x, self.pmt_3, c = "green", label = f"PMT \#3{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[2])}", lw = 1)
 
-        # if self.has_signal:
-        #     plt.axvline(self.signal_start, ls = "--", c = "red", lw = 2)
-        #     plt.axvline(self.signal_end, ls = "--", c = "red", lw = 2)
+        if self.has_signal:
+            plt.axvline(self.signal_start, ls = "--", c = "red", lw = 2)
+            plt.axvline(self.signal_end, ls = "--", c = "red", lw = 2)
 
         if self.has_accidentals:
             for start, stop in zip(self.injections_start, self.injections_end):
@@ -313,7 +312,7 @@ class Trace(Signal):
                 plt.axvline(stop, ls = "--", c = "gray")
 
         plt.xlim(0, self.trace_length)
-        plt.ylabel("Signal strength / VEM")
+        plt.ylabel("Signal strength / $\mathrm{VEM}_\mathrm{Peak}$")
         plt.xlabel("Bin / 25 ns" if self.downsampled else "Bin / $8.3\,\mathrm{ns}$")
         plt.legend()
         # plt.show()
@@ -422,6 +421,7 @@ class InjectedBackground():
     # get n injected particles
     def __new__(self, n : int, trace_length : int) -> tuple :
 
+        np.random.seed(4)
         if isinstance(n, str): n = self.poisson()
         
         Injections = np.zeros((3, trace_length))

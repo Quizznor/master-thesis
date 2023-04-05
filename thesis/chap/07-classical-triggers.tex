@@ -141,46 +141,8 @@ the SD field versus its' counterpart in analysis software.
 For this purpose, the MoPs trigger is not considered in the analysis presented in \autoref{chap:neural-network-triggers}. The implications of this choice are layed
 out in \autoref{sec:classical-triggers-performance}.
 
-\todo{correct this}
 \todo{pseudocode?}
 
-\subsection{Compatibility mode}
-\label{ssec:compatibility-mode}
-
-\begin{figure}
-	\begin{subfigure}[b]{0.5\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{./plots/time_trace_UUB.png}
-		\caption{\textbf{UUB time trace}}
-		\label{fig:uub-time-trace}
-	\end{subfigure}
-	\hfill
-	\begin{subfigure}[b]{0.5\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{./plots/time_trace_UB.png}
-		\caption{\textbf{UB time trace}}
-		\label{fig:ub-time-trace}
-	\end{subfigure}
-	\caption{\textbf{(a)} A simulated signal as it would appear to UUB electronics. The ionizing particles originating in the extensive air shower hit the tank 
-	around bin 660 ($\approx\SI{5.5}{\micro\second}$). \textbf{(b)} The same signal but filtered and downsampled to emulate UB electronics.}
-	\label{fig:uub-ub-comparison}
-\end{figure}
-
-Altough the triggers discussed in the previous subsections are meant to function completely autonomously in the SD field, their implementation requires some prior 
-knowledge of the signal one desires to detect. For their use in the Auger observatory, several hyperparameters such as the thresholds of the Th-Trigger, or the 
-window size of the ToT-trigger have been determined in studies (\cite{bertou2006calibration}, \cite{triggerSettings}, \cite{ToTtriggerSetting}). 
-
-These studies were conducted using the predecessor, the \textbf{U}nified \textbf{B}oard (UB), of the hardware that is being installed during the AugerPrime upgrade 
-of the observatory. Most importantly, the \textbf{U}pgraded \textbf{U}nified \textbf{B}oard (UUB) has a sampling rate that is three times larger
-(\SI{120}{\mega\hertz}) than that of UB electronics (\SI{40}{\mega\hertz}). Not only does this raise the number of bins in a standard time trace from 682 to 
-$2^{11} = 2048$, but also drastically reduces the efficiency (in particular for ToT-like triggers) of the above discussed algorithms. Whereas a new FADC bin is 
-measured every \SI{25}{\nano\second} in a UB station, the triggers would receive a new input every $\approx\SI{8.3}{\nano\second}$ in a UUB setting.
-
-The modus operandi elected by the Pierre Auger collaboration to circumvent this problem is to emulate UB electronics using the UUB electronics. This means that 
-measured FADC bins are to be filtered and downsampled before any trigger runs over them. Software implementations by which this is achieved are listed in 
-\autoref{app:filter-and-downsample}. The effect the filtering and downsampling has on measured data is visualized in \autoref{fig:uub-ub-comparison}. 
-
-\todo{comment on accuracy fo this method}
 
 \section{Performance}
 \label{sec:classical-triggers-performance}
