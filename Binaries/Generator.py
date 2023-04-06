@@ -184,17 +184,19 @@ class Generator(tf.keras.utils.Sequence):
         self.force_inject = kwargs.get("force_inject", GLOBAL.force_inject)
         self.apply_downsampling = kwargs.get("apply_downsampling", GLOBAL.downsampling)
         self.baseline_std = kwargs.get("sigma", GLOBAL.baseline_std)
+        self.q_peak = kwargs.get("q_peak", np.array([GLOBAL.q_peak for _ in range(3)]))
+        self.q_charge = kwargs.get("q_charge", np.array([GLOBAL.q_charge for _ in range(3)]))
         self.trace_options = \
         {
             "window_length"         : kwargs.get("window_length", GLOBAL.window),
             "window_step"           : kwargs.get("window_step", GLOBAL.step),
             "floor_trace"           : kwargs.get("floor_trace", GLOBAL.floor_trace),
-            "simulation_q_peak"     : kwargs.get("q_peak", np.array([GLOBAL.q_peak for _ in range(3)])),
-            "simulation_q_charge"   : kwargs.get("q_charge", np.array([GLOBAL.q_charge for _ in range(3)])),
             "is_vem"                : kwargs.get("is_vem", GLOBAL.is_vem),
             "apply_downsampling"    : self.apply_downsampling,
             "force_inject"          : self.force_inject,
             "trace_length"          : self.trace_length,
+            "simulation_q_charge"   : self.q_charge,
+            "simulation_q_peak"     : self.q_peak,
         }
 
         # Generator options
@@ -407,15 +409,17 @@ class Generator(tf.keras.utils.Sequence):
         if self.use_real_background: 
             q_peak, q_charge, baseline = self.RandomTraceBuffer.get()                                       # load random trace baseline
             baseline += np.random.uniform(0, 1, size = baseline.shape)                                      # convert int ADC to float ADC
+
+            self.trace_options["baseline_q_charge"] = q_charge
+            self.trace_options["baseline_q_peak"] = q_peak
+
         else:
             baseline = Baseline(GLOBAL.baseline_mean, self.baseline_std, self.trace_length)                 # or create mock gauss. baseline
 
-            # TODO this should take into account users choice of q_peak/q_charge
-            q_charge = np.array([GLOBAL.q_charge for _ in range(3)])
-            q_peak = np.array([GLOBAL.q_peak for _ in range(3)])
+            self.trace_options["baseline_q_charge"] = self.q_charge
+            self.trace_options["baseline_q_peak"] = self.q_peak
 
-        self.trace_options["baseline_q_charge"] = q_charge
-        self.trace_options["baseline_q_peak"] = q_peak
+
 
         return baseline
 

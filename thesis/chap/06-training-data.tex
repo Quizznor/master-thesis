@@ -136,9 +136,30 @@ traces from the stations Nuria and Le Qui Don, measured in the March dataset are
 
 As a crosscheck to verify the goodness of the approximation, the T2 trigger rate as reported by the calibration process is related to the trigger rate obtained by
 direct calculation over all (calibrated) random-traces. By extension, this also serves as a unit test for the classical triggers as they will be implemented in 
-\autoref{chap:classical-triggers}. 
+\autoref{chap:classical-triggers}. \todo{rate mismatch new plot}
 
-\todo{rate mismatch new plot}
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{./plots/random_traces_correction_factor.png}
+	\caption{.}
+	\label{fig:random-traces-correction}
+\end{figure}
+
+\begin{table}
+	\begin{center}
+	\caption{Numerical values from \cite{triggerSettings}}
+	\begin{tabular*}{0.4\textwidth}{@{\extracolsep{\fill}} c|c|c}
+		\toprule
+		PMT \# & Nuria & Le Qui Don \\
+		\midrule
+		1 & 5.00 & 2.85 \\
+		2 & 5.00 & 2.85 \\
+		3 & 5.00 & 2.85 \\
+		\bottomrule
+	\label{tab:trigger-thresholds}
+	\end{tabular*}
+	\end{center}
+\end{table}
 
 \begin{landscape}
     \begin{figure*}
@@ -253,6 +274,13 @@ amounts to a $30\%$ difference in amplitude between UUB full-bandwidth traces an
 from the same signal in the WCD though, this implies that \Ipeak must be adjusted by $~30\%$ as well, if traces are to be downsampled. This results in a 
 compatibility scaling factor $I_\text{VEM, compat.} = \SI{163.235}{\ADC}$ \cite{OfflineSource}.
 
+Recent contributions within the Auger collaboration (\cite{nitzTriggers, quentinComparison}), and to some extent also this work have shown that issues arise in the 
+comparison of \textbf{L}ateral \textbf{T}rigger \textbf{P}robabilities (LTPs) that are run in this compatibility mode. Namely, the UUB trigger efficiency (where 
+full-bandwidth traces are filtered and downsampled) is lower than that of UB stations. This implies that the filtering and downsampling algorithms in 
+\autoref{app:filter-and-downsample} either make imprecise assumptions about the station electronics, or $I_\text{VEM, compat.}$ or the trigger thresholds 
+themselves need to be adjusted further. This fact has to be kept in mind when discussing results and comparing lateral trigger probabilites from classical triggers
+and neural networks. 
+
 \begin{figure}
 	\begin{subfigure}[b]{0.5\textwidth}
 		\centering
@@ -275,3 +303,25 @@ compatibility scaling factor $I_\text{VEM, compat.} = \SI{163.235}{\ADC}$ \cite{
 \subsection{Sliding window analysis \& Labelling}
 \label{ssec:sliding-window-analysis}
 
+As will become apparent in \autoref{chap:classical-triggers}, three of the four trigger algorithms operate by examining only a window of measurement info, rather
+than evaluate the whole time trace as it is constructed in \autoref{sec:trace-building}. In a similar fashion, it is reasonable to assume neural networks do not 
+need to receive the $3\,(\text{PMT})\cdot2048\,(\text{UUB bins}) = 6144$ input values from the entire trace to make an informed choice of whether or not a given
+signal stems from an extensive air shower.
+
+For this reason, samples from the time trace are drawn via a sliding window analysis. A number of $n_\text{bins}$ are extracted from the trace, to be analyzed 
+by some classification algorithm. In order to not select the same information repeatedly, the window is moved by $n_\text{skip}$ bins forward and the process
+can begin anew. Unless explicitly specified otherwise, the hyperparameters in this sliding window analysis are set as 
+
+\begin{equation}
+	\label{eq:sliding-window-analysis-hyperparameters}
+	n_\text{bins} = 120, \qquad n_\text{skip} = 10.
+\end{equation}
+
+Whether or not a specific window contains signal from an extensive air shower - which is important for labelling data in the context of neural network training -
+is a simple exercise. The modular approach in \autoref{sec:trace-building} allows to simply check for nonzero bins in the shower signal component of the trace.
+In practice, upon creating a new combined trace, the first and last positive bin in the shower component are identified. This is e.g. visualized with dashed red 
+lines in \autoref{fig:component_adding}. If any overlap - even just a single bin - exists between the sliding window and this signal region, the extracted window
+is consequently labelled as signal. If this is not the case, the window is labelled as background.
+
+Of course, quality cuts can be applied, and a decision to count a given trace window can be made individually. This is further discussed in 
+\autoref{chap:neural-network-triggers}.
