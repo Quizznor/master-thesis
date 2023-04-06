@@ -1,0 +1,16 @@
+JobBatchName    = extract_LTP_traces
+Executable      = /cr/users/filip/Simulation/extractLTPTraces/submit.py 
+
+# error           = /cr/users/filip/Simulation/condor/errors-$(Process).err
+# output          = /cr/users/filip/Simulation/condor/output-$(Process).log
+# error           = /cr/users/filip/Simulation/condor/errors-$(Item).err
+# output          = /cr/users/filip/Simulation/condor/output-$(Item).log
+
+arguments       = $(Process)   
+# arguments       = $(Item)
+request_memory  = 1G
+max_idle        = 500                         
+
+Requirements	= (OpSysName == "Ubuntu" && OpSysMajorVer == 22  && TARGET.Machine != "crc2.ikp.kit.edu" && TARGET.Machine != "crc1.ikp.kit.edu" && TARGET.Machine != "crcds99.iap.kit.edu")
+
+queue 9998

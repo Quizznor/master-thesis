@@ -910,7 +910,6 @@ class NNClassifier(Classifier):
         # ValidationSet.physics_test(n_showers = int(0.2 * ValidationSet.__len__()), save_dir = f"/cr/data01/filip/models/{self.name}/validation_set_physics_test.png")
 
         try:
-
             self.model.fit(TrainingSet, validation_data = ValidationSet, epochs = epochs - self.epochs, callbacks = self.callbacks)
             self.epochs = epochs
 
@@ -937,7 +936,7 @@ class NNClassifier(Classifier):
         f, df, n, n_trig, t = self.production_test(60000)
 
         with open(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/production_test.csv", "w") as random_file:
-            random_file.write("# f  df  n_traces  n_total_triggered  total_trace_duration")
+            random_file.write("# f  df  n_traces  n_total_triggered  total_trace_duration\n")
             random_file.write(f"{f} {df} {n} {n_trig} {t}")
 
 
@@ -1142,21 +1141,42 @@ class HardwareClassifier(Classifier):
         super().__init__(name or "HardwareClassifier")
         self.triggers = []
 
-        if "th" in triggers: self.triggers.append(self.Th1)
+        if "th1" in triggers: self.triggers.append(self.Th1)
         if "th2" in triggers: self.triggers.append(self.Th2)
         if "tot" in triggers: self.triggers.append(self.ToT)
         if "totd" in triggers: self.triggers.append(self.ToTd)
         if "mops" in triggers: self.triggers.append(self.MoPS_compatibility)
 
-    def __call__(self, trace : np.ndarray) -> bool : 
-        
-        try:
-            for trigger in self.triggers:
-                if trigger(trace): return True
-            else: return False
+    def __call__(self, trace : typing.Union[np.ndarray, Trace]) -> bool :
 
-        except ValueError:
-            return np.array([self.__call__(t) for t in trace])
+        if isinstance(trace, Trace):
+
+            # check Threshold trigger first, they can receive the entire trace at once
+            if self.Th2 in self.triggers or self.Th1 in self.triggers:
+                full_trace = np.array([trace.pmt_1, trace.pmt_2, trace.pmt_3])
+                
+                if self.Th1 in self.triggers and self.Th1(full_trace): return True
+                if self.Th2 in self.triggers and self.Th2(full_trace): return True
+
+            # check for rest of the triggers in sliding window analysis
+            rest_of_the_triggers = [trigger for trigger in self.triggers if trigger not in [self.Th1, self.Th2]]
+
+            if rest_of_the_triggers == []: return False
+
+            for window in trace:
+                for trigger in rest_of_the_triggers:
+                    if trigger(window): return True
+            else: return False
+            
+        
+        elif isinstance(trace, np.ndarray):
+            try:
+                for trigger in self.triggers:
+                    if trigger(trace): return True
+                else: return False
+
+            except ValueError:
+                return np.array([self.__call__(t) for t in trace])
 
     def Th1(self, signal) -> bool : 
         return self.Th(signal, 1.7)

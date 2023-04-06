@@ -21,8 +21,8 @@ and \autoref{sec:sliding-window-analysis}.
 
 While a flux of partices causes elevated ADC levels in both the HG and LG channels of a WCD PMT during a shower event, the lack of such a phenomenon does not imply 
 the readout information is uniformly flat. Instead, it hovers around the channels' baseline (c.f. \autoref{sec:surface-detector}) with occasional spikes upwards 
-due to low-energy particles impinging on the detector. Coupled with electronic noise from the many digital components in the UUB, this constitutes the data that is 
-collected inbetween air shower events.
+due to low-energy particles impinging on the detector. Coupled with electronic noise from the many digital components in the station electronics, the 
+\textbf{U}pgraded \textbf{U}nified \textbf{B}oard (UUB), this constitutes the data that is collected inbetween air shower events.
 
 \subsection{Accidental muons}
 \label{ssec:accidental-muons}
@@ -219,9 +219,9 @@ continuity reasons and ease of comparing to plots generated with other software,
 bin $660$. Since otherwise the data is in the correct $\SI{}{\ADC}$ format, no further manipulation of the data is necessary.
 
 The trace container now holds all necessary components together, but remains in units of \SI{}{\ADC}. To convert to \SI{}{\Peak}, each bin in each PMT trace is 
-floored to mimic the FPGA digital counting, and divided by the appropriate scaling factor \Ipeak. If traces need to be UB compatible (compare 
-\autoref{ssec:filtering-and-downsampling}), the trace must be filtered and downsampled in an intermediate step, the scaling factor becomes 
-$I_\text{VEM, compat.} = \SI{163.235}{\ADC}$ \cite{OfflineSource}. If this isn't the case, the appropriate factor is $I_\text{VEM, Off.}$.
+floored to mimic the FPGA digital counting, and divided by the appropriate scaling factor \Ipeak. If traces need to be UB compatible the trace must be filtered and
+downsampled in an intermediate step. This influences the scaling factor $I_\text{VEM, compat.}$ in a major way (compare \autoref{ssec:filtering-and-downsampling}). 
+If the so-called full-bandwidth, UUB time trace is analyzed, the appropriate factor becomes $I_\text{VEM, Off.}$.
 
 \begin{figure}
 	\centering
@@ -239,18 +239,19 @@ knowledge of the signal one desires to detect. For their use in the Auger observ
 window size of the ToT-trigger have been determined in studies (\cite{bertou2006calibration}, \cite{triggerSettings}, \cite{ToTtriggerSetting}). 
 
 These studies were conducted using the predecessor, the \textbf{U}nified \textbf{B}oard (UB), of the hardware that is being installed during the AugerPrime upgrade
-of the observatory. Most importantly, the \textbf{U}pgraded \textbf{U}nified \textbf{B}oard (UUB) has a sampling rate that is three times larger
-(\SI{120}{\mega\hertz}) than that of UB electronics (\SI{40}{\mega\hertz}). Not only does this raise the number of bins in a standard time trace from 682 to 
-$2^{11} = 2048$, but also drastically reduces the efficiency (in particular for ToT-like triggers) of the above discussed algorithms. Whereas a new  bin is 
-measured every \SI{25}{\nano\second} in a UB station, the triggers would receive a new input every $\approx\SI{8.3}{\nano\second}$ in a UUB setting.
+of the observatory. Most importantly, the UUB has a sampling rate that is three times larger (\SI{120}{\mega\hertz}) than that of UB electronics 
+(\SI{40}{\mega\hertz}). Not only does this raise the number of bins in a standard time trace from 682 to $2^{11} = 2048$, but also drastically reduces the 
+efficiency (in particular for ToT-like triggers) of the above discussed algorithms. Whereas a new  bin is measured every \SI{25}{\nano\second} in a UB station, the
+triggers would receive a new input every $\approx\SI{8.3}{\nano\second}$ in a UUB setting.
 
 The modus operandi elected by the Pierre Auger collaboration to circumvent this problem is to emulate UB electronics using the UUB electronics. This means that 
 measured FADC bins are to be filtered and downsampled before any trigger runs over them. Software implementations by which this is achieved are listed in 
 \autoref{app:filter-and-downsample}. The effect the filtering and downsampling has on measured data is visualized in \autoref{fig:uub-ub-comparison}.
 
-
-
-\todo{comment on accuracy fo this method}
+While the features of the time trace largely remain intact, the absolute signal strength decreases due to a smearing effect imposed by the filtering. Overall, this
+amounts to a $30\%$ difference in amplitude between UUB full-bandwidth traces and their filtered and downsampled counterpart. Since both measurements are derived 
+from the same signal in the WCD though, this implies that \Ipeak must be adjusted by $~30\%$ as well, if traces are to be downsampled. This results in a 
+compatibility scaling factor $I_\text{VEM, compat.} = \SI{163.235}{\ADC}$ \cite{OfflineSource}.
 
 \begin{figure}
 	\begin{subfigure}[b]{0.5\textwidth}
@@ -273,3 +274,4 @@ measured FADC bins are to be filtered and downsampled before any trigger runs ov
 
 \subsection{Sliding window analysis \& Labelling}
 \label{ssec:sliding-window-analysis}
+
