@@ -132,34 +132,41 @@ For the first collection of random-traces, monitoring data is available, but the
 measurement is known. The elected procedure to evaluate data as accurately as possible is thus to calculate the day average of \Ipeak and \Qpeak and take this as 
 the best (first) estimate for each trace. As can be seen in \autoref{fig:random-trace-diagnostics}, this eliminates half of the remaining dataset, as two of the four 
 stations show a large variance in \Ipeak. The day average in these particular cases is not a good estimator for calibration purposes. For this reason, only random 
-traces from the stations Nuria and Le Qui Don, measured in the March dataset are used for analysis purposes.
+traces from the stations Nuria and Le Qui Don, measured in the March dataset are used for analysis purposes, as their $I_\text{VEM, Rand.}$ is stable.
 
 As a crosscheck to verify the goodness of the approximation, the T2 trigger rate as reported by the calibration process is related to the trigger rate obtained by
 direct calculation over all (calibrated) random-traces. By extension, this also serves as a unit test for the classical triggers as they will be implemented in 
-\autoref{chap:classical-triggers}. \todo{rate mismatch new plot}
+\autoref{chap:classical-triggers}. The results of this analysis are shown in \autoref{fig:random-traces-correction}. As is clear from the plot, the rates 
+calculated from the two different approaches are not in accordance. This indicates systematic errors in the calibration (a wrong implementation of trigger 
+algorithms is disfavoured from the discussion in \autoref{chap:classical-triggers}). The errors are consistent across both considered stations. It is found that 
+calculated trigger frequencies are $\approx25\%$ lower than what is taken from monitoring. It is unclear why this discrepancy occurs, as it implies that the 
+stations do not use the same threshold values for triggering as they report.
 
-\begin{figure}
-	\centering
-	\includegraphics[width=\textwidth]{./plots/random_traces_correction_factor.png}
-	\caption{.}
-	\label{fig:random-traces-correction}
-\end{figure}
+In any case, $I_\text{VEM, Rand.}$ must be adjusted to reflect this. A $25\%$ increase in trigger rate is relatable to a $\approx10\%$ decrease in \Ipeak. The 
+calibration scaling factors for random-traces thus become the values listed in \autoref{tab:I-peak-random}.
 
 \begin{table}
 	\begin{center}
-	\caption{Numerical values from \cite{triggerSettings}}
-	\begin{tabular*}{0.4\textwidth}{@{\extracolsep{\fill}} c|c|c}
+	\caption{Calibration constant \Ipeak for random-traces.}
+	\begin{tabular*}{0.6\textwidth}{@{\extracolsep{\fill}} c|c|c}
 		\toprule
 		PMT \# & Nuria & Le Qui Don \\
 		\midrule
-		1 & 5.00 & 2.85 \\
-		2 & 5.00 & 2.85 \\
-		3 & 5.00 & 2.85 \\
-		\bottomrule
+		1 & \SI{159.34}{\ADC} & \SI{145.79}{\ADC} \\
+		2 & \SI{161.37}{\ADC} & \SI{144.63}{\ADC} \\
+		3 & \SI{149.91}{\ADC} & \SI{154.62}{\ADC}
 	\label{tab:trigger-thresholds}
 	\end{tabular*}
 	\end{center}
 \end{table}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{./plots/random_traces_correction_factor.png}
+	\caption{The online reported T2 trigger rate (black) does not match the calculated trigger rate. Only a decrease $\Delta$\Ipeak by $1/10$th of the original 
+	\Ipeak gives a close approximation of the observed rate when manually calculating trigger frequencies.}
+	\label{fig:random-traces-correction}
+\end{figure}
 
 \begin{landscape}
     \begin{figure*}

@@ -7,6 +7,8 @@ import matplotlib.cm as cmap
 from matplotlib.patches import Polygon
 from matplotlib.colors import BoundaryNorm
 from matplotlib.colorbar import ColorbarBase
+from matplotlib.patches import Rectangle
+from matplotlib.collections import PatchCollection
 from scipy.stats.mstats import mquantiles
 from scipy.optimize import curve_fit
 # import seaborn as sns                                                         # causes problems on HTCondor cluster
@@ -68,6 +70,7 @@ class GLOBAL():
     seed                        = False                                         # make RNG dice rolls reproducible via seed
     full_trace                  = False                                         # return entire trace instead of sliding window
     downsampling                = False                                         # make UUB traces look like UB ones instead
+    random_phase                = None                                          # the random phase to use for downsampling
     
     # Classifier details, can be overwritten in __new__ of EventGenerator
     ignore_low_VEM              = False                                         # label signals under threshold as background

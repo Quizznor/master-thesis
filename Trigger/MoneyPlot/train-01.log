@@ -9,3 +9,33 @@
 ...
 001 (54782.000.000) 2023-04-03 08:43:22 Job executing on host: <141.52.67.91:9618?addrs=141.52.67.91-9618+[2a00-1398-4-b001-ae1f-6bff-feab-1e1e]-9618&alias=crc1&noUDP&sock=startd_1565_09ce>
 ...
+006 (54782.000.000) 2023-04-07 07:19:34 Image size of job updated: 1
+	0  -  MemoryUsage of job (MB)
+	0  -  ResidentSetSize of job (KB)
+...
+040 (54782.000.000) 2023-04-07 07:19:34 Started transferring output files
+...
+040 (54782.000.000) 2023-04-07 07:19:35 Finished transferring output files
+...
+005 (54782.000.000) 2023-04-07 07:19:35 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 3 19:09:48, Sys 0 02:12:39  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 3 19:09:48, Sys 0 02:12:39  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	120288096  -  Run Bytes Sent By Job
+	482554  -  Run Bytes Received By Job
+	120288096  -  Total Bytes Sent By Job
+	482554  -  Total Bytes Received By Job
+	Partitionable Resources :     Usage  Request Allocated 
+	   Cpus                 :      1.00        1         1 
+	   Disk (KB)            : 117960      100000   3049891 
+	   Gpus (Average)       :                            0 
+	   Memory (MB)          :      0        5120      5120 
+	   xCpus                :                            1 
+
+	Job terminated of its own accord at 2023-04-07T07:19:34Z with exit-code 0.
+...
+036 (54782.-01.000) 2023-04-07 07:19:35 Cluster removed
+	Materialized 1 jobs from 0 items.	Complete
+...

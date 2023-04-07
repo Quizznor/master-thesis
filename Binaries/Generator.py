@@ -32,6 +32,7 @@ class EventGenerator():
         __:VEM traces:______________________________________________________________
 
         * *apply_downsampling* (``bool``) -- make UUB traces resembel UB traces
+        * *random_phase* (``int [0, 1, 2]``) -- the random phase for downsampling
         * *real_background* (``bool``) -- use real background from random traces
         * *random_index* (``int``) -- which file to use first in random traces
         * *q_peak* (``float``) -- ADC to VEM conversion factor, for UB <-> UUB
@@ -40,6 +41,7 @@ class EventGenerator():
         * *force_inject* (``int``) -- force the injection of <force_inject> background particles
         * *sigma* (``float``) -- baseline std in ADC counts, ignored for real_background
         * *mu* (``list``) -- mean ADC level in ADC counts, ignored for real_background
+
 
         __:Classifier:______________________________________________________________
 
@@ -191,6 +193,7 @@ class Generator(tf.keras.utils.Sequence):
             "window_length"         : kwargs.get("window_length", GLOBAL.window),
             "window_step"           : kwargs.get("window_step", GLOBAL.step),
             "floor_trace"           : kwargs.get("floor_trace", GLOBAL.floor_trace),
+            "random_phase"          : kwargs.get("random_phase", GLOBAL.random_phase),
             "is_vem"                : kwargs.get("is_vem", GLOBAL.is_vem),
             "apply_downsampling"    : self.apply_downsampling,
             "force_inject"          : self.force_inject,
@@ -249,10 +252,7 @@ class Generator(tf.keras.utils.Sequence):
             for station in stations:
 
                 baseline = self.build_baseline()
-                try:
-                    VEMTrace = Trace(baseline, station, self.trace_options, self.files[index])                  # create the trace
-                except Exception as e:
-                    sys.exit(f"{e} forming trace from {self.files[index]}")
+                VEMTrace = Trace(baseline, station, self.trace_options, self.files[index])                  # create the trace
                 full_traces.append(VEMTrace)
 
                 if not self.for_training: continue
@@ -287,7 +287,6 @@ class Generator(tf.keras.utils.Sequence):
                 return full_traces
             
             else:
-
                 
                 # (traces), (labels) at this moment only contains signal traces
                 # fill up with background according to prior set in __init__...

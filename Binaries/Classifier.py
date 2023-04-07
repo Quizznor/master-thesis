@@ -111,10 +111,10 @@ class Classifier():
              open(save_file["FP"], "w") as FP, \
              open(save_file["FN"], "w") as FN:
 
-            for batch, traces in enumerate(Dataset):
+            for batch_no, traces in enumerate(Dataset):
 
-                progress_bar(batch, n_showers, start_time)
-                random_file = Dataset.files[batch]
+                progress_bar(batch_no, n_showers, start_time)
+                random_file = Dataset.files[batch_no]
                 random_file = f"{'/'.join(random_file.split('/')[-3:])}"
 
                 for trace in traces:
@@ -158,7 +158,7 @@ class Classifier():
                     else:
                         FN.write(save_string + f"{max_charge_integral}\n")
 
-                if batch + 1 >= n_showers: break        
+                if batch_no + 1 >= n_showers: break        
 
         Dataset.for_training = temp
         Dataset.__reset__()
@@ -184,15 +184,16 @@ class Classifier():
         warnings.simplefilter("default", UserWarning)
     
     # load a specific dataset (e.g. 'validation_data', 'real_background', etc.) and print performance
-    def load_and_print_performance(self, dataset : str) -> tuple : 
+    def load_and_print_performance(self, dataset : str, quiet = False) -> tuple : 
 
-        try:
-            if header_was_called: pass
+        if not quiet:
+            try:
+                if header_was_called: pass
 
-        except NameError:
-            self.__header__()
+            except NameError:
+                self.__header__()
 
-        print(f"Fetching predictions for: {self.name} -> {dataset}", end = "\r")
+            print(f"Fetching predictions for: {self.name} -> {dataset}", end = "\r")
 
         # load dataset in it's completeness
         if self.name == "HardwareClassifier":
@@ -228,14 +229,16 @@ class Classifier():
             FN = np.loadtxt(save_files['FN'], usecols = [2, 3, 4, 5, 6, 7])
         else: FN = np.array([])
 
-        tp, fp = len(TP), len(FP)
-        tn, fn = len(TN), len(FN)
 
-        ACC = ( tp + tn ) / (tp + fp + tn + fn)* 100
+        if not quiet:
+            tp, fp = len(TP), len(FP)
+            tn, fn = len(TN), len(FN)
 
-        name = self.name if len(self.name) <= 43 else self.name[:40] + "..."
-        dataset = dataset if len(dataset) <= 33 else dataset[:30] + "..."
-        print(f"{name:<45} {dataset:<35} {tp:7d} {fp:7d} {tn:7d} {fn:7d} -> {ACC = :6.2f}%")
+            ACC = ( tp + tn ) / (tp + fp + tn + fn)* 100
+
+            name = self.name if len(self.name) <= 43 else self.name[:40] + "..."
+            dataset = dataset if len(dataset) <= 33 else dataset[:30] + "..."
+            print(f"{name:<45} {dataset:<35} {tp:7d} {fp:7d} {tn:7d} {fn:7d} -> {ACC = :6.2f}%")
 
         return TP, FP, TN, FN
 
@@ -1030,17 +1033,83 @@ class Ensemble(NNClassifier):
 
         return [model(trace) for model in self.models]
 
-    def load_and_print_performance(self, dataset : str) -> list : 
+    def load_and_print_performance(self, dataset : str, quiet = False) -> list : 
 
         # TP, FP, TN, FN 
         predictions = []
 
         # keep the iterable index in case of early breaking during debugging
         for i, model in enumerate(self.models):
-            prediction = model.load_and_print_performance(dataset)
+            prediction = model.load_and_print_performance(dataset, quiet = quiet)
             predictions.append(prediction)
 
         return predictions
+
+    def get_background_rates(self) -> tuple : 
+
+        rate, rate_err = [], []
+
+        for model in self.models:
+            f,  df = np.loadtxt("/cr/data01/filip/models/" + model.name + "model_" + str(model.epochs) + "/production_test.csv", usecols = [0, 1])
+            rate.append(f), rate_err.append(df)
+
+        return rate, rate_err
+    
+    def get_accuracy(self, dataset : str) -> tuple : 
+
+        acc, acc_err = [], []
+
+        for prediction in self.load_and_print_performance(dataset, quiet = True):
+            TP, FP, TN, FN = prediction
+            x, o = len(TP), len(FN)
+            accuracy = x / (x + o)
+            err = 1/(x+0)**2 * np.sqrt( x**3 + o**3 - 2 * np.sqrt((x * o)**3) )
+
+            acc.append(accuracy)
+            acc_err.append(err)
+
+        return acc, acc_err
+
+    def money_plot(self, *args, **kwargs):
+
+        color = kwargs.get("color", "steelblue")
+        fig, ax = plt.subplots()
+
+        ax.set_yscale("log")
+        ax.set_ylabel("Random trace trigger rate / $\mathrm{Hz}$")
+        ax.set_xlabel("Trigger efficiency")
+        ax.set_xlim(0, 1.05)
+
+        HardwareClassifier.plot_performance(ax)
+
+        for i, dataset in enumerate(args):
+
+            rate, rate_err = self.get_background_rates()
+            acc, acc_err = self.get_accuracy(dataset)
+
+            n_rate, bins = np.histogram(rate, bins = 10)
+            current_y, scaling = min(rate), 0.01
+            bin_width = bins[1] - bins[0]
+            boxes = []
+
+            for i, rate_bin in enumerate(n_rate):
+                boxes.append(Rectangle((np.mean(acc) - scaling * rate_bin, current_y), width = 2*scaling*rate_bin, height = bin_width))
+                current_y += bin_width
+                    
+            ax.add_collection(PatchCollection(boxes, facecolor = "slategray", lw = 0, alpha = 0.2))
+            plt.errorbar(np.mean(acc), np.mean(rate), xerr = np.std(acc), yerr = np.std(rate), fmt = "o", markersize = 12, c = color)
+            plt.scatter(np.mean(acc), np.mean(rate) + np.std(rate), marker = "1", s = 400, zorder = 4, c = color)
+            plt.scatter(np.mean(acc), np.mean(rate) - np.std(rate), marker = "2", s = 400, zorder = 4, c = color)
+
+
+
+
+
+
+
+
+
+
 
     def ROC(self, dataset : str, **kwargs : dict) -> None :
 
@@ -1289,6 +1358,18 @@ class HardwareClassifier(Classifier):
             
         return pmt_active_counter >= pmt_multiplicity
 
+    @staticmethod
+    def plot_performance(ax : plt.axes, x : float = None, y : float = None, xerr : float = None, yerr : float = None) -> None :
+        
+        if x is None:                                                                                                           # default dataset: 'q_peak_compatibility' 
+            TP, FN = 66548., 100822.
+            x = TP / (TP + FN)
+            xerr = 1/(TP+FN)**2 * np.sqrt( TP**3 + FN**3 - 2 * np.sqrt((TP * FN)**3) )
+        if y is None:                                                                                                           # RunProductionTest/plot_everything.ipynb
+            y = 21.3
+            yerr = 3
+
+        ax.errorbar(x, y, xerr = xerr, yerr = yerr, c = "k", label = "Classical triggers", fmt = "*")
 
 class BayesianClassifier(Classifier):
     

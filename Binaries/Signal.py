@@ -63,11 +63,12 @@ class Signal():
 # container for the combined trace
 class Trace(Signal):
 
-    def __init__(self, baseline_data : np.ndarray, signal_data : tuple, trace_options : dict, event_file = None, **kwargs) :
+    def __init__(self, baseline_data : np.ndarray, signal_data : tuple, trace_options : dict, event_file = None) :
 
         self.window_length = trace_options["window_length"]
         self.window_step = trace_options["window_step"]
         self.downsampled = trace_options["apply_downsampling"]
+        self.random_phase = trace_options["random_phase"]
         self.trace_length = trace_options["trace_length"]
         self.simulation_q_charge = trace_options["simulation_q_charge"]
         self.simulation_q_peak = trace_options["simulation_q_peak"]
@@ -103,7 +104,7 @@ class Trace(Signal):
 
         # whether or not to apply downsampling
         if self.downsampled:
-            self.random_phase = kwargs.get("random_phase", np.random.randint(0, 3))
+            self.random_phase = np.random.randint(0, 3) if self.random_phase is None else self.random_phase
             self._iteration_index = max(self.signal_start - self.window_length + np.random.randint(1, 10), 0) // 3 if self.has_signal else 0
         else: 
             self._iteration_index = max(self.signal_start - self.window_length + np.random.randint(1, 10), 0) if self.has_signal else 0

@@ -15,6 +15,9 @@ Trigger/CompareEvents/*.csv
 Trigger/CompareEvents/*.root
 thesis/scripts/validity-plot/showersim
 antrag/
+*.out
+*.err
+*.log
 
 scripts/CDAS_triggers/io
 scripts/CDAS_triggers/sd
