@@ -17,7 +17,6 @@ class Classifier():
     def production_test(self, n_traces : int = 10000, **kwargs) -> tuple :
 
         n_total_triggered = 0
-        total_trace_duration = GLOBAL.trace_length * GLOBAL.single_bin_duration * n_traces
         start_time = str(datetime.now()).replace(" ", "-")[:-10]
 
         os.system(f"mkdir -p /cr/users/filip/plots/production_tests/{self.name.replace('/','-')}/{start_time}/")
@@ -25,8 +24,9 @@ class Classifier():
         window_length = 120
         window_step = int(window_length / 3)
 
-        # RandomTraces = EventGenerator("19_19.5", split = 1, force_inject = 0, real_background = True, prior = 0, window_length, **kwargs)
-        # RandomTraces.files = np.zeros(n_traces)
+        RandomTraces = EventGenerator("19_19.5", split = 1, force_inject = 0, real_background = True, prior = 0, window_length = window_length, window_step = window_step, **kwargs)
+        RandomTraces.files = np.zeros(n_traces)
+        total_trace_duration = GLOBAL.trace_length * GLOBAL.single_bin_duration * len(RandomTraces)
 
         start = perf_counter_ns()
 
@@ -40,8 +40,8 @@ class Classifier():
 
                     n_total_triggered += 1
 
-                    # if n_total_triggered < 100: 
-                    #     self.plot_trace_window(window, n_total_triggered, start_time, downsample)
+                    if n_total_triggered < 100: 
+                        self.plot_trace_window(window, n_total_triggered, start_time, trace[0].downsampled)
 
                     # perhaps skipping the entire trace isn't exactly accurate
                     # but then again just skipping one window seems wrong also
@@ -72,6 +72,8 @@ class Classifier():
         plt.plot(range(x), pmt1, label = r"PMT \#1")
         plt.plot(range(x), pmt2, label = r"PMT \#2")
         plt.plot(range(x), pmt3, label = r"PMT \#3")
+
+        
 
         plt.ylabel(r"Signal / VEM$_\mathrm{Peak}$")
         plt.xlabel(r"Bin / $8.33\,\mathrm{ns}$" if not downsampled else r"Bin / $25\,\mathrm{ns}$")
@@ -244,102 +246,6 @@ class Classifier():
 
     # Performance visualizers #######################################################################
     if True:                                              # So this can be collapsed in the editor =)
-        # plot the ROC curve for a specific dataset (e.g. 'validation_data', 'real_background', etc.) over signal strength (VEM_charge)
-        def ROC(self, dataset, **kwargs) -> None :
-
-            raise NotImplementedError
-
-            TP, FP, TN, FN = self.load_and_print_performance(dataset, usecols = [0, 0, 0, 0])
-
-            if kwargs.get("full_set", False):
-                y, x = np.array(list(TP) + list(TN)), np.array(list(FP) + list(FN))
-            else: y, x = TP, FP
-
-            x = np.clip(x, a_min = 1e-6, a_max = None)
-            y = np.clip(y, a_min = 1e-6, a_max = None)
-
-            score_low, score_high = min([x.min(), y.min()]), max([x.max(), y.max()])
-            last, current_x, current_y = score_low, 0, 0
-            ROC_x, ROC_y = [],[]
-
-            bins = np.geomspace(score_low, score_high, kwargs.get("n", 50))[::-1]
-            norm = ( len(x) + len(y) ) * 5                  # why x5 ???
-
-            for score_bin in bins:
-
-                this_x = ((last >= x) & (x > score_bin)).sum()
-                this_y = ((last >= y) & (y > score_bin)).sum()
-                
-                current_x += this_x / norm
-                current_y += this_y / norm
-                
-                ROC_y.append(current_y), ROC_x.append(current_x)
-
-                last = score_bin
-            
-            ROC_x.append(1), ROC_y.append(1)
-
-            plt.title(kwargs.get("title",""))
-            plt.xlim(-0.02,1.02)
-            plt.ylim(-0.02,1.02)
-            plt.rcParams.update({'font.size': 22})
-            plt.xlabel("False positive rate"), plt.ylabel("True positive rate")
-            plt.plot(ROC_x, ROC_y, label = kwargs.get("label", self.name + "/" + dataset), ls = kwargs.get("ls", "solid"), lw = 2)
-            
-            plt.plot([0,1],[0,1], ls = "--", c = "gray")
-
-            tp, fp = len(TP), len(FP)
-            tn, fn = len(TN), len(FN)
-
-            all = ( tp + tn + fp + fn )
-            TPR = ( tp ) / ( tp + fp ) * 100
-            ACC = ( tp + tn ) / all * 100
-
-            return ACC, TPR
-
-        # precision and recall curve over signal strength (VEM_charge)
-        def PRC(self, dataset : str, **kwargs) -> None :
-
-            raise NotImplementedError
-
-            TP, FP, TN, FN = self.load_and_print_performance(dataset, usecols = [0, 0, 0, 0])
-
-            TP = np.clip(TP, a_min = 1e-6, a_max = None)
-            FP = np.clip(FP, a_min = 1e-6, a_max = None)
-            FN = np.clip(FN, a_min = 1e-6, a_max = None)
-
-            score_low = min([TP.min(), FP.min(), FN.min()])
-            score_high = max([TP.max(), FP.max(), FN.max()])
-            last = score_low
-            PRC_x, PRC_y = [],[]
-
-            for score_bin in np.geomspace(score_low, score_high, kwargs.get("n", 100))[::-1]:
-
-                this_tp = ((last >= TP) & (TP > score_bin)).sum()
-                this_fp = ((last >= FP) & (FP > score_bin)).sum()
-                this_fn = ((last >= FN) & (FN > score_bin)).sum()
-                last = score_bin
-
-                if this_tp + this_fn != 0 and this_tp + this_fp != 0:
-                    this_x = this_tp / (this_tp + this_fn)                                  # recall
-                    this_y = this_tp / (this_tp + this_fp)                                  # precision
-
-                else: continue
-
-                # print(f"{last:.2e} -> {score_bin:.2e}: {this_x}, {this_y}")
-                
-                PRC_y.append(this_y), PRC_x.append(this_x)
-
-            PRC_y.sort() # ???
-            PRC_x.sort() # ???
-
-            plt.xlim(-0.02,1.02)
-            plt.ylim(0.48,1.02)
-            plt.rcParams.update({'font.size': 22})
-            plt.xlabel("Efficiency"), plt.ylabel("Precision")
-            plt.plot(1 - np.array(PRC_x), PRC_y, c = kwargs.get("c", "steelblue"), label = self.name + "/" + dataset, ls = kwargs.get("ls", "solid"))
-            plt.plot([0,1],[0.5,0.5,], ls = "--", c = "gray")
-
         # plot the classifiers efficiency at a given SPD, energy, and theta
         # TODO error calculation from LDF fit, etc...
         def spd_energy_efficiency(self, dataset : str, **kwargs) -> None :
@@ -494,6 +400,102 @@ class Classifier():
             plt.subplots_adjust(hspace = 0.04, wspace = 0)
 
             warnings.simplefilter("default", RuntimeWarning)
+
+        # plot the ROC curve for a specific dataset (e.g. 'validation_data', 'real_background', etc.) over signal strength (VEM_charge)
+        def ROC(self, dataset, **kwargs) -> None :
+
+            raise NotImplementedError
+
+            TP, FP, TN, FN = self.load_and_print_performance(dataset, usecols = [0, 0, 0, 0])
+
+            if kwargs.get("full_set", False):
+                y, x = np.array(list(TP) + list(TN)), np.array(list(FP) + list(FN))
+            else: y, x = TP, FP
+
+            x = np.clip(x, a_min = 1e-6, a_max = None)
+            y = np.clip(y, a_min = 1e-6, a_max = None)
+
+            score_low, score_high = min([x.min(), y.min()]), max([x.max(), y.max()])
+            last, current_x, current_y = score_low, 0, 0
+            ROC_x, ROC_y = [],[]
+
+            bins = np.geomspace(score_low, score_high, kwargs.get("n", 50))[::-1]
+            norm = ( len(x) + len(y) ) * 5                  # why x5 ???
+
+            for score_bin in bins:
+
+                this_x = ((last >= x) & (x > score_bin)).sum()
+                this_y = ((last >= y) & (y > score_bin)).sum()
+                
+                current_x += this_x / norm
+                current_y += this_y / norm
+                
+                ROC_y.append(current_y), ROC_x.append(current_x)
+
+                last = score_bin
+            
+            ROC_x.append(1), ROC_y.append(1)
+
+            plt.title(kwargs.get("title",""))
+            plt.xlim(-0.02,1.02)
+            plt.ylim(-0.02,1.02)
+            plt.rcParams.update({'font.size': 22})
+            plt.xlabel("False positive rate"), plt.ylabel("True positive rate")
+            plt.plot(ROC_x, ROC_y, label = kwargs.get("label", self.name + "/" + dataset), ls = kwargs.get("ls", "solid"), lw = 2)
+            
+            plt.plot([0,1],[0,1], ls = "--", c = "gray")
+
+            tp, fp = len(TP), len(FP)
+            tn, fn = len(TN), len(FN)
+
+            all = ( tp + tn + fp + fn )
+            TPR = ( tp ) / ( tp + fp ) * 100
+            ACC = ( tp + tn ) / all * 100
+
+            return ACC, TPR
+
+        # precision and recall curve over signal strength (VEM_charge)
+        def PRC(self, dataset : str, **kwargs) -> None :
+
+            raise NotImplementedError
+
+            TP, FP, TN, FN = self.load_and_print_performance(dataset, usecols = [0, 0, 0, 0])
+
+            TP = np.clip(TP, a_min = 1e-6, a_max = None)
+            FP = np.clip(FP, a_min = 1e-6, a_max = None)
+            FN = np.clip(FN, a_min = 1e-6, a_max = None)
+
+            score_low = min([TP.min(), FP.min(), FN.min()])
+            score_high = max([TP.max(), FP.max(), FN.max()])
+            last = score_low
+            PRC_x, PRC_y = [],[]
+
+            for score_bin in np.geomspace(score_low, score_high, kwargs.get("n", 100))[::-1]:
+
+                this_tp = ((last >= TP) & (TP > score_bin)).sum()
+                this_fp = ((last >= FP) & (FP > score_bin)).sum()
+                this_fn = ((last >= FN) & (FN > score_bin)).sum()
+                last = score_bin
+
+                if this_tp + this_fn != 0 and this_tp + this_fp != 0:
+                    this_x = this_tp / (this_tp + this_fn)                                  # recall
+                    this_y = this_tp / (this_tp + this_fp)                                  # precision
+
+                else: continue
+
+                # print(f"{last:.2e} -> {score_bin:.2e}: {this_x}, {this_y}")
+                
+                PRC_y.append(this_y), PRC_x.append(this_x)
+
+            PRC_y.sort() # ???
+            PRC_x.sort() # ???
+
+            plt.xlim(-0.02,1.02)
+            plt.ylim(0.48,1.02)
+            plt.rcParams.update({'font.size': 22})
+            plt.xlabel("Efficiency"), plt.ylabel("Precision")
+            plt.plot(1 - np.array(PRC_x), PRC_y, c = kwargs.get("c", "steelblue"), label = self.name + "/" + dataset, ls = kwargs.get("ls", "solid"))
+            plt.plot([0,1],[0.5,0.5,], ls = "--", c = "gray")
 
         # plot the classifiers efficiency in terms of deposited signal
         def signal_efficiency(self, dataset : str, **kwargs) -> None : 
@@ -852,7 +854,7 @@ class NNClassifier(Classifier):
             "simple_LSTM" : Architectures.__simple_LSTM__,
         }
 
-    def __init__(self, name : str, set_architecture = None, supress_print : bool = False, **kwargs) -> None :
+    def __init__(self, name : str, set_architecture = None, supress_print : bool = False) -> None :
 
         r'''
         :name ``str``: specifies the name of the NN and directory in /cr/data01/filip/models/
@@ -891,16 +893,18 @@ class NNClassifier(Classifier):
 
         self.model.compile(loss = 'categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy'], run_eagerly = True)
 
-        early_stopping_patience = kwargs.get("early_stopping_patience", GLOBAL.early_stopping_patience)
+        not supress_print and print(self)
+
+    def train(self, Datasets : tuple, epochs : int, **kwargs) -> None :
+        
+        # stop if no improvement over 75% of epoch and accuracy over 95%
+        early_stopping_patience = kwargs.get("early_stopping_patience", int(0.75 * len(Datasets[0])))
         early_stopping_accuracy = kwargs.get("early_stopping_accuracy", GLOBAL.early_stopping_accuracy)
         
         EarlyStopping = self.BatchwiseEarlyStopping(early_stopping_patience, early_stopping_accuracy)
 
-        self.callbacks = [EarlyStopping,]
-        not supress_print and print(self)
+        callbacks = [EarlyStopping,]
 
-    def train(self, Datasets : tuple, epochs : int) -> None :
-        
         try:
             os.mkdir(f"/cr/data01/filip/models/{self.name}")
         except FileExistsError: pass
@@ -913,7 +917,7 @@ class NNClassifier(Classifier):
         # ValidationSet.physics_test(n_showers = int(0.2 * ValidationSet.__len__()), save_dir = f"/cr/data01/filip/models/{self.name}/validation_set_physics_test.png")
 
         try:
-            self.model.fit(TrainingSet, validation_data = ValidationSet, epochs = epochs - self.epochs, callbacks = self.callbacks)
+            self.model.fit(TrainingSet, validation_data = ValidationSet, epochs = epochs - self.epochs, callbacks = callbacks)
             self.epochs = epochs
 
         except EarlyStoppingError: 
@@ -934,13 +938,13 @@ class NNClassifier(Classifier):
         print(f"\nTraining exited {training_status}. Onto providing metadata now...")
         self.make_signal_dataset(ValidationSet, f"validation_data")
 
-        # calculate trigger rate on random traces
-        print(f"\ncalculating trigger rate on 1s (~60 000 Hz) of random traces now")
-        f, df, n, n_trig, t = self.production_test(60000)
+        # # calculate trigger rate on random traces
+        # print(f"\ncalculating trigger rate on 0.5s (~30 000 Hz) of random traces now")
+        # f, df, n, n_trig, t = self.production_test(30000)
 
-        with open(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/production_test.csv", "w") as random_file:
-            random_file.write("# f  df  n_traces  n_total_triggered  total_trace_duration\n")
-            random_file.write(f"{f} {df} {n} {n_trig} {t}")
+        # with open(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/production_test.csv", "w") as random_file:
+        #     random_file.write("# f  df  n_traces  n_total_triggered  total_trace_duration\n")
+        #     random_file.write(f"{f} {df} {n} {n_trig} {t}")
 
 
     def save(self) -> None : 
@@ -1061,7 +1065,7 @@ class Ensemble(NNClassifier):
 
         for prediction in self.load_and_print_performance(dataset, quiet = True):
             TP, FP, TN, FN = prediction
-            x, o = len(TP), len(FN)
+            x, o = float(len(TP)), float(len(FN))
             accuracy = x / (x + o)
             err = 1/(x+0)**2 * np.sqrt( x**3 + o**3 - 2 * np.sqrt((x * o)**3) )
 
@@ -1279,6 +1283,7 @@ class HardwareClassifier(Classifier):
 
         threshold     = 0.2                                                         # bins above this threshold are 'active'
         n_bins        = 13                                                          # minimum number of bins above threshold
+        multiplicity  = 2                                                           # number of PMTs that satisfy conditions
 
         pmt_1, pmt_2, pmt_3 = signal
 
@@ -1288,7 +1293,7 @@ class HardwareClassifier(Classifier):
         pmt3_active = list(pmt_3 > threshold).count(True)
         ToT_trigger = [pmt1_active >= n_bins, pmt2_active >= n_bins, pmt3_active >= n_bins]
 
-        if ToT_trigger.count(True) >= 2:
+        if ToT_trigger.count(True) >= multiplicity:
             return True
         else:
             return False

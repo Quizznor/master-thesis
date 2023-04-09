@@ -20,8 +20,8 @@ ADC bins as measured by the three different WCD PMTs for values that exceed some
 all three WCD PMTs simultaneously, a Th-T1/2 trigger is issued. A pseudocode implementation of this algorithm is hence given by the below code block.
 
 \begin{lstlisting}
- th1 = 1.75      // Th1 level threshold above baseline, in VEM   
- th2 = 3.20      // Th2 level threshold above baseline, in VEM  
+ th1 = 1.75  // Th1 level threshold above baseline, in VEM   
+ th2 = 3.20  // Th2 level threshold above baseline, in VEM  
 
  while True:
 
@@ -29,7 +29,7 @@ all three WCD PMTs simultaneously, a Th-T1/2 trigger is issued. A pseudocode imp
 
      if pmt1 <= th2 and pmt2 <= th2 and pmt3 <= th2:
          raise ThT1_trigger
-     else if pmt1 <= th1 and pmt2 <= th1 and pmt3 <= th1:
+     if pmt1 <= th1 and pmt2 <= th1 and pmt3 <= th1:
          raise ThT2_trigger
      else: 
          continue
@@ -72,7 +72,7 @@ A pseudocode example is given below.
  n_bins      = 12   // number of bins above pedestal
  window_size = 120  // considered window length
 
- buffer_pmts = [[False for i in 1..window_size] for j in 1..3] 
+ buffers = [[False for i in 1..window_size] for j in 1..3] 
  step_count = 0
 
  while True:
@@ -141,9 +141,6 @@ the SD field versus its' counterpart in analysis software.
 For this purpose, the MoPs trigger is not considered in the analysis presented in \autoref{chap:neural-network-triggers}. The implications of this choice are layed
 out in \autoref{sec:classical-triggers-performance}.
 
-\todo{pseudocode?}
-
-
 \section{Performance}
 \label{sec:classical-triggers-performance}
 
@@ -181,11 +178,25 @@ water tank and raises a T2 trigger. The sensitivity - in the following also call
 
 The latter is a measure of how readily the triggers (wrongly) identify background events like stray cosmic muons as extensive air showers. It is imperative 
 for any trigger algorithm operating in the SD to minimize this probability. Simply due to the number of operating stations in the field, a small increase in 
-$\text{FDR}$ drastically raise the amount of potential events and hence load on the central analysis server of the observbatory.
+$\text{FDR}$ drastically raise the amount of potential events and hence load on the central analysis server of the observatory.
 
 \begin{equation}
 	\label{eq:statistics-efficiency}
 	\text{FDR} = \frac{\text{FP}}{\text{TP} + \text{FP}}.
 \end{equation}
 
-\todo{continue writing about performance}
+\subsection{Lateral Trigger Probability function}
+
+Ultimately, all test statistics constructed by classical station triggers (ignoring MoPS) are aliases for the deposited charge $S$ in the WCD. Because $S$
+is heavily influenced by the primary particle energy, zenith and distance to the shower core, as well as to a lesser extent by shower age and statistical 
+fluctuations, it makes sense to parametrize the trigger efficiency $\epsilon(E, \theta, \text{SPD})$ in terms of these observables. 
+
+From a heuristic consideration, it can immediately be concluded that large separations between station and shower axis affect efficiencies negatively, because the 
+particle distribution function monotonically decreases with increasing $r$ (compare \autoref{fig:component-LDF}). Similarly, inclined showers with a large $\theta$
+are more attenuated compared to vertical showers, as they have to travers a larger atmospheric depth ($\propto\sec\left(\theta\right)$) before reaching the 
+detector. Lastly, primaries with large $E$ on average deposit higher $S$ in the WCD due to unleashing bigger particle cascades. Consequently $\epsilon$ is 
+positively correlated to $E$.
+
+The functional form that can be obtained by evaluating trigger efficiencies for a given (slice of) $E$ and $\theta$ is labelled the \textbf{L}ateral 
+\textbf{T}rigger \textbf{P}robability (LTP). It will be the main comparison metric, by which different trigger algorithms are compared in this work. For classical
+triggers, two methods to extract LTPs are presented here.

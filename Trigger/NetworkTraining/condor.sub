@@ -1,4 +1,4 @@
-JobBatchName    = train_NN_model
+JobBatchName    = train_CNN_16muon
 Executable      = /cr/users/filip/Trigger/NetworkTraining/train_model.py
 
 error           = /cr/users/filip/Trigger/NetworkTraining/train.err
@@ -7,7 +7,7 @@ log             = /cr/users/filip/Trigger/NetworkTraining/train.log
 
 arguments       = $(Process)   
 # arguments       = $(Item)
-request_memory  = 5G
+request_memory  = 3G
 max_idle        = 150
                                                             
 should_transfer_files = YES                      

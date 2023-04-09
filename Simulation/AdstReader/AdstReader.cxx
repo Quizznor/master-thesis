@@ -310,8 +310,8 @@ void DoLtpCalculation(fs::path pathToAdst)
 void Compare(fs::path pathToAdst)
 {
   // const auto csvTraceFile = pathToAdst.parent_path()/ pathToAdst.filename().replace_extension("csv"); // for testing
-  const auto csvADCTraceFile = "/cr/tempdata01/filip/QGSJET-II/COMPARE/ADC/" + pathToAdst.filename().replace_extension("csv").string();
-  const auto csvVEMTraceFile = "/cr/tempdata01/filip/QGSJET-II/COMPARE/VEM/" + pathToAdst.filename().replace_extension("csv").string();
+  const auto csvADCTraceFile = "/cr/users/filip/Trigger/OfflineComparison/tot_fuckups/ADC/" + pathToAdst.filename().replace_extension("csv").string();
+  const auto csvVEMTraceFile = "/cr/users/filip/Trigger/OfflineComparison/tot_fuckups/VEM/" + pathToAdst.filename().replace_extension("csv").string();
 
   // create csv file streams
   ofstream traceADCFile(csvADCTraceFile, std::ios_base::app);

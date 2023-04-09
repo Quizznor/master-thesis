@@ -291,7 +291,7 @@ class Trace(Signal):
         return "||" + "".join(trace) + "||" + metadata
 
     # wrapper for plotting a trace
-    def __plot__(self) -> None :
+    def __plot__(self, **kwargs) -> None :
 
         x = range(self.trace_length)
         sig = lambda x : f"$S={x:.1f}\,\\mathrm{{VEM}}_\\mathrm{{Ch.}}$"
@@ -301,9 +301,9 @@ class Trace(Signal):
         except AttributeError:
             plt.title(f"Background trace - {sig(self.deposited_signal)}", pad = 20)
 
-        plt.plot(x, self.pmt_1, c = "steelblue", label = f"PMT \#1{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[0])}", lw = 1)
-        plt.plot(x, self.pmt_2, c = "orange", label = f"PMT \#2{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[1])}", lw = 1)
-        plt.plot(x, self.pmt_3, c = "green", label = f"PMT \#3{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[2])}", lw = 1)
+        plt.plot(x, self.pmt_1, c = "steelblue", label = f"PMT \#1{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[0])}", lw = 1, **kwargs)
+        plt.plot(x, self.pmt_2, c = "orange", label = f"PMT \#2{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[1])}", lw = 1, **kwargs)
+        plt.plot(x, self.pmt_3, c = "green", label = f"PMT \#3{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[2])}", lw = 1, **kwargs)
 
         if self.has_signal:
             plt.axvline(self.signal_start, ls = "--", c = "red", lw = 2)

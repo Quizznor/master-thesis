@@ -47,7 +47,7 @@ class GLOBAL():
     # for bias factor from TRUE to FPGA vem see Modules/SdReconstruction/SdCalibratorOG/SdCalibrator.xml.in
     q_peak                      = 215.781                                       # OFFLINE calibration factor for ADC - VEM
     q_charge                    = 1593.51                                       # OFFLINE calibration factor for integrals
-    # bias_factor                 = 1.087                                         # OFFLINE 
+    q_peak_compatibility        = 163.235                                       # OFFLINE q_peak for downsampled traces
 
     # Trace details, can be overwritten in __new__ of EventGenerator
     background_frequency        = 4665                                          # frequency of accidental injections / Hz
