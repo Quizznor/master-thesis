@@ -52,3 +52,33 @@ def confidence_comparison(confidence_level, *args, **kwargs):
         ax.axhline(0, c = "gray", ls = ":", lw = 2)
 
     plt.ylim(-100, y_max)
+
+
+class MoneyPlot():
+     
+    def __init__(self) -> None : 
+        self.ax = self.setup()
+        self.buffer_x, self.buffer_y = [], []
+
+    def setup(self) -> plt.axes :
+        fig, ax = plt.subplots()
+        ax.set_yscale("log")
+        ax.set_ylabel("Random trace trigger rate / $\mathrm{Hz}$")
+        ax.set_xlabel("Trigger efficiency")
+        HardwareClassifier.plot_performance(ax)
+        
+        ax.set_ylim(1)
+
+        return ax
+
+    def add(self, ensemble, dataset, **kwargs) -> None :
+        self.ax, x, y = ensemble.money_plot(self.ax, dataset, **kwargs)
+        self.buffer_x.append(x)
+        self.buffer_y.append(y)
+
+    def draw_line(self, **kwargs) -> None : 
+        self.ax.plot(self.buffer_x, self.buffer_y, **kwargs)
+        self.buffer_x, self.buffer_y = [], []
+
+    def __call__(self) -> None :
+        plt.show()

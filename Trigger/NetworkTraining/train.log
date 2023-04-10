@@ -259,3 +259,34 @@
 ...
 001 (56516.000.000) 2023-04-09 08:49:50 Job executing on host: <141.52.67.92:9618?addrs=141.52.67.92-9618+[2a00-1398-4-b001-ae1f-6bff-feab-1f38]-9618&alias=crc2.iap.kit.edu&noUDP&sock=startd_266023_3ac9>
 ...
+006 (56515.000.000) 2023-04-09 12:24:14 Image size of job updated: 1
+	0  -  MemoryUsage of job (MB)
+	0  -  ResidentSetSize of job (KB)
+...
+040 (56515.000.000) 2023-04-09 12:24:14 Started transferring output files
+...
+040 (56515.000.000) 2023-04-09 12:24:14 Finished transferring output files
+...
+005 (56515.000.000) 2023-04-09 12:24:14 Job terminated.
+	(0) Abnormal termination (signal 9)
+	(0) No core file
+		Usr 0 03:16:52, Sys 0 00:04:15  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 03:16:52, Sys 0 00:04:15  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	6682794  -  Run Bytes Sent By Job
+	487838  -  Run Bytes Received By Job
+	6682794  -  Total Bytes Sent By Job
+	487838  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :     0.97        1         1 
+	   Disk (KB)            :  7022      100000   1459002 
+	   Gpus (Average)       :                           0 
+	   Memory (MB)          :     0        3072      3072 
+	   xCpus                :                           1 
+
+	Job terminated of its own accord at 2023-04-09T12:24:13Z with signal 9.
+...
+036 (56515.-01.000) 2023-04-09 12:24:14 Cluster removed
+	Materialized 1 jobs from 0 items.	Complete
+...

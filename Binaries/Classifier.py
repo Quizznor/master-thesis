@@ -329,7 +329,7 @@ class Classifier():
 
                     x, _ = np.histogram(hits, bins = binning)
                     o, _ = np.histogram(misses, bins = binning)
-                    efficiency = x / (x + o) * LDF(bin_center)
+                    efficiency = x / (x + o) #* LDF(bin_center)
                     efficiency_err = 1/n_all**2 * np.sqrt( x**3 + o**3 - 2 * np.sqrt((x * o)**3) )          # lack LDF error part here !!
                     efficiency_err[efficiency_err == 0] = 1e-3                                              # such that residuals are finite
 
@@ -1074,46 +1074,28 @@ class Ensemble(NNClassifier):
 
         return acc, acc_err
 
-    def money_plot(self, *args, **kwargs):
+    def money_plot(self, ax, dataset : str, **kwargs) -> tuple :
 
         color = kwargs.get("color", "steelblue")
-        fig, ax = plt.subplots()
+        rate, rate_err = self.get_background_rates()
+        acc, acc_err = self.get_accuracy(dataset)
+        x, y = np.mean(acc), np.mean(rate)
 
-        ax.set_yscale("log")
-        ax.set_ylabel("Random trace trigger rate / $\mathrm{Hz}$")
-        ax.set_xlabel("Trigger efficiency")
-        ax.set_xlim(0, 1.05)
+        n_rate, bins = np.histogram(rate, bins = 10)
+        current_y, scaling = min(rate), 0.01
+        bin_width = bins[1] - bins[0]
+        boxes = []
 
-        HardwareClassifier.plot_performance(ax)
+        for i, rate_bin in enumerate(n_rate):
+            boxes.append(Rectangle((np.mean(acc) - scaling * rate_bin, current_y), width = 2*scaling*rate_bin, height = bin_width))
+            current_y += bin_width
+                
+        ax.add_collection(PatchCollection(boxes, facecolor = "slategray", lw = 0, alpha = 0.2))
+        ax.errorbar(x, y, xerr = np.std(acc), yerr = np.std(rate), fmt = "o", markersize = 12, c = color)
+        ax.scatter(x, y + np.std(rate), marker = "1", s = 400, zorder = 4, c = color)
+        ax.scatter(x, y - np.std(rate), marker = "2", s = 400, zorder = 4, c = color)
 
-        for i, dataset in enumerate(args):
-
-            rate, rate_err = self.get_background_rates()
-            acc, acc_err = self.get_accuracy(dataset)
-
-            n_rate, bins = np.histogram(rate, bins = 10)
-            current_y, scaling = min(rate), 0.01
-            bin_width = bins[1] - bins[0]
-            boxes = []
-
-            for i, rate_bin in enumerate(n_rate):
-                boxes.append(Rectangle((np.mean(acc) - scaling * rate_bin, current_y), width = 2*scaling*rate_bin, height = bin_width))
-                current_y += bin_width
-                    
-            ax.add_collection(PatchCollection(boxes, facecolor = "slategray", lw = 0, alpha = 0.2))
-            plt.errorbar(np.mean(acc), np.mean(rate), xerr = np.std(acc), yerr = np.std(rate), fmt = "o", markersize = 12, c = color)
-            plt.scatter(np.mean(acc), np.mean(rate) + np.std(rate), marker = "1", s = 400, zorder = 4, c = color)
-            plt.scatter(np.mean(acc), np.mean(rate) - np.std(rate), marker = "2", s = 400, zorder = 4, c = color)
-
-
-
-
-
-
-
-
-
-
+        return ax, x, y
 
     def ROC(self, dataset : str, **kwargs : dict) -> None :
 
@@ -1364,17 +1346,24 @@ class HardwareClassifier(Classifier):
         return pmt_active_counter >= pmt_multiplicity
 
     @staticmethod
-    def plot_performance(ax : plt.axes, x : float = None, y : float = None, xerr : float = None, yerr : float = None) -> None :
+    def plot_performance(ax : plt.axes, x : float = None, y : float = None, x_err : float = None, y_err : float = None) -> None :
         
         if x is None:                                                                                                           # default dataset: 'q_peak_compatibility' 
             TP, FN = 66548., 100822.
             x = TP / (TP + FN)
-            xerr = 1/(TP+FN)**2 * np.sqrt( TP**3 + FN**3 - 2 * np.sqrt((TP * FN)**3) )
+            x_err = 1/(TP+FN)**2 * np.sqrt( TP**3 + FN**3 - 2 * np.sqrt((TP * FN)**3) )
         if y is None:                                                                                                           # RunProductionTest/plot_everything.ipynb
             y = 21.3
-            yerr = 3
+            y_err = 3
 
-        ax.errorbar(x, y, xerr = xerr, yerr = yerr, c = "k", label = "Classical triggers", fmt = "*")
+        ordinate = np.geomspace(0.01, 1)
+        coordinate = ordinate * y/x
+        coordinate_err = np.sqrt((1/x**2 * y_err**2 + (y/x**2)**2 * x_err**2) * ordinate)
+        ax.errorbar(x, y, c = "k", label = "Classical triggers", fmt = "*", markersize = 20)
+        ax.plot(ordinate, coordinate, c = "k", ls = "--", lw = 2)
+        upper, lower = coordinate + coordinate_err, coordinate - coordinate_err
+        ax.fill_between(ordinate, lower, upper, color = "k", alpha = 0.15)
+
 
 class BayesianClassifier(Classifier):
     

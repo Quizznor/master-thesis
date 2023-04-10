@@ -192,7 +192,7 @@ void ExtractDataFromAdstFiles(fs::path pathToAdst)
       const auto nElectrons = genStation->GetNumberOfElectrons();
       const auto nPhotons = genStation->GetNumberOfPhotons();
 
-      // Save trace in ADC/VEM format
+      // Save trace in ADC format
       for (unsigned int PMT = 1; PMT < 4; PMT++)
       {
 
