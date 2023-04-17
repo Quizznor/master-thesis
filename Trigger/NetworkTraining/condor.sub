@@ -1,9 +1,9 @@
-JobBatchName    = train_CNN_16muon
+JobBatchName    = train_8Muon
 Executable      = /cr/users/filip/Trigger/NetworkTraining/train_model.py
 
-error           = /cr/users/filip/Trigger/NetworkTraining/train.err
-output          = /cr/users/filip/Trigger/NetworkTraining/train.out
-log             = /cr/users/filip/Trigger/NetworkTraining/train.log
+# error           = /cr/users/filip/Trigger/NetworkTraining/train-8.err
+# output          = /cr/users/filip/Trigger/NetworkTraining/train-8.out
+# log             = /cr/users/filip/Trigger/NetworkTraining/train-8.log
 
 arguments       = $(Process)   
 # arguments       = $(Item)
@@ -12,7 +12,8 @@ max_idle        = 150
                                                             
 should_transfer_files = YES                      
 
-Requirements	= (OpSysName == "Ubuntu" && OpSysMajorVer == 22  && (TARGET.Machine == "crc2.iap.kit.edu" || TARGET.Machine != "crc1.iap.kit.edu"))
+# Requirements	= (OpSysName == "Ubuntu" && OpSysMajorVer == 22  && (TARGET.Machine == "crc2.iap.kit.edu" || TARGET.Machine != "crc1.iap.kit.edu"))
+Requirements = (OpSysName == "Ubuntu" && OpSysMajorVer == 22) 
 transfer_input_files  = /cr/users/filip/Binaries
 
 queue 1

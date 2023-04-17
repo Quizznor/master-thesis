@@ -8,7 +8,7 @@ n_showers = len(p1)
 
 Trigger = HardwareClassifier()
 
-save_path = "/cr/data01/filip/models/HardwareClassifier/ROC_curve/compatibility_corrected_all_phases"
+save_path = "/cr/data01/filip/models/HardwareClassifier/ROC_curve/compatibility_true_vem_conversion_all_phases"
 
 if not os.path.exists(save_path):
     os.makedirs(save_path)

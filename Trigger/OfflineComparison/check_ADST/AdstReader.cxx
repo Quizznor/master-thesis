@@ -194,7 +194,7 @@ std::vector<uint> getCrowns(uint stationId, DetectorGeometry detectorGeometry, u
 
 void DoLtpCalculation(fs::path pathToAdst)
 {
-  std::string csvTraceFile = "/cr/tempdata01/filip/QGSJET-II/LTP/ADST/" + pathToAdst.filename().replace_extension("csv").string();
+  std::string csvTraceFile = "/cr/tempdata01/filip/QGSJET-II/LDF/ADST/" + pathToAdst.filename().replace_extension("csv").string();
 
   std::cout << "writing to " + csvTraceFile << std::endl;
 
@@ -243,20 +243,7 @@ void DoLtpCalculation(fs::path pathToAdst)
       if (std::find(recreatedStationIds.begin(), recreatedStationIds.end(), consideredStationId) != recreatedStationIds.end())
       {
         // station was triggered, add to "hits"
-        const auto station = sdEvent.GetStationById(consideredStationId);
-
-        const auto T1ThFlag = station->IsT1Threshold();
-        const auto T2ThFlag = station->IsT2Threshold();
-        const auto T2ToTFlag = station->IsTOT();
-        const auto T2ToTdFlag = station->IsTOTd();
-        const auto T2MoPSFlag = station->IsMoPS();
-
         all_hits[binIndex] += 1;
-        th1_hits[binIndex] += T1ThFlag;
-        th2_hits[binIndex] += T2ThFlag;
-        tot_hits[binIndex] += T2ToTFlag;
-        totd_hits[binIndex] += T2ToTdFlag;
-        mops_hits[binIndex] += T2MoPSFlag;
       }
       else
       {

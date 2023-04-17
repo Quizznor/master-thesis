@@ -1,0 +1,18 @@
+JobBatchName    = LSTM_all_energies_downsampled_5_0VEM
+Executable      = /cr/users/filip/EnsembleTrain/LSTM_all_energies_downsampled_charge/5_0VEM.py
+
+error           = /cr/users/filip/EnsembleTrain/output/all_energies_downsampled_5_0VEM-$(Process).err
+output          = /cr/users/filip/EnsembleTrain/output/all_energies_downsampled_5_0VEM-$(Process).out
+log             = /cr/users/filip/EnsembleTrain/output/all_energies_downsampled_5_0VEM-$(Process).log
+
+arguments       = $(Process)
+request_memory  = 3G
+max_idle        = 150
+max_retries     = 5
+                                                            
+should_transfer_files = YES                      
+
+Requirements = (OpSysName == "Ubuntu" && OpSysMajorVer == 22) 
+transfer_input_files  = /cr/work/filip/Binaries
+
+queue 10

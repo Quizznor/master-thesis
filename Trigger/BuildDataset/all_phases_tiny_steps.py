@@ -1,9 +1,9 @@
 from Binaries import *
 
 q_peak_compatibility = np.array([163.235 for _ in range(3)])
-p1 = EventGenerator("all", split = 1, real_background = False, apply_downsampling = True, random_phase = 0, seed = 42, sigma = 0, q_peak = q_peak_compatibility, window_step = 1)
-p2 = EventGenerator("all", split = 1, real_background = False, apply_downsampling = True, random_phase = 1, seed = 42, sigma = 0, q_peak = q_peak_compatibility, window_step = 1)
-p3 = EventGenerator("all", split = 1, real_background = False, apply_downsampling = True, random_phase = 2, seed = 42, sigma = 0, q_peak = q_peak_compatibility, window_step = 1)
+p1 = EventGenerator("all", split = 1, real_background = False, apply_downsampling = True, random_phase = 0, seed = 42, sigma = 0, q_peak = q_peak_compatibility)
+p2 = EventGenerator("all", split = 1, real_background = False, apply_downsampling = True, random_phase = 1, seed = 42, sigma = 0, q_peak = q_peak_compatibility)
+p3 = EventGenerator("all", split = 1, real_background = False, apply_downsampling = True, random_phase = 2, seed = 42, sigma = 0, q_peak = q_peak_compatibility)
 n_showers = len(p1)
 
 Trigger = HardwareClassifier()

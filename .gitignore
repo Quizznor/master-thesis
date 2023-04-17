@@ -18,6 +18,7 @@ antrag/
 *.out
 *.err
 *.log
+Trigger/NetworkTraining/*.out
 
 Trigger/OfflineComparison/make_events/
 Trigger/OfflineComparison/th1_fuckups/

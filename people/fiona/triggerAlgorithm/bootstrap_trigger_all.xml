@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<!DOCTYPE bootstrap [
+  <!ENTITY standardSdIdealDetConfig SYSTEM '/cr/data01/filip/offline_ubuntu20/install/share/auger-offline/config/standardSdIdealDetConfig.xml'>
+  <!ENTITY standardSdSimModuleConfig SYSTEM '/cr/data01/filip/offline_ubuntu20/install/share/auger-offline/config/standardSdSimModuleConfig.xml'>
+  <!ENTITY standardSdRecModuleConfig SYSTEM '/cr/data01/filip/offline_ubuntu20/install/share/auger-offline/config/standardSdRecModuleConfig.xml'>
+]>
+
+<bootstrap
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation='/cr/data01/filip/offline_ubuntu20/install/share/auger-offline/config/bootstrap.xsd'
+  xmlns:xlink="http://www.auger.org/schema/types">
+
+  &standardSdIdealDetConfig;
+  &standardSdSimModuleConfig;
+  &standardSdRecModuleConfig;
+
+  <centralConfig>
+
+    <configLink
+      id         = "ModuleSequence"
+      type       = "XML"
+      xlink:href = "./ModuleSequence_trigger_all.xml"/>
+
+    <configLink
+      id         = "EventFileReader"
+      type       = "XML"
+      xlink:href = "./EventFileReader.xml"/>
+
+    <configLink
+      id         = "EventFileExporter"
+      type       = "XML"
+      xlink:href = "./EventFileExporter.xml"/>
+
+    <configLink
+      id         = "EventGenerator"
+      type       = "XML"
+      xlink:href = "./EventGenerator.xml"/>
+
+   <configLink
+       id         = "SStationListXMLManager"
+       type       = "XML"
+       xlink:href = "./CustomStationList.xml"/>
+
+  </centralConfig>
+
+  <parameterOverrides>
+
+    <!-- Define CORSIKA input file for simulation -->
+    <configLink id="EventFileReader">
+      <EventFileReader>
+        <CORSIKA>
+          <InputFilenames>
+            /lsdf/corsika/e18m100prot-qgs4/th00/DAT551052.part
+          </InputFilenames>
+          <PatternPath> *.part </PatternPath>
+          <InputMapping>
+            <GroundData> (1).part </GroundData>
+            <ProfileData> (1).long </ProfileData>
+          </InputMapping>
+        </CORSIKA>
+      </EventFileReader>
+    </configLink>
+
+  <!-- <configLink id="EventGenerator">
+    <EventGenerator>
+       <coreRandomization>
+        <centerOfTile>
+          <stationAtCenter> 5398 </stationAtCenter>
+        </centerOfTile>
+        <sizeOfTile>
+          <deltaNorthing unit="meter"> 866 </deltaNorthing>
+          <deltaEasting unit="meter"> 1500 </deltaEasting>
+        </sizeOfTile>
+    </coreRandomization>
+    </EventGenerator>
+  </configLink> -->
+    
+  <configLink id="RecDataWriter">
+      <RecDataWriter>
+
+        <!-- Write all traces to ADST (not just high-energy ones) -->
+        <minEnergyForTraces unit="EeV"> 0 </minEnergyForTraces>
+        <rootOutput>
+          <outputFileName> 
+            ADST.root
+          </outputFileName>
+        </rootOutput>
+        <!-- <asciiOutput>
+          <outputFileMode> eWrite </outputFileMode>
+          <mode> Hybrid </mode>
+          <outputFileName> HybridRec.dat </outputFileName>
+          <minimumFDRecLevel> 5 </minimumFDRecLevel>
+          <minimumSDRecLevel> 3 </minimumSDRecLevel>
+        </asciiOutput> -->
+      </RecDataWriter>
+    </configLink>
+
+    <configLink id="SDenseStationListXMLManager">
+      <SDenseStationList>
+        <isUUB> 1 </isUUB>
+        <hasSmallPMT> 1 </hasSmallPMT>
+        <hasScintillator> 1 </hasScintillator>
+      </SDenseStationList>
+    </configLink>
+
+    <configLink id="RandomEngineRegistry">
+      <RandomEngineRegistry>
+        <DetectorSeed> 000001 </DetectorSeed>
+        <PhysicsSeed> 000002 </PhysicsSeed>
+      </RandomEngineRegistry>
+    </configLink>
+
+    <configLink id="TankTriggerSimulator">
+      <TankTriggerSimulator>
+          <T1Threshold>
+            <LevelVEM> 0.01 </LevelVEM>
+            <Multiplicity> 1 </Multiplicity>
+          </T1Threshold>
+        
+          <T2Threshold>
+            <LevelVEM> 0.01 </LevelVEM>
+            <Multiplicity> 1 </Multiplicity>
+          </T2Threshold>
+        
+          <TOT>
+            <LevelVEM> 0.01 </LevelVEM>
+            <Occupancy> 1 </Occupancy> <!-- this means >= 13! -->
+            <Window> 120 </Window>
+            <Multiplicity> 1 </Multiplicity>
+          </TOT>
+      </TankTriggerSimulator>
+    </configLink>
+
+    <configLink id = "SModelsXMLManager">
+      <SDetectorConfig>
+        <stationModels>
+          <pmtElectronics id="wcdLarge120MHz">
+            <LGBaselineRMS> 0 </LGBaselineRMS>
+            <HGBaselineRMS> 0 </HGBaselineRMS>
+          </pmtElectronics>
+          <pmtElectronics id="scin120MHz">
+            <LGBaselineRMS> 0 </LGBaselineRMS>
+            <HGBaselineRMS> 0 </HGBaselineRMS>
+          </pmtElectronics>
+        </stationModels>
+      </SDetectorConfig>
+    </configLink>
+
+    <!-- For testing purposes only -->
+    <!-- <configLink id="CachedShowerRegenerator">
+      <CachedShowerRegenerator>
+        <WeightedStationSimulationParticleLimit> 10000 </WeightedStationSimulationParticleLimit>
+      </CachedShowerRegenerator>
+    </configLink> -->
+   
+
+  </parameterOverrides>
+
+</bootstrap>

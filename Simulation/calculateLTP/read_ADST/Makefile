@@ -20,7 +20,7 @@ CPPFLAGS := -I. -I./src $(shell auger-offline-config --cppflags) \
  # asan clang
 
 CXXFLAGS := -ggdb3 -Wall -Wextra -Wtype-limits -std=c++17 -O0 \
-            -fno-inline -fno-omit-frame-pointer -fsanitize=address \
+            -fno-inline -fno-omit-frame-pointer \
 # -fsanitize=bounds-strict \
 # -pipe  # asan gcc
 

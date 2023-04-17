@@ -118,7 +118,7 @@ def lateral_trigger_probability_error(x : np.ndarray, pcov : np.ndarray, efficie
     return lateral_distribution_function_error(x, pcov, efficiency, prob_50, scale)
 
 def lateral_distribution_function(x : np.ndarray, efficiency : float, prob_50 : float, scale : float) -> np.ndarray :
-    return np.clip(efficiency * (1 - 1 / (1 + np.exp(-scale * (x - prob_50)))), 0, 1)
+    return np.clip(efficiency * (1 - 1 / (1 + np.exp(-(x - prob_50)/scale))), 0, 1)
 
 def lateral_distribution_function_error(x : np.ndarray, pcov : np.ndarray, efficiency : float, prob_50 : float, scale : float) -> np.ndarray :
 

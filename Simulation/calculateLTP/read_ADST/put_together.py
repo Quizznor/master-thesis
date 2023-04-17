@@ -21,26 +21,28 @@ steps = os.listdir(root_path)
 
 for k, file in enumerate(steps):
 
-    print(f"Adding file {k}/{len(steps)}: {100 * (k + 1)/len(steps):.2f}%", end = "\r")
-
-    data = np.loadtxt(root_path + "/" + file, usecols = [1, 2, 3, 4, 5, 6, 7], max_rows = 66)
-
-    #   saveFile << (i + 1) * 100 << " " << all_hits[i] << " " << misses[i] << " " << th1_hits[i] << " " << th2_hits[i] << " " << tot_hits[i] << " " << mops_hits[i] << "\n";
-    log_e, theta, _, _, _, _, _ = data[0]
-    hits, misses, th1, th2, tot, totd, mops = data[1:, 0], data[1:, 1], data[1:, 2], data[1:, 3], data[1:, 4], data[1:, 5], data[1:, 6]
-
-    t, e = np.digitize(theta, theta_bins), np.digitize(log_e, energy_bins)
-
     try:
+        print(f"Adding file {k}/{len(steps)}: {100 * (k + 1)/len(steps):.2f}%                                                     ", end = "\r")
+
+        data = np.loadtxt(root_path + "/" + file, usecols = [1, 2, 3, 4, 5, 6, 7], max_rows = 66)
+
+        #   saveFile << (i + 1) * 100 << " " << all_hits[i] << " " << misses[i] << " " << th1_hits[i] << " " << th2_hits[i] << " " << tot_hits[i] << " " << mops_hits[i] << "\n";
+        log_e, theta, _, _, _, _, _ = data[0]
+        hits, misses, th1, th2, tot, totd, mops = data[1:, 0], data[1:, 1], data[1:, 2], data[1:, 3], data[1:, 4], data[1:, 5], data[1:, 6]
+        assert sum(hits) + sum(misses) == 61, f"{sum(hits)} + {sum(misses)} != 61"
+
+        t, e = np.digitize(theta, theta_bins), np.digitize(log_e, energy_bins)
+
         miss_sorted[e - 1][t - 1] += misses
         hits_sorted[e - 1][t - 1] += hits
         th1_sorted[e - 1][t - 1] += th1
         th2_sorted[e - 1][t - 1] += th2
         tot_sorted[e - 1][t - 1] += tot
         totd_sorted[e - 1][t - 1] += totd
-    except IndexError: files_missed += 1
+        mops_sorted[e - 1][t - 1] += mops
+    except (IndexError, AssertionError): files_missed += 1
 
-print("files missed:                                            ", files_missed)
+print("files missed: ", files_missed, "            ")
 
 # save all gathered data
 for e_bin in range(1, len(energy_bins)):
@@ -56,4 +58,6 @@ for e_bin in range(1, len(energy_bins)):
         save_matrix = np.dstack([sp_distances, save_hits, save_misses, save_th1, save_th2, save_tot, save_totd, save_mops])[0]
 
         if np.all(save_hits == 0) or np.all(save_misses == 0): continue
-        np.savetxt(save_file, save_matrix)
+        
+        with open(save_file, "w") as file:
+            np.savetxt(file, save_matrix)

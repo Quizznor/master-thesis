@@ -40,9 +40,6 @@ class Classifier():
 
                     n_total_triggered += 1
 
-                    if n_total_triggered < 100: 
-                        self.plot_trace_window(window, n_total_triggered, start_time, trace[0].downsampled)
-
                     # perhaps skipping the entire trace isn't exactly accurate
                     # but then again just skipping one window seems wrong also
                     # -> David thinks this should be fine
@@ -309,6 +306,7 @@ class Classifier():
                 for t, (hits, misses) in enumerate(zip(hits, misses)):
 
                     LDF, (LDF_efficiency, LDF_prob_50, LDF_scale) = get_fit_function("/cr/tempdata01/filip/QGSJET-II/LDF/", e, t)
+                    LDF = lambda x : lateral_distribution_function(x, LDF_efficiency, LDF_prob_50, 1/LDF_scale)
 
                     c = colormap(t / (len(theta_bins) - 1))
                     all_data = hits + misses
@@ -324,14 +322,19 @@ class Classifier():
 
                         if len(n_all) <= 7: 
                             n_data_in_bins -= 10
-                            if n_data_in_bins == 50: break
+                            if n_data_in_bins <= 50: break
                         else: break
 
                     x, _ = np.histogram(hits, bins = binning)
                     o, _ = np.histogram(misses, bins = binning)
-                    efficiency = x / (x + o) #* LDF(bin_center)
+                    efficiency = x / (x + o) * LDF(bin_center)
                     efficiency_err = 1/n_all**2 * np.sqrt( x**3 + o**3 - 2 * np.sqrt((x * o)**3) )          # lack LDF error part here !!
-                    efficiency_err[efficiency_err == 0] = 1e-3                                              # such that residuals are finite
+                    # efficiency_err[efficiency_err == 0] = 1e-3                                              # such that residuals are finite
+
+                    filter = np.isnan(efficiency)
+                    bin_center = bin_center[~filter]
+                    efficiency = efficiency[~filter]
+                    efficiency_err = efficiency_err[~filter]
 
                     # perform fit with x_err and y_err
                     try:
@@ -349,10 +352,10 @@ class Classifier():
                                 # When running in compatibility mode (i.e. using lateral_distribution_function under the hood)
                                 # lateral_distribution_function(x : np.ndarray, efficiency : float, prob_50 : float, scale : float)
                                 popt, pcov = curve_fit(lateral_trigger_probability, bin_center, efficiency, 
-                                                                        p0 = [1, bin_center[np.argmin(abs(efficiency - 50))], LDF_scale],
-                                                                        bounds = ([0, 0, 0], [np.inf, np.inf, 1]),
-                                                                        sigma = efficiency_err,
-                                                                        absolute_sigma = True,
+                                                                        p0 = [1, bin_center[np.argmin(abs(efficiency - 0.5))], 1/LDF_scale],
+                                                                        bounds = ([0, 0, 0], [np.inf, np.inf, 1000]),
+                                                                        # sigma = efficiency_err,
+                                                                        # absolute_sigma = True,
                                                                         maxfev = 10000)
 
                                 # write fit parameters to disk
@@ -874,7 +877,8 @@ class NNClassifier(Classifier):
                 self.epochs = "converged"
             except OSError:
                 available_models = os.listdir('/cr/data01/filip/models/' + name)
-                if len(available_models) != 1:
+                if len(available_models) == 0: raise FileNotFoundError
+                elif len(available_models) != 1:
                     choice = input(f"\nSelect epoch from {available_models}\n Model: ")
                 else: choice = available_models[0]
                 self.model = tf.keras.models.load_model("/cr/data01/filip/models/" + name + "/" + choice)
@@ -897,8 +901,8 @@ class NNClassifier(Classifier):
 
     def train(self, Datasets : tuple, epochs : int, **kwargs) -> None :
         
-        # stop if no improvement over 75% of epoch and accuracy over 95%
-        early_stopping_patience = kwargs.get("early_stopping_patience", int(0.75 * len(Datasets[0])))
+        # stop if no improvement over 50% of epoch and accuracy over 95%
+        early_stopping_patience = kwargs.get("early_stopping_patience", int(0.5 * len(Datasets[0])))
         early_stopping_accuracy = kwargs.get("early_stopping_accuracy", GLOBAL.early_stopping_accuracy)
         
         EarlyStopping = self.BatchwiseEarlyStopping(early_stopping_patience, early_stopping_accuracy)
@@ -906,7 +910,7 @@ class NNClassifier(Classifier):
         callbacks = [EarlyStopping,]
 
         try:
-            os.mkdir(f"/cr/data01/filip/models/{self.name}")
+            os.makedirs(f"/cr/data01/filip/models/{self.name}")
         except FileExistsError: pass
 
         training_status = "normally"
@@ -917,7 +921,7 @@ class NNClassifier(Classifier):
         # ValidationSet.physics_test(n_showers = int(0.2 * ValidationSet.__len__()), save_dir = f"/cr/data01/filip/models/{self.name}/validation_set_physics_test.png")
 
         try:
-            self.model.fit(TrainingSet, validation_data = ValidationSet, epochs = epochs - self.epochs, callbacks = callbacks)
+            self.model.fit(TrainingSet, validation_data = ValidationSet, epochs = epochs - self.epochs, callbacks = callbacks, verbose = kwargs.get("verbose", 2))
             self.epochs = epochs
 
         except EarlyStoppingError: 
@@ -938,13 +942,13 @@ class NNClassifier(Classifier):
         print(f"\nTraining exited {training_status}. Onto providing metadata now...")
         self.make_signal_dataset(ValidationSet, f"validation_data")
 
-        # # calculate trigger rate on random traces
-        # print(f"\ncalculating trigger rate on 0.5s (~30 000 Hz) of random traces now")
-        # f, df, n, n_trig, t = self.production_test(30000)
+        # calculate trigger rate on random traces
+        print(f"\ncalculating trigger rate on 0.5s (~30 000 Traces) of random traces now")
+        f, df, n, n_trig, t = self.production_test(30000, apply_downsampling = kwargs.get("apply_downsampling", False))
 
-        # with open(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/production_test.csv", "w") as random_file:
-        #     random_file.write("# f  df  n_traces  n_total_triggered  total_trace_duration\n")
-        #     random_file.write(f"{f} {df} {n} {n_trig} {t}")
+        with open(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/production_test.csv", "w") as random_file:
+            random_file.write("# f  df  n_traces  n_total_triggered  total_trace_duration\n")
+            random_file.write(f"{f} {df} {n} {n_trig} {t}")
 
 
     def save(self) -> None : 
@@ -985,7 +989,7 @@ class NNClassifier(Classifier):
 # Class for streamlined handling of multiple NNs with the same architecture
 class Ensemble(NNClassifier):
 
-    def __init__(self, name : str, set_architecture : str = None, n_models : int = GLOBAL.n_ensembles) -> None :
+    def __init__(self, name : str, set_architecture : str = None, n_models : int = GLOBAL.n_ensembles, **kwargs) -> None :
 
         r'''
         :name ``str``: specifies the name of the NN and directory in /cr/data01/filip/models/ENSEMBLES/
@@ -1000,18 +1004,26 @@ class Ensemble(NNClassifier):
             os.mkdir(f"/cr/data01/filip/models/ENSEMBLES/{name}")
         except FileExistsError: pass
 
-        supress_print = False
+        n_fail = 0
+
+        supress_print = kwargs.get("supress_print", False)
         self.models = []
 
         for i in range(1, n_models + 1):
-            ThisModel = NNClassifier("ENSEMBLES/" + name + f"/ensemble_{str(i).zfill(2)}/", set_architecture, supress_print)
-            self.models.append(ThisModel)
+
+            try:
+                ThisModel = NNClassifier("ENSEMBLES/" + name + f"/ensemble_{str(i).zfill(2)}/", set_architecture, supress_print)
+                self.models.append(ThisModel)
+            except FileNotFoundError:
+                n_fail += 1
 
             supress_print = True
 
         self.name = "ENSEMBLE_" + name
 
-        print(f"{self.name}: {n_models} models successfully initiated\n")
+        not kwargs.get("supress_print", False) and print(f"{self.name}: {n_models} models successfully initiated\n")
+        if n_fail: print(f"{n_fail} models couldn't be initialized!")
+
 
     def train(self, Datasets : tuple, epochs : int, **kwargs) -> None:
 
@@ -1057,7 +1069,7 @@ class Ensemble(NNClassifier):
             f,  df = np.loadtxt("/cr/data01/filip/models/" + model.name + "model_" + str(model.epochs) + "/production_test.csv", usecols = [0, 1])
             rate.append(f), rate_err.append(df)
 
-        return rate, rate_err
+        return np.array(rate), np.array(rate_err)
     
     def get_accuracy(self, dataset : str) -> tuple : 
 
@@ -1072,30 +1084,34 @@ class Ensemble(NNClassifier):
             acc.append(accuracy)
             acc_err.append(err)
 
-        return acc, acc_err
+        return np.array(acc), np.array(acc_err)
 
-    def money_plot(self, ax, dataset : str, **kwargs) -> tuple :
+    def money_plot(self, dataset : str) -> None :
 
-        color = kwargs.get("color", "steelblue")
         rate, rate_err = self.get_background_rates()
         acc, acc_err = self.get_accuracy(dataset)
         x, y = np.mean(acc), np.mean(rate)
 
-        n_rate, bins = np.histogram(rate, bins = 10)
-        current_y, scaling = min(rate), 0.01
-        bin_width = bins[1] - bins[0]
-        boxes = []
+        if not os.path.isdir(f"/cr/users/filip/MoneyPlot/data/{self.name.split('/')[-1][9:]}"):
+            os.makedirs(f"/cr/users/filip/MoneyPlot/data/{self.name.split('/')[-1][9:]}")
 
-        for i, rate_bin in enumerate(n_rate):
-            boxes.append(Rectangle((np.mean(acc) - scaling * rate_bin, current_y), width = 2*scaling*rate_bin, height = bin_width))
-            current_y += bin_width
-                
-        ax.add_collection(PatchCollection(boxes, facecolor = "slategray", lw = 0, alpha = 0.2))
-        ax.errorbar(x, y, xerr = np.std(acc), yerr = np.std(rate), fmt = "o", markersize = 12, c = color)
-        ax.scatter(x, y + np.std(rate), marker = "1", s = 400, zorder = 4, c = color)
-        ax.scatter(x, y - np.std(rate), marker = "2", s = 400, zorder = 4, c = color)
+        save_matrix = np.dstack([acc, acc_err, rate, rate_err])[0]
+        np.savetxt(f"/cr/users/filip/MoneyPlot/data/{self.name.split('/')[-1][9:]}/{dataset}.csv", save_matrix)
 
-        return ax, x, y
+
+    def get_best_model(self, dataset : str) -> NNClassifier : 
+
+        try:
+            acc, acc_err, rate, rate_err = np.loadtxt(f"/cr/users/filip/MoneyPlot/data/{self.name[9:]}/{dataset}.csv", unpack = True)
+
+            SN_ratios = rate / acc                              # this is technically a noise to signal ratio, hence we must MINIMIZE
+            
+            return self.models[np.argmin(SN_ratios)]
+
+        except OSError:
+            print(f"Crunching numbers for {self.name[9:]}: {dataset}...")
+            self.money_plot(dataset)
+            self.get_best_model(dataset)
 
     def ROC(self, dataset : str, **kwargs : dict) -> None :
 
@@ -1349,7 +1365,7 @@ class HardwareClassifier(Classifier):
     def plot_performance(ax : plt.axes, x : float = None, y : float = None, x_err : float = None, y_err : float = None) -> None :
         
         if x is None:                                                                                                           # default dataset: 'q_peak_compatibility' 
-            TP, FN = 66548., 100822.
+            TP, FN = 89144., 156908.
             x = TP / (TP + FN)
             x_err = 1/(TP+FN)**2 * np.sqrt( TP**3 + FN**3 - 2 * np.sqrt((TP * FN)**3) )
         if y is None:                                                                                                           # RunProductionTest/plot_everything.ipynb
@@ -1359,7 +1375,7 @@ class HardwareClassifier(Classifier):
         ordinate = np.geomspace(0.01, 1)
         coordinate = ordinate * y/x
         coordinate_err = np.sqrt((1/x**2 * y_err**2 + (y/x**2)**2 * x_err**2) * ordinate)
-        ax.errorbar(x, y, c = "k", label = "Classical triggers", fmt = "*", markersize = 20)
+        ax.errorbar(x, y, c = "k", label = r"Th ($3.2\,\mathrm{VEM}$), ToT, ToTd", fmt = "*", markersize = 20)
         ax.plot(ordinate, coordinate, c = "k", ls = "--", lw = 2)
         upper, lower = coordinate + coordinate_err, coordinate - coordinate_err
         ax.fill_between(ordinate, lower, upper, color = "k", alpha = 0.15)

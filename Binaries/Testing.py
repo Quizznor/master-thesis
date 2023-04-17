@@ -53,32 +53,64 @@ def confidence_comparison(confidence_level, *args, **kwargs):
 
     plt.ylim(-100, y_max)
 
-
 class MoneyPlot():
      
-    def __init__(self) -> None : 
-        self.ax = self.setup()
+    def __init__(self, name : str) -> None : 
+
+        self.fig, self.ax = plt.subplots()
+        self.ax.set_title(name)
+        self.ax.set_yscale("log")
+        self.ax.set_ylabel("Random trace trigger rate / $\mathrm{Hz}$")
+        self.ax.set_xlabel("Trigger efficiency")
+        HardwareClassifier.plot_performance(self.ax)
+
         self.buffer_x, self.buffer_y = [], []
 
-    def setup(self) -> plt.axes :
-        fig, ax = plt.subplots()
-        ax.set_yscale("log")
-        ax.set_ylabel("Random trace trigger rate / $\mathrm{Hz}$")
-        ax.set_xlabel("Trigger efficiency")
-        HardwareClassifier.plot_performance(ax)
-        
-        ax.set_ylim(1)
+    def add(self, ensemble : str, dataset, **kwargs) -> None :
 
-        return ax
+        try:
+            acc, acc_err, rate, rate_err = np.loadtxt(f"/cr/users/filip/MoneyPlot/data/{ensemble}/{dataset}.csv", unpack = True)
 
-    def add(self, ensemble, dataset, **kwargs) -> None :
-        self.ax, x, y = ensemble.money_plot(self.ax, dataset, **kwargs)
-        self.buffer_x.append(x)
-        self.buffer_y.append(y)
+            n_rate, bins = np.histogram(rate, bins = 10)
+            current_y, scaling = min(rate), 0.005
+            bin_width = bins[1] - bins[0]
+            boxes = []
+
+            for i, rate_bin in enumerate(n_rate):
+                boxes.append(Rectangle((np.mean(acc) - scaling * rate_bin, current_y), width = 2*scaling*rate_bin, height = bin_width))
+                current_y += bin_width
+            
+            x, y = np.mean(acc), np.mean(rate)
+            color = kwargs.get("color", None)
+            label = kwargs.get("label", None)
+            self.ax.add_collection(PatchCollection(boxes, facecolor = "slategray", lw = 0, alpha = 0.2))
+            self.ax.errorbar(x, y, xerr = np.std(acc), yerr = np.std(rate), fmt = "o", markersize = 8, c = color, label = label, capsize = 4)
+
+            self.buffer_x.append(x)
+            self.buffer_y.append(y)
+
+        except OSError:
+            print(f"Crunching numbers for {ensemble}: {dataset}...")
+            NN = Ensemble(ensemble, supress_print = True)
+            NN.money_plot(dataset)
+
+            self.add(ensemble, dataset, **kwargs)
 
     def draw_line(self, **kwargs) -> None : 
         self.ax.plot(self.buffer_x, self.buffer_y, **kwargs)
         self.buffer_x, self.buffer_y = [], []
 
-    def __call__(self) -> None :
+    def annotate(self, fcn : str, **kwargs) -> None :
+
+        function = {
+            "errorbar" : self.ax.errorbar,
+            "scatter" : self.ax.scatter,
+        }
+
+        function[fcn]([], [], **kwargs)
+
+    def __call__(self, xlim : tuple = (0, 1.05), ylim : tuple = (1, None)) -> None :
+        self.ax.set_xlim(xlim[0], xlim[1])
+        self.ax.set_ylim(ylim[0], ylim[1])
+        self.ax.legend()
         plt.show()

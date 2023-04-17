@@ -1,0 +1,17 @@
+JobBatchName    = classical_triggers_make_scaled_predictions
+Executable      = /cr/users/filip/Trigger/CalculateEfficiencies/get_accuracies.py
+
+error           = /cr/users/filip/Trigger/CalculateEfficiencies/output//train-$(Process).err
+# output          = /cr/users/filip/Trigger/MoneyPlot/train-02.out
+# log             = /cr/users/filip/Trigger/MoneyPlot/train-02.log
+
+arguments       = $(Process)
+request_memory  = 1G
+max_idle        = 150
+                                                            
+should_transfer_files = YES                      
+
+Requirements	= (OpSysName == "Ubuntu" && OpSysMajorVer == 22  && (TARGET.Machine == "crc2.iap.kit.edu" || TARGET.Machine != "crc1.iap.kit.edu"))
+transfer_input_files  = /cr/users/filip/Binaries
+
+queue 38

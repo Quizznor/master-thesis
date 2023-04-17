@@ -1,5 +1,7 @@
 % !TEX root = ../thesis.tex
 
+\todo{physics statistics test???}
+
 \chapter{Neural network training data}
 \label{chap:neural-network-data}
 
@@ -242,14 +244,15 @@ dice according to the injection frequency specified in \autoref{ssec:accidental-
 traces from \cite{DavidBackgroundSim} is drawn and each sample added to every PMT at a random uniform position somewhere in the trace. 
 \autoref{fig:component_adding} shows an example where five muons are injected into the trace.
 
-Last, the actual shower signal is added to the trace container. In principle, it can be added at any random position, similar to the random injections. However, for 
-continuity reasons and ease of comparing to plots generated with other software, the latch bin for signal insertion is hardcoded to be the same as in \Offline, 
+Last, the actual shower signal is added to the trace container. In principle, it can be added at any random position, similar to the random injections. However, 
+for continuity reasons and ease of comparing to plots generated with other software, the latch bin for signal insertion is hardcoded to be the same as in \Offline, 
 bin $660$. Since otherwise the data is in the correct $\SI{}{\ADC}$ format, no further manipulation of the data is necessary.
 
 The trace container now holds all necessary components together, but remains in units of \SI{}{\ADC}. To convert to \SI{}{\Peak}, each bin in each PMT trace is 
-floored to mimic the FPGA digital counting, and divided by the appropriate scaling factor \Ipeak. If traces need to be UB compatible the trace must be filtered and
-downsampled in an intermediate step. This influences the scaling factor $I_\text{VEM, compat.}$ in a major way (compare \autoref{ssec:filtering-and-downsampling}). 
-If the so-called full-bandwidth, UUB time trace is analyzed, the appropriate factor becomes $I_\text{VEM, Off.}$.
+floored to mimic the FPGA digital counting, and divided by the appropriate scaling factor \Ipeak times a correction factor that stems from a bias in the online 
+peak estimation algorithm (see \cite{bertou2006calibration}). If traces need to be UB compatible the FADC bins must be filtered and downsampled in an intermediate 
+step. This influences the scaling factor $I_\text{VEM, compat.}$ in a major way (compare \autoref{ssec:filtering-and-downsampling}). If the so-called 
+full-bandwidth, UUB time trace is analyzed, the appropriate factor becomes $I_\text{VEM, Off.}$.
 
 \begin{figure}
 	\centering
@@ -268,18 +271,19 @@ window size of the ToT-trigger have been determined in studies (\cite{bertou2006
 
 These studies were conducted using the predecessor, the \textbf{U}nified \textbf{B}oard (UB), of the hardware that is being installed during the AugerPrime upgrade
 of the observatory. Most importantly, the UUB has a sampling rate that is three times larger (\SI{120}{\mega\hertz}) than that of UB electronics 
-(\SI{40}{\mega\hertz}). Not only does this raise the number of bins in a standard time trace from 682 to $2^{11} = 2048$, but also drastically reduces the 
-efficiency (in particular for ToT-like triggers) of the above discussed algorithms. Whereas a new  bin is measured every \SI{25}{\nano\second} in a UB station, the
-triggers would receive a new input every $\approx\SI{8.3}{\nano\second}$ in a UUB setting.
+(\SI{40}{\mega\hertz}). Not only does this raise the number of bins in a standard time trace from $682$ to $2048$, but also drastically reduces the efficiency 
+(in particular for ToT-like triggers) of the above discussed algorithms. Whereas a new  bin is measured every \SI{25}{\nano\second} in a UB station, the triggers 
+would receive a new input every $\approx\SI{8.3}{\nano\second}$ in a UUB setting. If the window size of e.g. the ToT trigger were to remain constant, only a third
+of the original signal becomes available for a given window frame.
 
 The modus operandi elected by the Pierre Auger collaboration to circumvent this problem is to emulate UB electronics using the UUB electronics. This means that 
 measured FADC bins are to be filtered and downsampled before any trigger runs over them. Software implementations by which this is achieved are listed in 
 \autoref{app:filter-and-downsample}. The effect the filtering and downsampling has on measured data is visualized in \autoref{fig:uub-ub-comparison}.
 
-While the features of the time trace largely remain intact, the absolute signal strength decreases due to a smearing effect imposed by the filtering. Overall, this
+While the features of the time trace largely remain intact, the absolute signal strength decreases due to a smearing effect imposed by filtering. Overall, this
 amounts to a $30\%$ difference in amplitude between UUB full-bandwidth traces and their filtered and downsampled counterpart. Since both measurements are derived 
-from the same signal in the WCD though, this implies that \Ipeak must be adjusted by $~30\%$ as well, if traces are to be downsampled. This results in a 
-compatibility scaling factor $I_\text{VEM, compat.} = \SI{163.235}{\ADC}$ \cite{OfflineSource}.
+from the same signal in the WCD though, this implies that \Ipeak must be adjusted by $~30\%$ as well if traces are to be filtered and downsampled. This results in 
+a compatibility scaling factor $I_\text{VEM, compat.} = \SI{163.235}{\ADC}$ \cite{OfflineSource}.
 
 Recent contributions within the Auger collaboration (\cite{nitzTriggers, quentinComparison}), and to some extent also this work have shown that issues arise in the 
 comparison of \textbf{L}ateral \textbf{T}rigger \textbf{P}robabilities (LTPs) that are run in this compatibility mode. Namely, the UUB trigger efficiency (where 
