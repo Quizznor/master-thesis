@@ -125,9 +125,18 @@ The reasoning for this choice is as follows:
 
 This approach only marginally takes into account shower-to-shower-fluctuations. Such statistic perturbations are responsible for a smearing of the (initially)
 hard transition from sub- to full efficiency. The parametrization used by the Pierre Auger collaboration takes this into consideration by design.The presented 
-$\text{LTP}^*(r)$ does not. As a result, one could expect a bias, where $\text{LTP}^*(R^*)$ over- or underestimates the actual trigger probability. 
+$\text{LTP}^*(r)$ does - at least explicitly - not. As a result, one could expect a bias, where $\text{LTP}^*(R^*)$ over- or underestimates the actual trigger 
+probability. This is however not the case when examining the residuals of the performance fit that is done in \autoref{ssec:combined-performance}. A plot 
+showcasing this result is offered in \autoref{fig:fitfunction-comparison}
 
-
+\begin{figure}
+	\centering
+	\includegraphics[width=1\textwidth]{./plots/LTP_bias_check.png}
+	\caption{The residuals from comparing $\epsilon^\text{True}$ to $\text{LTP}(r)$ vanish at large (small) $r$, where the lateral trigger probability is close to
+	zero (one). No systematic bias is observed in the transitional region around $R^*$. Large outliers are caused by the dataset being limited in site at low 
+	energies (marked with an x)}
+	\label{fig:fitfunction-comparison}
+\end{figure}
 
 
 \subsection{Bayesian folding}
