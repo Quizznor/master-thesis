@@ -118,23 +118,23 @@ The reasoning for this choice is as follows:
 	\item There exists an imbalance in training data. Due to the geometry of the SD array, more traces at smaller $r$ are available. In an attempt to reduce 
 	possible biases resulting from low statistics at small SPD, the form is kept as simple as possible.
 
-	\item The discontinuity at $R_0$ is replaced by a kink at $R^* = R_0 - \frac{\log\left(\left(1 - 1/\epsilon^*\right)^{-1}-1\right)}{\Delta R}$. 
-	This is however expected. Since there exists a phase transition, namely to full efficiency, at this point, discontinuities in the lateral trigger 
-	probability are allowed.
+	\item The function is guaranteed to be continously differentiable in $R_0$. For values $\epsilon^* > 1$ this is replaced with a kink at 
+	$R^* = R_0 - \frac{\log\left(\left(1 - 1/\epsilon^*\right)^{-1}-1\right)}{\Delta R}$, where $\text{LTP}^*(r)$ would exceed $1$ if not for clipping. There 
+	exists some physical motivations for this however. Due to the phase transition, namely to full efficiency, at this point, discontinuities in the lateral 
+	trigger probability are allowed.
 \end{itemize}
 
 This approach only marginally takes into account shower-to-shower-fluctuations. Such statistic perturbations are responsible for a smearing of the (initially)
 hard transition from sub- to full efficiency. The parametrization used by the Pierre Auger collaboration takes this into consideration by design.The presented 
 $\text{LTP}^*(r)$ does - at least explicitly - not. As a result, one could expect a bias, where $\text{LTP}^*(R^*)$ over- or underestimates the actual trigger 
 probability. This is however not the case when examining the residuals of the performance fit that is done in \autoref{ssec:combined-performance}. A plot 
-showcasing this result is offered in \autoref{fig:fitfunction-comparison}
+showcasing this result is offered in \autoref{fig:fitfunction-comparison}. \todo{low energy bias}
 
 \begin{figure}
 	\centering
 	\includegraphics[width=1\textwidth]{./plots/LTP_bias_check.png}
-	\caption{The residuals from comparing $\epsilon^\text{True}$ to $\text{LTP}(r)$ vanish at large (small) $r$, where the lateral trigger probability is close to
-	zero (one). No systematic bias is observed in the transitional region around $R^*$. Large outliers are caused by the dataset being limited in site at low 
-	energies (marked with an x)}
+	\caption{The residuals from comparing $\epsilon^\text{True}$ to $\text{LTP}^*(r)$ vanish at large (small) $r$. No systematic bias is observed in the 
+	transitional region around $R^*$. Large outliers are caused by the dataset being limited in size at low energies (marked with an x).}
 	\label{fig:fitfunction-comparison}
 \end{figure}
 

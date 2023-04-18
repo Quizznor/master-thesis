@@ -1,9 +1,9 @@
-JobBatchName    = LSTM_all_energies_downsampled_5_0VEM
-Executable      = /cr/users/filip/EnsembleTrain/LSTM_all_energies_downsampled_charge/5_0VEM.py
+JobBatchName    = large_CNN_full_energy_downsampled_8_0VEM
+Executable      = /cr/users/filip/EnsembleTrain/full_energy_downsampled_large_CNN/8_0VEM.py
 
-error           = /cr/users/filip/EnsembleTrain/output/all_energies_downsampled_5_0VEM-$(Process).err
-output          = /cr/users/filip/EnsembleTrain/output/all_energies_downsampled_5_0VEM-$(Process).out
-log             = /cr/users/filip/EnsembleTrain/output/all_energies_downsampled_5_0VEM-$(Process).log
+error           = /cr/users/filip/EnsembleTrain/output/all_energies_downsampled-8_0VEM-$(Process).err
+output          = /cr/users/filip/EnsembleTrain/output/all_energies_downsampled-8_0VEM-$(Process).out
+log             = /cr/users/filip/EnsembleTrain/output/all_energies_downsampled-8_0VEM-$(Process).log
 
 arguments       = $(Process)
 request_memory  = 3G

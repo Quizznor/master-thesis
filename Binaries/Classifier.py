@@ -1363,22 +1363,23 @@ class HardwareClassifier(Classifier):
 
     @staticmethod
     def plot_performance(ax : plt.axes, x : float = None, y : float = None, x_err : float = None, y_err : float = None) -> None :
-        
-        if x is None:                                                                                                           # default dataset: 'q_peak_compatibility' 
-            TP, FN = 89144., 156908.
-            x = TP / (TP + FN)
-            x_err = 1/(TP+FN)**2 * np.sqrt( TP**3 + FN**3 - 2 * np.sqrt((TP * FN)**3) )
-        if y is None:                                                                                                           # RunProductionTest/plot_everything.ipynb
-            y = 21.3
-            y_err = 3
 
+        x, xerr, y, yerr = np.loadtxt("/cr/data01/filip/models/HardwareClassifier/ROC_curve/money_plot.csv", unpack = True)
+
+        unscaled_index = np.argmin(abs(x - 3.965828361484564080e-01))
+
+        # special treatment for unscaled q_peak prediction 
         ordinate = np.geomspace(0.01, 1)
-        coordinate = ordinate * y/x
-        coordinate_err = np.sqrt((1/x**2 * y_err**2 + (y/x**2)**2 * x_err**2) * ordinate)
-        ax.errorbar(x, y, c = "k", label = r"Th ($3.2\,\mathrm{VEM}$), ToT, ToTd", fmt = "*", markersize = 20)
-        ax.plot(ordinate, coordinate, c = "k", ls = "--", lw = 2)
-        upper, lower = coordinate + coordinate_err, coordinate - coordinate_err
-        ax.fill_between(ordinate, lower, upper, color = "k", alpha = 0.15)
+        coordinate = ordinate * y[unscaled_index]/x[unscaled_index]
+        # coordinate_err = np.sqrt((1/x[unscaled_index]**2 * yerr[unscaled_index]**2 + (y[unscaled_index]/x[unscaled_index]**2)**2 * xerr[unscaled_index]**2) * ordinate)
+
+        ax.plot(ordinate, coordinate, c = "k", ls = "--", lw = 0.7)
+        ax.errorbar(x[unscaled_index], y[unscaled_index], label = r"Classical triggers, Th, ToT, ToTd", fmt = "-o", markersize = 15, mfc = "w", c = "k")
+
+        # normal treatment for all other predictions
+        scaled_indices = [idx != unscaled_index for idx in range(len(x))]
+
+        ax.plot(x[scaled_indices], y[scaled_indices], c = "k", lw = 2)
 
 
 class BayesianClassifier(Classifier):
