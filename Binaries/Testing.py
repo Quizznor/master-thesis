@@ -2,6 +2,9 @@ from .__config__ import *
 from .Signal import *
 from .Generator import *
 from .Classifier import *
+from .Hardware import *
+from .Network import *
+from .Ensemble import *
 
 # plot the estimated confidence range of provided classifiers
 def confidence_comparison(confidence_level, *args, **kwargs):
@@ -70,6 +73,8 @@ class MoneyPlot():
 
         try:
             acc, acc_err, rate, rate_err = np.loadtxt(f"/cr/users/filip/MoneyPlot/data/{ensemble}/{dataset}.csv", unpack = True)
+
+            if len(acc) != 10: print(f"[WARN] -- Incomplete predictions for {ensemble}: {dataset}... You may want to recalculate this")
 
             n_rate, bins = np.histogram(rate, bins = 10)
             current_y, scaling = min(rate), 0.005

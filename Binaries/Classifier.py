@@ -241,451 +241,395 @@ class Classifier():
 
         return TP, FP, TN, FN
 
-    # Performance visualizers #######################################################################
-    if True:                                              # So this can be collapsed in the editor =)
-        # plot the classifiers efficiency at a given SPD, energy, and theta
-        # TODO error calculation from LDF fit, etc...
-        def spd_energy_efficiency(self, dataset : str, **kwargs) -> None :
-            
-            warnings.simplefilter("ignore", RuntimeWarning)
-            colormap = cmap.get_cmap("plasma")
-            bar_kwargs = \
-            {
-                "fmt" : "o",
-                "elinewidth" : 0.5,
-                "capsize" : 3
-            }
-            
-            e_labels = [r"$16$", r"$16.5$", r"$17$", r"$17.5$", r"$18$", r"$18.5$", r"$19$", r"$19.5$"]            
-            annotate = lambda e : e_labels[e] + r" $\leq$ log($E$ / eV) $<$ " + e_labels[e + 1]
-
-            energy_bins = [10**16, 10**16.5, 10**17, 10**17.5, 10**18, 10**18.5, 10**19, 10**19.5]      # uniform in log(E)
-            theta_bins =  [0.0000, 33.5600, 44.4200, 51.3200, 56.2500, 65.3700]                         # pseudo-uniform in sec(θ)
-
-            miss_sorted = [[ [] for t in range(len(theta_bins) - 1) ] for e in range(len(energy_bins) - 1)]
-            hits_sorted = [[ [] for t in range(len(theta_bins) - 1) ] for e in range(len(energy_bins) - 1)]
-
-            # Prediction structure: []
-            TP, FP, TN, FN = self.load_and_print_performance(dataset)
-
-            # Sort predictions into bins of theta and energy
-            for source, target in zip([TP, FN], [hits_sorted, miss_sorted]):
-
-                spd, energy, theta = source[:, 0], source[:, 1], source[:, 2]
-                energy_sorted = np.digitize(energy, energy_bins)
-                theta_sorted = np.digitize(theta, theta_bins)
-
-                for e, t, shower_plane_distance in zip(energy_sorted, theta_sorted, spd):
-                    target[e - 1][t - 1].append(shower_plane_distance)
-
-
-            if kwargs.get("draw_plot", True):
-                fig, axes = plt.subplots(3,3, sharex = False, sharey = True, figsize = [50, 25])
-                fig.suptitle(f"{self.name} - {dataset}", fontsize = 50)
-                axes[-1][-1].axis("off"), axes[-1][-2].axis("off")
-                plt.ylim(-0.05, 1.05)
-
-            # Calculate efficiencies given sorted performances
-            # axis 1 = sorted by primary particles' energy
-            for e, (hits, misses) in enumerate(zip(hits_sorted, miss_sorted)):
-
-                if kwargs.get("draw_plot", True): 
-                    ax = axes[e // 3][e % 3]
-                    ax.axvline(1500, c = "k", ls = "--")
-                    ax.set_xlim(0, 6000),
-                    ax.plot([], [], ls = "solid", c = "k", label = "Extrapolated")
-                    ax.legend(loc = "upper right", title = annotate(e))
-                    if e >= 4: 
-                        ax.set_xlabel("Shower plane distance / m")
-                        ax.set_xticks([1e3, 2e3, 3e3, 4e3, 5e3])
-                    else:
-                        ax.set_xticks([])
-                    if e % 3 == 0: ax.set_ylabel("Trigger efficiency")
-
-                # axis 2 = sorted by zenith angle
-                for t, (hits, misses) in enumerate(zip(hits, misses)):
-
-                    LDF, (LDF_efficiency, LDF_prob_50, LDF_scale) = get_fit_function("/cr/tempdata01/filip/QGSJET-II/LDF/", e, t)
-                    LDF = lambda x : lateral_distribution_function(x, LDF_efficiency, LDF_prob_50, 1/LDF_scale)
-
-                    c = colormap(t / (len(theta_bins) - 1))
-                    all_data = hits + misses
-                    n_data_in_bins = int(50 * np.sqrt(e + 1))
-
-                    # have at least 7 bins or bins with >50 samples
-                    while True:
-                        n_bins = len(all_data) // n_data_in_bins
-                        probabilities = np.linspace(0, 1, n_bins)
-                        binning = mquantiles(all_data, prob = probabilities)
-                        bin_center = 0.5 * (binning[1:] + binning[:-1])
-                        n_all, _ = np.histogram(all_data, bins = binning)
-
-                        if len(n_all) <= 7: 
-                            n_data_in_bins -= 10
-                            if n_data_in_bins <= 50: break
-                        else: break
-
-                    x, _ = np.histogram(hits, bins = binning)
-                    o, _ = np.histogram(misses, bins = binning)
-                    efficiency = x / (x + o) * LDF(bin_center)
-                    efficiency_err = 1/n_all**2 * np.sqrt( x**3 + o**3 - 2 * np.sqrt((x * o)**3) )          # lack LDF error part here !!
-                    # efficiency_err[efficiency_err == 0] = 1e-3                                              # such that residuals are finite
-
-                    filter = np.isnan(efficiency)
-                    bin_center = bin_center[~filter]
-                    efficiency = efficiency[~filter]
-                    efficiency_err = efficiency_err[~filter]
-
-                    # perform fit with x_err and y_err
-                    try:
-                        if kwargs.get("perform_fit", True):
-
-                            try:
-                                # # lateral_trigger_probability(x : np.ndarray, efficiency : float, prob_50, scale : float, C : float)
-                                # popt, pcov = curve_fit(lateral_trigger_probability, bin_center, efficiency, 
-                                #                                         p0 = [efficiency[0], bin_center[np.argmin(abs(efficiency - 50))], LDF_scale, 2 * LDF_scale],
-                                #                                         bounds = ([0, 0, 0, 0], [1, np.inf, 1, 0.5]),
-                                #                                         sigma = efficiency_err,
-                                #                                         absolute_sigma = True,
-                                #                                         maxfev = 10000)
-
-                                # When running in compatibility mode (i.e. using lateral_distribution_function under the hood)
-                                # lateral_distribution_function(x : np.ndarray, efficiency : float, prob_50 : float, scale : float)
-                                popt, pcov = curve_fit(lateral_trigger_probability, bin_center, efficiency, 
-                                                                        p0 = [1, bin_center[np.argmin(abs(efficiency - 0.5))], 1/LDF_scale],
-                                                                        bounds = ([0, 0, 0], [np.inf, np.inf, 1000]),
-                                                                        # sigma = efficiency_err,
-                                                                        # absolute_sigma = True,
-                                                                        maxfev = 10000)
-
-                                # write fit parameters to disk
-                                file_name = f"{e_labels[e].replace('$','')}_{e_labels[e+1].replace('$','')}__{int(theta_bins[t])}_{int(theta_bins[t+1])}.csv"
-
-                                if hasattr(self, "epochs"):
-                                    fit_dir = f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/FITPARAM/"
-                                else: fit_dir = f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/FITPARAM/"
-                                
-                                try: os.mkdir(fit_dir)
-                                except FileExistsError: pass
-
-                                with open(fit_dir + file_name, "w") as fit_parameters:
-                                    np.savetxt(fit_parameters, popt)
-
-
-                                if kwargs.get("draw_plot", True):
-
-                                    X = np.geomspace(1e-3, 6000, 1000)
-
-                                    efficiency_fit = lateral_trigger_probability(X, *popt)
-                                    efficiency_fit_error = lateral_trigger_probability_error(X, pcov, *popt)
-                                    bottom = np.clip(efficiency_fit - efficiency_fit_error, 0, 1)
-                                    top = np.clip(efficiency_fit + efficiency_fit_error, 0, 1)
-                                
-                                    ax.plot(X, efficiency_fit, color = c)
-                                    ax.fill_between(X, bottom, top, color = c, alpha = 0.1)
-                            
-                            except IndexError: pass
-                    
-                    except ValueError: pass
-
-                    if kwargs.get("draw_plot", True):
-                        upper = np.clip(efficiency + efficiency_err, 0, 1)
-                        lower = np.clip(efficiency - efficiency_err, 0, 1)
-
-                        ax.errorbar(bin_center, efficiency, yerr = [efficiency - lower, upper - efficiency], color = c, **bar_kwargs)
-
-            norm = BoundaryNorm(theta_bins, colormap.N)
-            ax2 = fig.add_axes([0.92, 0.1, 0.01, 0.8])
-            cbar = ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"sec$(\theta)$ - 1")
-            cbar.set_ticks(theta_bins)
-            cbar.set_ticklabels(["0.0", "0.2", "0.4", "0.6", "0.8", "1.4"])
-
-            plt.subplots_adjust(hspace = 0.04, wspace = 0)
-
-            warnings.simplefilter("default", RuntimeWarning)
-
-        # plot the ROC curve for a specific dataset (e.g. 'validation_data', 'real_background', etc.) over signal strength (VEM_charge)
-        def ROC(self, dataset, **kwargs) -> None :
-
-            raise NotImplementedError
-
-            TP, FP, TN, FN = self.load_and_print_performance(dataset, usecols = [0, 0, 0, 0])
-
-            if kwargs.get("full_set", False):
-                y, x = np.array(list(TP) + list(TN)), np.array(list(FP) + list(FN))
-            else: y, x = TP, FP
-
-            x = np.clip(x, a_min = 1e-6, a_max = None)
-            y = np.clip(y, a_min = 1e-6, a_max = None)
-
-            score_low, score_high = min([x.min(), y.min()]), max([x.max(), y.max()])
-            last, current_x, current_y = score_low, 0, 0
-            ROC_x, ROC_y = [],[]
-
-            bins = np.geomspace(score_low, score_high, kwargs.get("n", 50))[::-1]
-            norm = ( len(x) + len(y) ) * 5                  # why x5 ???
-
-            for score_bin in bins:
-
-                this_x = ((last >= x) & (x > score_bin)).sum()
-                this_y = ((last >= y) & (y > score_bin)).sum()
-                
-                current_x += this_x / norm
-                current_y += this_y / norm
-                
-                ROC_y.append(current_y), ROC_x.append(current_x)
-
-                last = score_bin
-            
-            ROC_x.append(1), ROC_y.append(1)
-
-            plt.title(kwargs.get("title",""))
-            plt.xlim(-0.02,1.02)
-            plt.ylim(-0.02,1.02)
-            plt.rcParams.update({'font.size': 22})
-            plt.xlabel("False positive rate"), plt.ylabel("True positive rate")
-            plt.plot(ROC_x, ROC_y, label = kwargs.get("label", self.name + "/" + dataset), ls = kwargs.get("ls", "solid"), lw = 2)
-            
-            plt.plot([0,1],[0,1], ls = "--", c = "gray")
-
-            tp, fp = len(TP), len(FP)
-            tn, fn = len(TN), len(FN)
-
-            all = ( tp + tn + fp + fn )
-            TPR = ( tp ) / ( tp + fp ) * 100
-            ACC = ( tp + tn ) / all * 100
-
-            return ACC, TPR
-
-        # precision and recall curve over signal strength (VEM_charge)
-        def PRC(self, dataset : str, **kwargs) -> None :
-
-            raise NotImplementedError
-
-            TP, FP, TN, FN = self.load_and_print_performance(dataset, usecols = [0, 0, 0, 0])
-
-            TP = np.clip(TP, a_min = 1e-6, a_max = None)
-            FP = np.clip(FP, a_min = 1e-6, a_max = None)
-            FN = np.clip(FN, a_min = 1e-6, a_max = None)
-
-            score_low = min([TP.min(), FP.min(), FN.min()])
-            score_high = max([TP.max(), FP.max(), FN.max()])
-            last = score_low
-            PRC_x, PRC_y = [],[]
-
-            for score_bin in np.geomspace(score_low, score_high, kwargs.get("n", 100))[::-1]:
-
-                this_tp = ((last >= TP) & (TP > score_bin)).sum()
-                this_fp = ((last >= FP) & (FP > score_bin)).sum()
-                this_fn = ((last >= FN) & (FN > score_bin)).sum()
-                last = score_bin
-
-                if this_tp + this_fn != 0 and this_tp + this_fp != 0:
-                    this_x = this_tp / (this_tp + this_fn)                                  # recall
-                    this_y = this_tp / (this_tp + this_fp)                                  # precision
-
-                else: continue
-
-                # print(f"{last:.2e} -> {score_bin:.2e}: {this_x}, {this_y}")
-                
-                PRC_y.append(this_y), PRC_x.append(this_x)
-
-            PRC_y.sort() # ???
-            PRC_x.sort() # ???
-
-            plt.xlim(-0.02,1.02)
-            plt.ylim(0.48,1.02)
-            plt.rcParams.update({'font.size': 22})
-            plt.xlabel("Efficiency"), plt.ylabel("Precision")
-            plt.plot(1 - np.array(PRC_x), PRC_y, c = kwargs.get("c", "steelblue"), label = self.name + "/" + dataset, ls = kwargs.get("ls", "solid"))
-            plt.plot([0,1],[0.5,0.5,], ls = "--", c = "gray")
-
-        # plot the classifiers efficiency in terms of deposited signal
-        def signal_efficiency(self, dataset : str, **kwargs) -> None : 
-
-            theta_bins = [26, 38, 49, 60]
-            energy_bins = [10**16.5, 1e17, 10**17.5, 1e18, 10**18.5, 1e19]
-            TP, FP, TN, FN = self.load_and_print_performance(dataset)
-            # Prediction structure: [ integral, n_signal, energy, SPD, Theta]
-
-            signal_bins = np.geomspace(1e-1, 1e4, kwargs.get("bins", 50))
-            colormap = cmap.get_cmap("plasma")
-            
-            warnings.simplefilter("ignore", RuntimeWarning)
-
-            miss_sorted = [[ [] for t in range(len(theta_bins) + 1) ] for e in range(len(energy_bins) + 1)]
-            hits_sorted = [[ [] for t in range(len(theta_bins) + 1) ] for e in range(len(energy_bins) + 1)]
-            e_labels = [r"$16$", r"$16.5$", r"$17$", r"$17.5$", r"$18$", r"$18.5$", r"$19$", r"$19.5$"]
-            t_labels = [r"0$^{\circ}$", r"26$^{\circ}$", r"38$^{\circ}$", r"49$^{\circ}$", r"60$^{\circ}$", r"90$^{\circ}$"]
-
-            # sort predictions into bins of theta and energy
-            for source, target in zip([TP, FN], [hits_sorted, miss_sorted]):
-
-                SPD, E, T = source[:, 0], source[:, 1], source[:, 2]
-
-                # sort misses / hits w.r.t zenith and primary energy
-                theta_indices = np.digitize(T, theta_bins)
-                energy_indices = np.digitize(E, energy_bins)
-
-                for e, t, spd in zip(energy_indices, theta_indices, SPD):
-                    target[e][t].append(spd)
-
-            for e, (hits_by_energy, misses_by_energy) in enumerate(zip(hits_sorted, miss_sorted)):
-
-                fig = plt.figure()
-                plt.xscale("log")
-                plt.ylim(-0.05, 1.05)
-                plt.errorbar([],[], c = "k", ls = "--", label = "Simulated")
-                plt.legend(loc = "upper right", title = e_labels[e] + r" $\leq$ log($E$ / eV) < " + e_labels[e + 1], title_fontsize = 19)
-                plt.xlabel("Deposited Signal / VEM")
-                plt.ylabel("Trigger efficiency / %")
-
-                for t, (hits_by_theta, miss_by_theta) in enumerate(zip(hits_by_energy, misses_by_energy)):
-
-                    c = colormap(t / len(hits_by_energy))
-                    x, _ = np.histogram(hits_by_theta, bins = signal_bins)
-                    o, _ = np.histogram(miss_by_theta, bins = signal_bins)
-
-                    bins, y = 0.5 * (signal_bins[1:] + signal_bins[:-1]), x / (x + o)
-                    sx, sy = 0.5 * np.diff(signal_bins), x/(x + 0)**2 * np.sqrt(o**2 + (x + 2*o)/(x + o)**2)
-
-                    plt.errorbar(bins, y, ls = "--", xerr = sx, yerr = sy, label = t_labels[t] + r"$\leq$ $\theta$ < " + t_labels[t + 1], color = c)
-                    
-
-                norm = BoundaryNorm([0] + theta_bins + [90], colormap.N)
-                ax2 = fig.add_axes([0.95, 0.1, 0.01, 0.8])
-                ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"Zenith angle")
-
-            plt.show()
-
-        # relate single station efficiency function to T3 efficiency
-        def do_t3_simulation(self, dataset : str, n_points : int = 1e5) -> None :
-
-            if isinstance(n_points, float): n_points = int(n_points)
-
-            if isinstance(self, NNClassifier):
-                fitparams = np.loadtxt(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/fit_params.csv")
-            else:
-                fitparams = np.loadtxt(f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/fit_params.csv")
-
-            plt.rcParams["figure.figsize"] = [25, 18]
-            plt.rcParams["font.size"] = 22
-            colormap = cmap.get_cmap("plasma")
-            fig, ax = plt.subplots()
-
-            # set up plot
-            ax.text( 635, -55, "T3 detected", fontsize = 22)
-            ax.text(1395, 775, "T3 missed", fontsize = 22)
-            symmetry_line = lambda x : 1500 - x
-            X = np.linspace(700, 1550, 100)
-            ax.scatter([0, 1500, 750, 2250], [0, 0, 750, 750], s = 100, c = "k")
-            ax.plot(X, symmetry_line(X), ls = "solid", c = "k", zorder = 0, lw = 2)
-            ax.add_patch(Polygon([[0,0], [1500, 0], [750, 750]], closed = True, color = "green", alpha = 0.1, lw = 0))
-            ax.add_patch(Polygon([[750, 750], [1500, 0], [2250, 750]], closed = True, color = "red", alpha = 0.1, lw = 0))
-
-            # create shower cores in target area
-            theta_bins = [0, 26, 38, 49, 60, 90]
-            ys = np.random.uniform(0, 750, n_points)
-            xs = np.random.uniform(0, 1500, n_points) + ys
-            reflect = [ ys[i] > symmetry_line(xs[i]) for i in range(len(xs))]
-            xs[reflect] = -xs[reflect] + 2250
-            ys[reflect] = -ys[reflect] + 750
-
-            start_time = perf_counter_ns()
-
-            # do the T3 simulation
-            t3_hits, t3_misses = np.zeros((7, 5)), np.zeros((7, 5))
-            x_container, y_container = [[[] for t in range(5)] for e in range(7)], [[[] for t in range(5)] for e in range(7)]
-            stations = [[0, 0, 0], [1500, 0, 0], [750, 750, 0]]
-
-            for step_count, (x, y) in enumerate(zip(xs, ys)):
-
-                progress_bar(step_count, n_points, start_time)
-
-                energy_and_theta = np.random.randint(0, len(fitparams))
-                energy, t = energy_and_theta // 5, energy_and_theta % 5
-                fit_function = lambda spd : lateral_trigger_probability(x, *fitparams[energy_and_theta])
-
-                # choose theta, phi at random, calculate shower_plane_distance
-                theta = np.radians(np.random.uniform(theta_bins[t], theta_bins[t + 1]))
-                phi = np.random.uniform(0, 2 * np.pi)
-                sp_distances = []
-                
-                for station in stations:
-
-                    core_position = np.array([x, y, 0])
-                    core_origin = np.sin(theta) * np.array([np.cos(phi), np.sin(phi), 1/np.tan(theta)]) + core_position
-
-                    shower_axis = core_position - core_origin
-                    dot_norm = np.dot(shower_axis, shower_axis)
-                    perpendicular_norm = np.dot(station - core_origin, shower_axis) / dot_norm
-                    sp_distances.append( np.linalg.norm(perpendicular_norm * shower_axis + (core_origin - station)))
-
-                # #  In case of paranoia regarding distance calculation break comment
-                # ax.add_patch(plt.Circle((0, 0), sp_distances[0], color='b', fill=False))
-                # ax.add_patch(plt.Circle((1500, 0), sp_distances[1], color='b', fill=False))
-                # ax.add_patch(plt.Circle((750, 750), sp_distances[2], color='b', fill=False))
-
-                trigger_probabilities = [fit_function(distance) for distance in sp_distances]
-                dice_roll = np.random.uniform(0, 1, 3)
-
-                if np.all(dice_roll < trigger_probabilities):
-                    t3_hits[energy][t] += 1
-                    # plt.scatter(x, y, c = "k")
+    # plot the classifiers efficiency at a given SPD, energy, and theta
+    # TODO error calculation from LDF fit, etc...
+    def spd_energy_efficiency(self, dataset : str, **kwargs) -> None :
+        
+        warnings.simplefilter("ignore", RuntimeWarning)
+        colormap = cmap.get_cmap("plasma")
+        bar_kwargs = \
+        {
+            "fmt" : "o",
+            "elinewidth" : 0.5,
+            "capsize" : 3
+        }
+        
+        e_labels = [r"$16$", r"$16.5$", r"$17$", r"$17.5$", r"$18$", r"$18.5$", r"$19$", r"$19.5$"]            
+        annotate = lambda e : e_labels[e] + r" $\leq$ log($E$ / eV) $<$ " + e_labels[e + 1]
+
+        energy_bins = [10**16, 10**16.5, 10**17, 10**17.5, 10**18, 10**18.5, 10**19, 10**19.5]      # uniform in log(E)
+        theta_bins =  [0.0000, 33.5600, 44.4200, 51.3200, 56.2500, 65.3700]                         # pseudo-uniform in sec(θ)
+
+        miss_sorted = [[ [] for t in range(len(theta_bins) - 1) ] for e in range(len(energy_bins) - 1)]
+        hits_sorted = [[ [] for t in range(len(theta_bins) - 1) ] for e in range(len(energy_bins) - 1)]
+
+        # Prediction structure: []
+        TP, FP, TN, FN = self.load_and_print_performance(dataset)
+
+        # Sort predictions into bins of theta and energy
+        for source, target in zip([TP, FN], [hits_sorted, miss_sorted]):
+
+            spd, energy, theta = source[:, 0], source[:, 1], source[:, 2]
+            energy_sorted = np.digitize(energy, energy_bins)
+            theta_sorted = np.digitize(theta, theta_bins)
+
+            for e, t, shower_plane_distance in zip(energy_sorted, theta_sorted, spd):
+                target[e - 1][t - 1].append(shower_plane_distance)
+
+
+        if kwargs.get("draw_plot", True):
+            fig, axes = plt.subplots(3,3, sharex = False, sharey = True, figsize = [50, 25])
+            fig.suptitle(f"{self.name} - {dataset}", fontsize = 50)
+            axes[-1][-1].axis("off"), axes[-1][-2].axis("off")
+            plt.ylim(-0.05, 1.05)
+
+        # Calculate efficiencies given sorted performances
+        # axis 1 = sorted by primary particles' energy
+        for e, (hits, misses) in enumerate(zip(hits_sorted, miss_sorted)):
+
+            if kwargs.get("draw_plot", True): 
+                ax = axes[e // 3][e % 3]
+                ax.axvline(1500, c = "k", ls = "--")
+                ax.set_xlim(0, 6000),
+                ax.plot([], [], ls = "solid", c = "k", label = "Extrapolated")
+                ax.legend(loc = "upper right", title = annotate(e))
+                if e >= 4: 
+                    ax.set_xlabel("Shower plane distance / m")
+                    ax.set_xticks([1e3, 2e3, 3e3, 4e3, 5e3])
                 else:
-                    x, y = 2250 - x, 750 - y
-                    t3_misses[energy][t] += 1
-                    # plt.scatter(x, y, c = "r")
+                    ax.set_xticks([])
+                if e % 3 == 0: ax.set_ylabel("Trigger efficiency")
 
-                x_container[energy][t].append(x)
-                y_container[energy][t].append(y)
+            # axis 2 = sorted by zenith angle
+            for t, (hits, misses) in enumerate(zip(hits, misses)):
 
-            size_bins = [30, 50, 70, 90, 110, 160, 200]
-            e_labels = [r"$16$", r"$16.5$", r"$17$", r"$17.5$", r"$18$", r"$18.5$", r"$19$", r"$19.5$"]
+                LDF, (LDF_efficiency, LDF_prob_50, LDF_scale) = get_fit_function("/cr/tempdata01/filip/QGSJET-II/LDF/", e, t)
+                LDF = lambda x : lateral_distribution_function(x, LDF_efficiency, LDF_prob_50, 1/LDF_scale)
 
-            for e, (x_energy, y_energy) in enumerate(zip(x_container, y_container)):
-                for t, (x, y) in enumerate(zip(x_energy, y_energy)):
+                c = colormap(t / (len(theta_bins) - 1))
+                all_data = hits + misses
+                n_data_in_bins = int(50 * np.sqrt(e + 1))
 
-                    c = colormap(t / len(x_energy))
-                    s = size_bins[e]
+                # have at least 7 bins or bins with >50 samples
+                while True:
+                    n_bins = len(all_data) // n_data_in_bins
+                    probabilities = np.linspace(0, 1, n_bins)
+                    binning = mquantiles(all_data, prob = probabilities)
+                    bin_center = 0.5 * (binning[1:] + binning[:-1])
+                    n_all, _ = np.histogram(all_data, bins = binning)
 
-                    ax.scatter(x[::100], y[::100], color = c, s = s, marker = "x")
+                    if len(n_all) <= 7: 
+                        n_data_in_bins -= 10
+                        if n_data_in_bins <= 50: break
+                    else: break
 
-            for e, bin in enumerate(size_bins):
-                ax.scatter([],[], c = "k", s = bin, label = e_labels[e] + r" $\leq$ log($E$ / eV) < " + e_labels[e + 1], marker = "x")
+                x, _ = np.histogram(hits, bins = binning)
+                o, _ = np.histogram(misses, bins = binning)
+                efficiency = x / (x + o) * LDF(bin_center)
+                efficiency_err = 1/n_all**2 * np.sqrt( x**3 + o**3 - 2 * np.sqrt((x * o)**3) )          # lack LDF error part here !!
+                # efficiency_err[efficiency_err == 0] = 1e-3                                              # such that residuals are finite
 
-            ax.set_aspect('equal')
-            ax.legend(fontsize = 18)
-            plt.xlabel("Easting / m")
-            plt.ylabel("Northing / m")
+                filter = np.isnan(efficiency)
+                bin_center = bin_center[~filter]
+                efficiency = efficiency[~filter]
+                efficiency_err = efficiency_err[~filter]
 
-            norm = BoundaryNorm(theta_bins, colormap.N)
-            ax2 = fig.add_axes([0.91, 0.3, 0.01, 0.4])
+                # perform fit with x_err and y_err
+                try:
+                    if kwargs.get("perform_fit", True):
+
+                        try:
+                            # # lateral_trigger_probability(x : np.ndarray, efficiency : float, prob_50, scale : float, C : float)
+                            # popt, pcov = curve_fit(lateral_trigger_probability, bin_center, efficiency, 
+                            #                                         p0 = [efficiency[0], bin_center[np.argmin(abs(efficiency - 50))], LDF_scale, 2 * LDF_scale],
+                            #                                         bounds = ([0, 0, 0, 0], [1, np.inf, 1, 0.5]),
+                            #                                         sigma = efficiency_err,
+                            #                                         absolute_sigma = True,
+                            #                                         maxfev = 10000)
+
+                            # When running in compatibility mode (i.e. using lateral_distribution_function under the hood)
+                            # lateral_distribution_function(x : np.ndarray, efficiency : float, prob_50 : float, scale : float)
+                            popt, pcov = curve_fit(lateral_trigger_probability, bin_center, efficiency, 
+                                                                    p0 = [1, bin_center[np.argmin(abs(efficiency - 0.5))], 1/LDF_scale],
+                                                                    bounds = ([0, 0, 0], [np.inf, np.inf, 1000]),
+                                                                    # sigma = efficiency_err,
+                                                                    # absolute_sigma = True,
+                                                                    maxfev = 10000)
+
+                            # write fit parameters to disk
+                            file_name = f"{e_labels[e].replace('$','')}_{e_labels[e+1].replace('$','')}__{int(theta_bins[t])}_{int(theta_bins[t+1])}.csv"
+
+                            if hasattr(self, "epochs"):
+                                fit_dir = f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/FITPARAM/"
+                            else: fit_dir = f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/FITPARAM/"
+                            
+                            try: os.mkdir(fit_dir)
+                            except FileExistsError: pass
+
+                            with open(fit_dir + file_name, "w") as fit_parameters:
+                                np.savetxt(fit_parameters, popt)
+
+
+                            if kwargs.get("draw_plot", True):
+
+                                X = np.geomspace(1e-3, 6000, 1000)
+
+                                efficiency_fit = lateral_trigger_probability(X, *popt)
+                                efficiency_fit_error = lateral_trigger_probability_error(X, pcov, *popt)
+                                bottom = np.clip(efficiency_fit - efficiency_fit_error, 0, 1)
+                                top = np.clip(efficiency_fit + efficiency_fit_error, 0, 1)
+                            
+                                ax.plot(X, efficiency_fit, color = c)
+                                ax.fill_between(X, bottom, top, color = c, alpha = 0.1)
+                        
+                        except IndexError: pass
+                
+                except ValueError: pass
+
+                if kwargs.get("draw_plot", True):
+                    upper = np.clip(efficiency + efficiency_err, 0, 1)
+                    lower = np.clip(efficiency - efficiency_err, 0, 1)
+
+                    ax.errorbar(bin_center, efficiency, yerr = [efficiency - lower, upper - efficiency], color = c, **bar_kwargs)
+
+        norm = BoundaryNorm(theta_bins, colormap.N)
+        ax2 = fig.add_axes([0.92, 0.1, 0.01, 0.8])
+        cbar = ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"sec$(\theta)$ - 1")
+        cbar.set_ticks(theta_bins)
+        cbar.set_ticklabels(["0.0", "0.2", "0.4", "0.6", "0.8", "1.4"])
+
+        plt.subplots_adjust(hspace = 0.04, wspace = 0)
+
+        warnings.simplefilter("default", RuntimeWarning)
+
+    # plot the classifiers efficiency in terms of deposited signal    
+    def signal_efficiency(self, dataset : str, **kwargs) -> None : 
+
+        theta_bins = [26, 38, 49, 60]
+        energy_bins = [10**16.5, 1e17, 10**17.5, 1e18, 10**18.5, 1e19]
+        TP, FP, TN, FN = self.load_and_print_performance(dataset)
+        # Prediction structure: [ integral, n_signal, energy, SPD, Theta]
+
+        signal_bins = np.geomspace(1e-1, 1e4, kwargs.get("bins", 50))
+        colormap = cmap.get_cmap("plasma")
+        
+        warnings.simplefilter("ignore", RuntimeWarning)
+
+        miss_sorted = [[ [] for t in range(len(theta_bins) + 1) ] for e in range(len(energy_bins) + 1)]
+        hits_sorted = [[ [] for t in range(len(theta_bins) + 1) ] for e in range(len(energy_bins) + 1)]
+        e_labels = [r"$16$", r"$16.5$", r"$17$", r"$17.5$", r"$18$", r"$18.5$", r"$19$", r"$19.5$"]
+        t_labels = [r"0$^{\circ}$", r"26$^{\circ}$", r"38$^{\circ}$", r"49$^{\circ}$", r"60$^{\circ}$", r"90$^{\circ}$"]
+
+        # sort predictions into bins of theta and energy
+        for source, target in zip([TP, FN], [hits_sorted, miss_sorted]):
+
+            SPD, E, T = source[:, 0], source[:, 1], source[:, 2]
+
+            # sort misses / hits w.r.t zenith and primary energy
+            theta_indices = np.digitize(T, theta_bins)
+            energy_indices = np.digitize(E, energy_bins)
+
+            for e, t, spd in zip(energy_indices, theta_indices, SPD):
+                target[e][t].append(spd)
+
+        for e, (hits_by_energy, misses_by_energy) in enumerate(zip(hits_sorted, miss_sorted)):
+
+            fig = plt.figure()
+            plt.xscale("log")
+            plt.ylim(-0.05, 1.05)
+            plt.errorbar([],[], c = "k", ls = "--", label = "Simulated")
+            plt.legend(loc = "upper right", title = e_labels[e] + r" $\leq$ log($E$ / eV) < " + e_labels[e + 1], title_fontsize = 19)
+            plt.xlabel("Deposited Signal / VEM")
+            plt.ylabel("Trigger efficiency / %")
+
+            for t, (hits_by_theta, miss_by_theta) in enumerate(zip(hits_by_energy, misses_by_energy)):
+
+                c = colormap(t / len(hits_by_energy))
+                x, _ = np.histogram(hits_by_theta, bins = signal_bins)
+                o, _ = np.histogram(miss_by_theta, bins = signal_bins)
+
+                bins, y = 0.5 * (signal_bins[1:] + signal_bins[:-1]), x / (x + o)
+                sx, sy = 0.5 * np.diff(signal_bins), x/(x + 0)**2 * np.sqrt(o**2 + (x + 2*o)/(x + o)**2)
+
+                plt.errorbar(bins, y, ls = "--", xerr = sx, yerr = sy, label = t_labels[t] + r"$\leq$ $\theta$ < " + t_labels[t + 1], color = c)
+                
+
+            norm = BoundaryNorm([0] + theta_bins + [90], colormap.N)
+            ax2 = fig.add_axes([0.95, 0.1, 0.01, 0.8])
             ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"Zenith angle")
 
-            plt.figure()
+        plt.show()
 
-            e_labels = EventGenerator.libraries.keys()
-            t_labels = ["0_26", "26_38", "38_49", "49_60", "60_90"]
+    # plot the classifiers efficiency in terms of primary energy
+    def energy_efficiency(self, dataset : str, angle : float = 38, tolerance : float = 2, **kwargs) -> None : 
 
-            sns.heatmap(t3_hits / (t3_hits + t3_misses) * 1e2, annot = True, fmt = ".1f", cbar_kws = {"label" : "T3 efficiency / %"})
-            plt.xticks(ticks = 0.5 + np.arange(0, 5, 1), labels = t_labels)
-            plt.yticks(ticks = 0.5 + np.arange(0, 7, 1), labels = e_labels)
-            plt.xlabel("Zenith range")
-            plt.ylabel("Energy range")
+        bar_kwargs = \
+            {
+                "fmt" : kwargs.get("marker", "o"),
+                "c" : kwargs.get("color", "steelblue"),
+                "elinewidth" : 0.9,
+                "capsize" : 4,
+                "label" : kwargs.get("label", None)
+            }
 
-            plt.show()
+        e_bins = np.geomspace(10**16, 10**19.5, kwargs.get("n_points", 10))
+        TP, FP, TN, FN = self.load_and_print_performance(dataset)
 
-        @staticmethod
-        def __header__() -> None : 
+        TP_spd_selected = TP[np.where(TP[:, 0] <= kwargs.get("array_spacing", 1500))]
+        TP_selected = TP_spd_selected[np.where(TP_spd_selected[:,2] < angle + tolerance)]
+        TP_selected = TP_selected[np.where(angle - tolerance <= TP_selected[:,2])]
+        FN_spd_selected = FN[np.where(FN[:, 0] <= kwargs.get("array_spacing", 1500))]
+        FN_selected = FN_spd_selected[np.where(FN_spd_selected[:,2] < angle + tolerance)]
+        FN_selected = FN_selected[np.where(angle - tolerance <= FN_selected[:,2])]
 
-            global header_was_called
-            header_was_called = True
+        hits = [0 for _ in range(len(e_bins) - 1)]
+        miss = [0 for _ in range(len(e_bins) - 1)]
 
-            print(f"\n{'Classifier':<45} {'Dataset':<35} {'TP':>7} {'FP':>7} {'TN':>7} {'FN':>7}")
+        # Sort predictions into bins of energy
+        for source, target in zip([TP_selected, FN_selected], [hits, miss]):
 
-    
-    # Performance visualizers #######################################################################
+            energy_sorted = np.digitize(source[:,1], e_bins)
+            values, counts = np.unique(energy_sorted, return_counts = True)
+
+            for (value, count) in zip(values, counts):
+                target[value - 1] += count
+
+        hits, miss = np.array(hits), np.array(miss)
+        efficiency = hits / (hits + miss)
+        eff_err = 1/(hits + miss)**2 * np.sqrt( hits**3 + miss**3 - 2 * np.sqrt((hits * miss)**3) )
+
+        upper = np.clip(efficiency + eff_err, 0, 1)
+        lower = np.clip(efficiency - eff_err, 0, 1)
+
+        plt.xscale("log")
+        plt.errorbar(0.5 * (e_bins[1:] + e_bins[:-1]), efficiency, yerr = [efficiency - lower, upper - efficiency], **bar_kwargs)
+        plt.legend(title = fr"${angle - tolerance}^\circ \leq \theta < {angle + tolerance}^\circ$")
+
+    # relate single station efficiency function to T3 efficiency
+    def do_t3_simulation(self, dataset : str, n_points : int = 1e5) -> None :
+
+        if isinstance(n_points, float): n_points = int(n_points)
+
+        if isinstance(self, NNClassifier):
+            fitparams = np.loadtxt(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/fit_params.csv")
+        else:
+            fitparams = np.loadtxt(f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/fit_params.csv")
+
+        plt.rcParams["figure.figsize"] = [25, 18]
+        plt.rcParams["font.size"] = 22
+        colormap = cmap.get_cmap("plasma")
+        fig, ax = plt.subplots()
+
+        # set up plot
+        ax.text( 635, -55, "T3 detected", fontsize = 22)
+        ax.text(1395, 775, "T3 missed", fontsize = 22)
+        symmetry_line = lambda x : 1500 - x
+        X = np.linspace(700, 1550, 100)
+        ax.scatter([0, 1500, 750, 2250], [0, 0, 750, 750], s = 100, c = "k")
+        ax.plot(X, symmetry_line(X), ls = "solid", c = "k", zorder = 0, lw = 2)
+        ax.add_patch(Polygon([[0,0], [1500, 0], [750, 750]], closed = True, color = "green", alpha = 0.1, lw = 0))
+        ax.add_patch(Polygon([[750, 750], [1500, 0], [2250, 750]], closed = True, color = "red", alpha = 0.1, lw = 0))
+
+        # create shower cores in target area
+        theta_bins = [0, 26, 38, 49, 60, 90]
+        ys = np.random.uniform(0, 750, n_points)
+        xs = np.random.uniform(0, 1500, n_points) + ys
+        reflect = [ ys[i] > symmetry_line(xs[i]) for i in range(len(xs))]
+        xs[reflect] = -xs[reflect] + 2250
+        ys[reflect] = -ys[reflect] + 750
+
+        start_time = perf_counter_ns()
+
+        # do the T3 simulation
+        t3_hits, t3_misses = np.zeros((7, 5)), np.zeros((7, 5))
+        x_container, y_container = [[[] for t in range(5)] for e in range(7)], [[[] for t in range(5)] for e in range(7)]
+        stations = [[0, 0, 0], [1500, 0, 0], [750, 750, 0]]
+
+        for step_count, (x, y) in enumerate(zip(xs, ys)):
+
+            progress_bar(step_count, n_points, start_time)
+
+            energy_and_theta = np.random.randint(0, len(fitparams))
+            energy, t = energy_and_theta // 5, energy_and_theta % 5
+            fit_function = lambda spd : lateral_trigger_probability(x, *fitparams[energy_and_theta])
+
+            # choose theta, phi at random, calculate shower_plane_distance
+            theta = np.radians(np.random.uniform(theta_bins[t], theta_bins[t + 1]))
+            phi = np.random.uniform(0, 2 * np.pi)
+            sp_distances = []
+            
+            for station in stations:
+
+                core_position = np.array([x, y, 0])
+                core_origin = np.sin(theta) * np.array([np.cos(phi), np.sin(phi), 1/np.tan(theta)]) + core_position
+
+                shower_axis = core_position - core_origin
+                dot_norm = np.dot(shower_axis, shower_axis)
+                perpendicular_norm = np.dot(station - core_origin, shower_axis) / dot_norm
+                sp_distances.append( np.linalg.norm(perpendicular_norm * shower_axis + (core_origin - station)))
+
+            # #  In case of paranoia regarding distance calculation break comment
+            # ax.add_patch(plt.Circle((0, 0), sp_distances[0], color='b', fill=False))
+            # ax.add_patch(plt.Circle((1500, 0), sp_distances[1], color='b', fill=False))
+            # ax.add_patch(plt.Circle((750, 750), sp_distances[2], color='b', fill=False))
+
+            trigger_probabilities = [fit_function(distance) for distance in sp_distances]
+            dice_roll = np.random.uniform(0, 1, 3)
+
+            if np.all(dice_roll < trigger_probabilities):
+                t3_hits[energy][t] += 1
+                # plt.scatter(x, y, c = "k")
+            else:
+                x, y = 2250 - x, 750 - y
+                t3_misses[energy][t] += 1
+                # plt.scatter(x, y, c = "r")
+
+            x_container[energy][t].append(x)
+            y_container[energy][t].append(y)
+
+        size_bins = [30, 50, 70, 90, 110, 160, 200]
+        e_labels = [r"$16$", r"$16.5$", r"$17$", r"$17.5$", r"$18$", r"$18.5$", r"$19$", r"$19.5$"]
+
+        for e, (x_energy, y_energy) in enumerate(zip(x_container, y_container)):
+            for t, (x, y) in enumerate(zip(x_energy, y_energy)):
+
+                c = colormap(t / len(x_energy))
+                s = size_bins[e]
+
+                ax.scatter(x[::100], y[::100], color = c, s = s, marker = "x")
+
+        for e, bin in enumerate(size_bins):
+            ax.scatter([],[], c = "k", s = bin, label = e_labels[e] + r" $\leq$ log($E$ / eV) < " + e_labels[e + 1], marker = "x")
+
+        ax.set_aspect('equal')
+        ax.legend(fontsize = 18)
+        plt.xlabel("Easting / m")
+        plt.ylabel("Northing / m")
+
+        norm = BoundaryNorm(theta_bins, colormap.N)
+        ax2 = fig.add_axes([0.91, 0.3, 0.01, 0.4])
+        ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"Zenith angle")
+
+        plt.figure()
+
+        e_labels = EventGenerator.libraries.keys()
+        t_labels = ["0_26", "26_38", "38_49", "49_60", "60_90"]
+
+        sns.heatmap(t3_hits / (t3_hits + t3_misses) * 1e2, annot = True, fmt = ".1f", cbar_kws = {"label" : "T3 efficiency / %"})
+        plt.xticks(ticks = 0.5 + np.arange(0, 5, 1), labels = t_labels)
+        plt.yticks(ticks = 0.5 + np.arange(0, 7, 1), labels = e_labels)
+        plt.xlabel("Zenith range")
+        plt.ylabel("Energy range")
+
+        plt.show()
+
+    @staticmethod
+    def __header__() -> None : 
+
+        global header_was_called
+        header_was_called = True
+
+        print(f"\n{'Classifier':<45} {'Dataset':<35} {'TP':>7} {'FP':>7} {'TN':>7} {'FN':>7}")
 
 
 class BayesianClassifier(Classifier):

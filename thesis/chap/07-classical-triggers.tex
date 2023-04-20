@@ -54,6 +54,8 @@ $\text{FDR}$ drastically raises the amount of potential events and hence load on
 	\text{FDR} = \frac{\text{FP}}{\text{TP} + \text{FP}}.
 \end{equation}
 
+\todo{noise level money plot}
+
 Ultimately, all test statistics constructed by classical station triggers (ignoring MoPS, c.f. \autoref{ec:trigger-implementation}) are aliases for the deposited 
 charge $S$ in the WCD. Because $S$ is heavily influenced by the primary particle energy, zenith and distance to the shower core, as well as to a lesser extent by 
 shower age and statistical fluctuations, it makes sense to parametrize the trigger efficiency $\epsilon(E, \theta, \text{SPD})$ in terms of these observables. 
@@ -74,29 +76,29 @@ estimator for the neural network LTPs discussed in \autoref{chap:neural-network-
 
 \Offline can simulate the SD detector response given a preprocessed shower footprint as given by e.g. CORSIKA. As such, calculating the LTP for a given event
 condenses to counting the number of triggered and non-triggered stations at specific distances from the shower axis. If this is done for a large enough sample size
-of showers, one eliminates noise induced by shower-to-shower fluctuations and arrives at an independent estimator for a T2 trigger given a shower at a shower plane
-distance $r$, with energy $E$ and zenith $\theta$. As per \cite{abreu2011lateral}, the closed form approximation of the LTP is given as
+of showers, one eliminates noise induced by shower-to-shower fluctuations and arrives at an independent estimator for the probability of a T2 trigger given a 
+shower at a shower plane distance $r$, with energy $E$ and zenith $\theta$. As per \cite{abreu2011lateral}, the closed form approximation of the LTP is given as
 
 \begin{equation}
 	\label{eq:offline-ltp}
 	\text{LTP}\left(r\right) = 
 	\begin{dcases}
-		\frac{1}{1 + \exp\left(\frac{r - R_0}{\Delta R}\right)}, \qquad r \leq R_0 \\
+		\frac{1}{1 + \exp\left(\frac{r - R_0}{\sigma_R}\right)}, \qquad r \leq R_0 \\
 		\frac{1}{2} \exp{\left(C(r-R_0)\right)},\;\;\;\,r > R_0
 	\end{dcases}
 \end{equation}
 
-In \autoref{eq:offline-ltp}, $R_0$, $\Delta R$ and $C$ are all fit constants that will in general depend on $E$ and $\theta$. Most importantly, $R_0$ marks the 
+In \autoref{eq:offline-ltp}, $R_0$, $\sigma_R$ and $C$ are all fit constants that will in general depend on $E$ and $\theta$. Most importantly, $R_0$ marks the 
 shower plane distance where $\text(R_0) = 0.5$. This is connected to a steepening of the rising flank in the efficiency curve. Whereas an exponential function with
-decay constant $C<0$ describes data well for large $r$, a logistic function with scaling factor $1/\Delta R$ must account for the asymptotic transition to full 
+decay constant $C<0$ describes data well for large $r$, a logistic function with scaling factor $1/\sigma_R$ must account for the asymptotic transition to full 
 efficiency closer to the core.
 
 It must be mentioned that the motivation behind this parametrization is data- and not physics driven. In particular, $\text{LTP}(r)$ is not smooth in $R_0$ if the 
-parameters $C$ and $\Delta R$ are not finetuned as indicated in \autoref{eq:smoothness-requirement}.
+parameters $C$ and $\sigma_R$ are not finetuned as indicated in \autoref{eq:smoothness-requirement}.
 
 \begin{equation}
 	\label{eq:smoothness-requirement}
-	\lim\limits_{r \to R_0^+} \frac{\partial\,\text{LTP}(r)}{\partial r} = \frac{C}{2} \;\; \stackrel{!}{=} \;\; \frac{1}{4\Delta R} = \lim\limits_{r \to R_0^-} \frac{\partial\,\text{LTP}(r)}{\partial r}
+	\lim\limits_{r \to R_0^+} \frac{\partial\,\text{LTP}(r)}{\partial r} = \frac{C}{2} \;\; \stackrel{!}{=} \;\; \frac{1}{4\sigma_R} = \lim\limits_{r \to R_0^-} \frac{\partial\,\text{LTP}(r)}{\partial r}
 \end{equation}
 
 In this work however, a different parametrization is used to estimate the T2 response of a station. The functional form of this adjusted trigger probability is
@@ -104,7 +106,7 @@ a clipped logistic function, and given in \autoref{eq:my-ltp}.
 
 \begin{equation}
 	\label{eq:my-ltp}
-	\text{LTP}^*(r) = \min\left(1,\,\epsilon^*\,\left(1 - \frac{1}{1+e^{-\frac{r-R_0}{\Delta R}}}\right)\right)
+	\text{LTP}^*(r) = \min\left(1,\,\epsilon^*\,\left(1 - \frac{1}{1+e^{-\frac{r-R_0}{\sigma_R}}}\right)\right)
 \end{equation}
 
 The reasoning for this choice is as follows:
@@ -112,14 +114,14 @@ The reasoning for this choice is as follows:
 \begin{itemize}
 	\item The original parametrization, $\text{LTP}(r)$, eventually approaches $1$. This hints to a problem. It is not a guarantee that some trigger algorithm will
 	detect all extensive air showers. Espically neural network triggers  might be sensitive to only a subset of showers. This is reflected in the latter form, 
-	$\text{LTP}^*(r)$, by introducing an additional fit parameter, the pseudo-efficiency $\epsilon^*>0$. In the case of $\epsilon^*\geq1$, the domain of the 
+	$\text{LTP}^*(r)$, by introducing an additional fit parameter, the pseudo-efficiency $0\leq\epsilon^*<2$. In the case of $\epsilon^*\geq1$, the domain of the 
 	function is correctly mapped to $[0, 1]$.
 
 	\item There exists an imbalance in training data. Due to the geometry of the SD array, more traces at smaller $r$ are available. In an attempt to reduce 
 	possible biases resulting from low statistics at small SPD, the form is kept as simple as possible.
 
 	\item The function is guaranteed to be continously differentiable in $R_0$. For values $\epsilon^* > 1$ this is replaced with a kink at 
-	$R^* = R_0 - \frac{\log\left(\left(1 - 1/\epsilon^*\right)^{-1}-1\right)}{\Delta R}$, where $\text{LTP}^*(r)$ would exceed $1$ if not for clipping. There 
+	$R^* = R_0 - \frac{\log\left(\left(1 - 1/\epsilon^*\right)^{-1}-1\right)}{\sigma_R}$, where $\text{LTP}^*(r)$ would exceed $1$ if not for clipping. There 
 	exists some physical motivations for this however. Due to the phase transition, namely to full efficiency, at this point, discontinuities in the lateral 
 	trigger probability are allowed.
 \end{itemize}
@@ -128,7 +130,8 @@ This approach only marginally takes into account shower-to-shower-fluctuations. 
 hard transition from sub- to full efficiency. The parametrization used by the Pierre Auger collaboration takes this into consideration by design.The presented 
 $\text{LTP}^*(r)$ does - at least explicitly - not. As a result, one could expect a bias, where $\text{LTP}^*(R^*)$ over- or underestimates the actual trigger 
 probability. This is however not the case when examining the residuals of the performance fit that is done in \autoref{ssec:combined-performance}. A plot 
-showcasing this result is offered in \autoref{fig:fitfunction-comparison}. \todo{low energy bias}
+showcasing this is offered in \autoref{fig:fitfunction-comparison}. Still, results at low energies ($\log(E\,/\,\mathrm{eV}) < 17.5$) must be taken with a hint of 
+skepticism, as only very little data is available for such showers.
 
 \begin{figure}
 	\centering
@@ -138,11 +141,38 @@ showcasing this result is offered in \autoref{fig:fitfunction-comparison}. \todo
 	\label{fig:fitfunction-comparison}
 \end{figure}
 
-
 \subsection{Bayesian folding}
 \label{sec:bayesian-folding}
 
-\todo{write}
+Given a time trace of the form in \autoref{chap:neural-network-data}, it is easy to determine whether or not a given trigger algorithm analyzing this trace would
+raise a T2. The trigger probability obtained this way must however not be confused with the lateral trigger probabilty discussed above. It is the conditional 
+probability of a T2 given that a tank receives an air shower signal, $P(\text{T2}\,|\,\mathcal{C}_1)$. The complete LTP can be calculated in the following form:
+
+\begin{equation}
+	\label{eq:bayesian-folding}
+	\text{LTP} := P(\text{T2}) = P(\text{T2}\,|\,\mathcal{C}_1) * P(\mathcal{C}_1).
+\end{equation}
+
+$P(\mathcal{C}_1)$ in \autoref{eq:bayesian-folding} is the \textbf{L}ateral \textbf{P}article \textbf{P}robability (LPP) and quantifies the chance of a station 
+receiving a signal from an extensive air shower. It is the probabilistic interpretation of the lateral distribution function (c.f. \autoref{fig:component-LDF}). 
+The LTP of an ideal classifier that is able to identify individual particles would be equal to the LPP.
+
+For this work, the LPP is calculated by comparing the simulated stations in \autoref{sec:signal-dataset} to a catalog of known stations in the vicinity of the 
+shower core. The ratio of simulated stations divided by all stations at a specific SPD is the LPP at a given (slice of) energy $E$ and zenith $\theta$. A 
+function like in \autoref{eq:my-ltp} is fitted to the data to extrapolate values at arbitrary SPD. The result of this analysis for all energies and zenith angles
+is shown in \autoref{fig:LPP-fits}. The best fit parameters are listed in \autoref{app:LPP-fit-parameters}.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=1\textwidth]{./plots/LPP.png}
+	\caption{The probability of a station receiving a particle in relation to its' separation from the shower core axis. The probability at a constant SPD 
+	increases with increasing primary energy, but decreases with increasing zenith angle.}
+	\label{fig:fitfunction-comparison}
+\end{figure}
+
+The comparison between the LTP gathered via Bayesian folding is compared to the \Offline approach in \autoref{sec:offline-ltp}. This is done for every classical
+trigger individually. It is found that no remarkable difference between both results exists. As a consequence, this method of evaluating the LTP allows for an 
+easy comparison of neural network triggers to the algorithms discussed in the following. 
 
 \section{Implementation}
 \label{sec:trigger-implementation}
@@ -196,7 +226,23 @@ In the case of faulty electronics, where only a subset of the WCD PMTs are avail
 \subsubsection{Performance}
 \label{ssec:th-performance}
 
-\todo{write}
+The average trigger rate for the Th-T2 trigger per station is \textit{defined} to be $\approx\SI{20}{\hertz}$ (c.f. \autoref{ssec:online-calibration}). Comparing 
+this to the nominal T3 trigger rate at CDAS level ($\approx\SI{0.03}{\hertz}$ \cite{abraham2010trigger}), it becomes obvious that a lot of background events pass 
+this threshold. Consequently, the trigger has a very high false discovery rate 
+$\text{FDR}\approx\frac{\SI{20}{\hertz} - \SI{0.03}{\hertz}}{\SI{20}{\hertz} + \SI{0.03}{\hertz}}=0.997$.
+
+The efficiency of the threshold trigger is comparably poor. Only every fifth trace ($\epsilon = 0.2$) is detected as such. This number must however be taken with 
+context. In \autoref{chap:neural-network-data}, a signal is considered to be any kind of detector response from an extensive air shower. This includes single muons
+injected into WCDs faraway from the shower core. As such, the dataset that triggers are being tested on contain a lot of information algorithms were designed to 
+ignore. This drops the efficiency considerably. Nevertheless, it serves as a gauge to compare this trigger to the ones discussed on the following pages.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{./plots/th2_LTP_comparison.png}
+	\caption{The lateral trigger probability for the threshold T2 trigger. Shown is the comparison between the different procedures discussed in 
+	\autoref{sec:classical-triggers-performance}. Both results agree across all considered primary energies and zenith angles.} 
+	\label{fig:th2-ltp-comparison}
+\end{figure}
 
 \subsection{Time over Threshold trigger (ToT)}
 \label{ssec:time-over-threshold-trigger}

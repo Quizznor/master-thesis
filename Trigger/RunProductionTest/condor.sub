@@ -11,6 +11,7 @@ arguments       = $(Process)
 # arguments     = $(Item) $(Process1)
 request_memory  = 2G
 max_idle        = 150
+max_materialize = 50
 
 # NURIA - 798
 # LOQUI - 4000

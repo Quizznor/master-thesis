@@ -290,8 +290,8 @@ station = "nuria"
 i = int(sys.argv[1])
 trace_duration = GLOBAL.n_bins * GLOBAL.single_bin_duration
 
-window_start = range(0, 682 - 120, 10)
-window_stop = range(120, 682, 10)
+window_start = range(0, 682 - 120, 30)
+window_stop = range(120, 682, 30)
 Th2 = HardwareClassifier(["th2"])
 ToT = HardwareClassifier(["tot"])
 ToTd = HardwareClassifier(["tot"])
@@ -301,11 +301,14 @@ Buffer = RandomTrace(station = station, index = i)
 n_traces = len(Buffer._these_traces)
 duration = n_traces * trace_duration
 
-percentages = [-16, -14, -13, -12, -11, -8, -6, -4, -2, -1, 0, 1, 2, 4, 8, 16]
+# percentages = [-16, -14, -13, -12, -11, -8, -6, -4, -2, -1, 0, 1, 2, 4, 8, 16]
+percentages = []
 # percentages += list(np.arange(-50, -25, 5)) + list(np.arange(20, 101, 5))
+# percentages += list(np.arange(-95, -54, 10)) + list(np.arange(110, 251, 10))
+percentages += [-94, -93, -92, -91, -90, -89, -88, -87, -86] + [-83, -81, -79, -77] + [-72, -69] + [-60]
 percentages = np.array(percentages) * 1e-2
 
-# # increments = np.array([-4, -2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20])
+# increments = np.array([-4, -2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20])
 
 for percentage in percentages:
 # for increment in increments:
