@@ -405,8 +405,8 @@ class Classifier():
     # plot the classifiers efficiency in terms of deposited signal    
     def signal_efficiency(self, dataset : str, **kwargs) -> None : 
 
-        theta_bins = [26, 38, 49, 60]
-        energy_bins = [10**16.5, 1e17, 10**17.5, 1e18, 10**18.5, 1e19]
+        energy_bins = [10**16, 10**16.5, 10**17, 10**17.5, 10**18, 10**18.5, 10**19, 10**19.5]      # uniform in log(E)
+        theta_bins =  [0.0000, 33.5600, 44.4200, 51.3200, 56.2500, 65.3700]                         # pseudo-uniform in sec(θ)
         TP, FP, TN, FN = self.load_and_print_performance(dataset)
         # Prediction structure: [ integral, n_signal, energy, SPD, Theta]
 
@@ -475,12 +475,33 @@ class Classifier():
         e_bins = np.geomspace(10**16, 10**19.5, kwargs.get("n_points", 10))
         TP, FP, TN, FN = self.load_and_print_performance(dataset)
 
+        energy_bins = [10**16, 10**16.5, 10**17, 10**17.5, 10**18, 10**18.5, 10**19, 10**19.5]      # uniform in log(E)
+        theta_bins =  [0.0000, 33.5600, 44.4200, 51.3200, 56.2500, 65.3700]                         # pseudo-uniform in sec(θ)
+
         TP_spd_selected = TP[np.where(TP[:, 0] <= kwargs.get("array_spacing", 1500))]
         TP_selected = TP_spd_selected[np.where(TP_spd_selected[:,2] < angle + tolerance)]
         TP_selected = TP_selected[np.where(angle - tolerance <= TP_selected[:,2])]
         FN_spd_selected = FN[np.where(FN[:, 0] <= kwargs.get("array_spacing", 1500))]
         FN_selected = FN_spd_selected[np.where(FN_spd_selected[:,2] < angle + tolerance)]
         FN_selected = FN_selected[np.where(angle - tolerance <= FN_selected[:,2])]
+
+        indices_to_delete = []
+        FN_selected = list(FN_selected)
+
+        # take LDF particle probability into account
+        for i, prediction in enumerate(TP_selected):
+            spd, energy, theta = prediction[:3]
+            eb = np.digitize(energy, energy_bins)
+            tb = np.digitize(theta, theta_bins)
+            _, (eff, prob50, scale) = get_fit_function("/cr/tempdata01/filip/QGSJET-II/LDF/", eb, tb)
+            LDF = lambda x : lateral_distribution_function(x, eff, prob50, 1/scale)
+
+            if np.random.uniform() <= 1 - LDF(spd):
+                FN_selected.append(prediction)
+                indices_to_delete.append(i)
+
+        FN_selected = np.array(FN_selected)
+        TP_selected = np.delete(TP_selected, indices_to_delete, axis = 0)
 
         hits = [0 for _ in range(len(e_bins) - 1)]
         miss = [0 for _ in range(len(e_bins) - 1)]
@@ -506,29 +527,34 @@ class Classifier():
         plt.legend(title = fr"${angle - tolerance}^\circ \leq \theta < {angle + tolerance}^\circ$")
 
     # relate single station efficiency function to T3 efficiency
-    def do_t3_simulation(self, dataset : str, n_points : int = 1e5) -> None :
+    def do_t3_simulation(self, dataset : str, n_points : int = 1e5, **kwargs) -> None :
+
+        import seaborn as sns
 
         if isinstance(n_points, float): n_points = int(n_points)
 
         if isinstance(self, NNClassifier):
-            fitparams = np.loadtxt(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/fit_params.csv")
+            root_path = f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/"
         else:
-            fitparams = np.loadtxt(f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/fit_params.csv")
+            root_path = f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/"
 
-        plt.rcParams["figure.figsize"] = [25, 18]
-        plt.rcParams["font.size"] = 22
         colormap = cmap.get_cmap("plasma")
         fig, ax = plt.subplots()
 
+        dx = 100
+        theta = kwargs.get("theta", 38)
+        tolerance = kwargs.get("tolerance", 4)
+
         # set up plot
         ax.text( 635, -55, "T3 detected", fontsize = 22)
-        ax.text(1395, 775, "T3 missed", fontsize = 22)
+        ax.text(1395 + dx, 775, "T3 missed", fontsize = 22)
         symmetry_line = lambda x : 1500 - x
         X = np.linspace(700, 1550, 100)
-        ax.scatter([0, 1500, 750, 2250], [0, 0, 750, 750], s = 100, c = "k")
-        ax.plot(X, symmetry_line(X), ls = "solid", c = "k", zorder = 0, lw = 2)
+        ax.scatter([0, 1500, 750], [0, 0, 750], s = 100, c = "k")
+        ax.scatter([1500 + dx, 750 + dx, 2250 + dx], [0, 750, 750], s = 100, c = "k")
+        ax.plot(X + dx/2, symmetry_line(X), ls = "solid", c = "k", zorder = 0, lw = 2)
         ax.add_patch(Polygon([[0,0], [1500, 0], [750, 750]], closed = True, color = "green", alpha = 0.1, lw = 0))
-        ax.add_patch(Polygon([[750, 750], [1500, 0], [2250, 750]], closed = True, color = "red", alpha = 0.1, lw = 0))
+        ax.add_patch(Polygon([[750 + dx, 750], [1500 + dx, 0], [2250 + dx, 750]], closed = True, color = "red", alpha = 0.1, lw = 0))
 
         # create shower cores in target area
         theta_bins = [0, 26, 38, 49, 60, 90]
@@ -538,30 +564,40 @@ class Classifier():
         xs[reflect] = -xs[reflect] + 2250
         ys[reflect] = -ys[reflect] + 750
 
+        energy_hits, energy_miss = [], []
+
+        energy_bins = [10**16, 10**16.5, 10**17, 10**17.5, 10**18, 10**18.5, 10**19, 10**19.5]      # uniform in log(E)
+        theta_bins =  [0.0000, 33.5600, 44.4200, 51.3200, 56.2500, 65.3700]                         # pseudo-uniform in sec(θ)
+
         start_time = perf_counter_ns()
 
         # do the T3 simulation
-        t3_hits, t3_misses = np.zeros((7, 5)), np.zeros((7, 5))
-        x_container, y_container = [[[] for t in range(5)] for e in range(7)], [[[] for t in range(5)] for e in range(7)]
+        t3_hits = [[0 for t in range(len(theta_bins) - 1)] for e in range(len(energy_bins) - 1)]
+        t3_misses = [[0 for t in range(len(theta_bins) - 1)] for e in range(len(energy_bins) - 1)]
+        x_container = [[[] for t in range(len(theta_bins) - 1)] for e in range(len(energy_bins) - 1)]
+        y_container = [[[] for t in range(len(theta_bins) - 1)] for e in range(len(energy_bins) - 1)]
+        container_hits = [[] for t in range(len(theta_bins) - 1)]
+        container_miss = [[] for t in range(len(theta_bins) - 1)]
         stations = [[0, 0, 0], [1500, 0, 0], [750, 750, 0]]
 
         for step_count, (x, y) in enumerate(zip(xs, ys)):
 
             progress_bar(step_count, n_points, start_time)
 
-            energy_and_theta = np.random.randint(0, len(fitparams))
-            energy, t = energy_and_theta // 5, energy_and_theta % 5
-            fit_function = lambda spd : lateral_trigger_probability(x, *fitparams[energy_and_theta])
+            random_phi = np.random.uniform(0, 360)
+            random_energy = 10**(np.random.uniform(low = 16, high = 19.5))
+            random_zenith = np.random.uniform(low = 0, high = 65)
+            eb = np.digitize(random_energy, energy_bins) - 1
+            tb = np.digitize(random_zenith, theta_bins) - 1
 
-            # choose theta, phi at random, calculate shower_plane_distance
-            theta = np.radians(np.random.uniform(theta_bins[t], theta_bins[t + 1]))
-            phi = np.random.uniform(0, 2 * np.pi)
+            fit_function, _ = get_fit_function(root_path, eb, tb)
+
             sp_distances = []
             
             for station in stations:
 
                 core_position = np.array([x, y, 0])
-                core_origin = np.sin(theta) * np.array([np.cos(phi), np.sin(phi), 1/np.tan(theta)]) + core_position
+                core_origin = np.sin(random_zenith) * np.array([np.cos(random_phi), np.sin(random_phi), 1/np.tan(random_zenith)]) + core_position
 
                 shower_axis = core_position - core_origin
                 dot_norm = np.dot(shower_axis, shower_axis)
@@ -577,15 +613,19 @@ class Classifier():
             dice_roll = np.random.uniform(0, 1, 3)
 
             if np.all(dice_roll < trigger_probabilities):
-                t3_hits[energy][t] += 1
-                # plt.scatter(x, y, c = "k")
-            else:
-                x, y = 2250 - x, 750 - y
-                t3_misses[energy][t] += 1
-                # plt.scatter(x, y, c = "r")
+                t3_hits[eb][tb] += 1
+                container_hits[tb].append(random_energy)
 
-            x_container[energy][t].append(x)
-            y_container[energy][t].append(y)
+            else:
+                x, y = 2250 - x + dx, 750 - y
+                t3_misses[eb][tb] += 1
+                container_miss[tb].append(random_energy)
+
+                if theta - tolerance/2 <= random_zenith < theta + tolerance/2:
+                    energy_miss.append(random_energy)
+
+            x_container[eb][tb].append(x)
+            y_container[eb][tb].append(y)
 
         size_bins = [30, 50, 70, 90, 110, 160, 200]
         e_labels = [r"$16$", r"$16.5$", r"$17$", r"$17.5$", r"$18$", r"$18.5$", r"$19$", r"$19.5$"]
@@ -596,10 +636,10 @@ class Classifier():
                 c = colormap(t / len(x_energy))
                 s = size_bins[e]
 
-                ax.scatter(x[::100], y[::100], color = c, s = s, marker = "x")
+                ax.scatter(x[::kwargs.get("step", 50)], y[::kwargs.get("step", 50)], color = c, s = s, marker = "x")
 
         for e, bin in enumerate(size_bins):
-            ax.scatter([],[], c = "k", s = bin, label = e_labels[e] + r" $\leq$ log($E$ / eV) < " + e_labels[e + 1], marker = "x")
+            ax.scatter([],[], c = "k", s = bin, label = e_labels[e] + r" $\leq$ log$_{10}$($E$ / $\mathrm{eV}$) $<$ " + e_labels[e + 1], marker = "x")
 
         ax.set_aspect('equal')
         ax.legend(fontsize = 18)
@@ -607,21 +647,53 @@ class Classifier():
         plt.ylabel("Northing / m")
 
         norm = BoundaryNorm(theta_bins, colormap.N)
-        ax2 = fig.add_axes([0.91, 0.3, 0.01, 0.4])
-        ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"Zenith angle")
+        ax2 = fig.add_axes([0.91, 0.2, 0.01, 0.6])
+
+        cbar = ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"sec$(\theta)$ - 1")
+        cbar.set_ticks(theta_bins)
+        cbar.set_ticklabels(["0.0", "0.2", "0.4", "0.6", "0.8", "1.4"])
 
         plt.figure()
 
-        e_labels = EventGenerator.libraries.keys()
-        t_labels = ["0_26", "26_38", "38_49", "49_60", "60_90"]
+        theta_bins =  [0.0000, 33.5600, 44.4200, 51.3200, 56.2500, 65.3700]                         # pseudo-uniform in sec(θ)
 
-        sns.heatmap(t3_hits / (t3_hits + t3_misses) * 1e2, annot = True, fmt = ".1f", cbar_kws = {"label" : "T3 efficiency / %"})
-        plt.xticks(ticks = 0.5 + np.arange(0, 5, 1), labels = t_labels)
-        plt.yticks(ticks = 0.5 + np.arange(0, 7, 1), labels = e_labels)
+        e_labels = EventGenerator.libraries.keys()
+        t_labels = ["0_34", "34_44", "44_51", "51_56", "56_65"]
+
+        t3_hits = np.array(t3_hits)
+        t3_misses = np.array(t3_misses)
+
+        sns.heatmap(t3_hits / (t3_hits + t3_misses) * 1e2, annot = True, fmt = ".1f", cbar_kws = {"label" : "T3 efficiency / \%"})
+        plt.xticks(ticks = 0.5 + np.arange(0, 5, 1), labels = t_labels, fontsize = 28)
+        plt.yticks(ticks = 0.5 + np.arange(0, 7, 1), labels = e_labels, fontsize = 28)
         plt.xlabel("Zenith range")
         plt.ylabel("Energy range")
 
-        plt.show()
+        fig = plt.figure()
+
+        e_bins_efficiency = np.geomspace(10**16, 10**19.5, kwargs.get("e_bins", len(energy_bins) - 1))
+
+        for t, (energy_hits, energy_miss) in enumerate(zip(container_hits, container_miss)):
+            n_hit, bins = np.histogram(energy_hits, bins = e_bins_efficiency)
+            n_miss, bins = np.histogram(energy_miss, bins = e_bins_efficiency)
+            eff_err = 1/(n_hit + n_miss)**2 * np.sqrt( n_hit**3 + n_miss**3 - 2 * np.sqrt((n_hit * n_miss)**3) )
+            eff = n_hit / (n_miss + n_hit)
+
+            upper = np.clip(eff + eff_err, 0, 1)
+            lower = np.clip(eff - eff_err, 0, 1)
+
+            plt.errorbar(0.5 * (bins[1:] + bins[:-1]), eff, yerr = [eff - lower, upper - eff], fmt = "-o", c = colormap(t / (len(theta_bins) - 1)))
+
+        plt.ylabel("T3 Trigger efficiency")
+        plt.xlabel("Primary energy / $\mathrm{eV}$")
+        plt.xscale("log")
+
+        norm = BoundaryNorm(theta_bins, colormap.N)
+        ax2 = fig.add_axes([0.91, 0.1, 0.01, 0.8])
+
+        cbar = ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"sec$(\theta)$ - 1")
+        cbar.set_ticks(theta_bins)
+        cbar.set_ticklabels(["0.0", "0.2", "0.4", "0.6", "0.8", "1.4"])
 
     @staticmethod
     def __header__() -> None : 

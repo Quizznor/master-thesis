@@ -54,9 +54,10 @@ $\text{FDR}$ drastically raises the amount of potential events and hence load on
 	\text{FDR} = \frac{\text{FP}}{\text{TP} + \text{FP}}.
 \end{equation}
 
-\todo{noise level money plot}
+\subsection{Lateral Trigger Probability (LTP)}
+\label{ssec:lateral-trigger-probability}
 
-Ultimately, all test statistics constructed by classical station triggers (ignoring MoPS, c.f. \autoref{ec:trigger-implementation}) are aliases for the deposited 
+Ultimately, all test statistics constructed by classical station triggers (ignoring MoPS, c.f. \autoref{sec:trigger-implementation}) are aliases for the deposited 
 charge $S$ in the WCD. Because $S$ is heavily influenced by the primary particle energy, zenith and distance to the shower core, as well as to a lesser extent by 
 shower age and statistical fluctuations, it makes sense to parametrize the trigger efficiency $\epsilon(E, \theta, \text{SPD})$ in terms of these observables. 
 
@@ -71,8 +72,8 @@ The functional form that can be obtained by evaluating trigger efficiencies for 
 classical triggers, two methods to extract the LTP are presented here. This is to show that both yield comparable results, and the latter method is a fair 
 estimator for the neural network LTPs discussed in \autoref{chap:neural-network-triggers}.
 
-\subsection{\Offline lateral trigger probability}
-\label{sec:offline-ltp}
+\subsubsection{\Offline lateral trigger probability}
+\label{sssec:offline-ltp}
 
 \Offline can simulate the SD detector response given a preprocessed shower footprint as given by e.g. CORSIKA. As such, calculating the LTP for a given event
 condenses to counting the number of triggered and non-triggered stations at specific distances from the shower axis. If this is done for a large enough sample size
@@ -141,11 +142,11 @@ skepticism, as only very little data is available for such showers.
 	\label{fig:fitfunction-comparison}
 \end{figure}
 
-\subsection{Bayesian folding}
-\label{sec:bayesian-folding}
+\subsubsection{Bayesian folding}
+\label{sssec:bayesian-folding}
 
 Given a time trace of the form in \autoref{chap:neural-network-data}, it is easy to determine whether or not a given trigger algorithm analyzing this trace would
-raise a T2. The trigger probability obtained this way must however not be confused with the lateral trigger probabilty discussed above. It is the conditional 
+raise a T2. The trigger probability obtained this way must however not be confused with the lateral trigger probability discussed above. It is the conditional 
 probability of a T2 given that a tank receives an air shower signal, $P(\text{T2}\,|\,\mathcal{C}_1)$. The complete LTP can be calculated in the following form:
 
 \begin{equation}
@@ -160,7 +161,7 @@ The LTP of an ideal classifier that is able to identify individual particles wou
 For this work, the LPP is calculated by comparing the simulated stations in \autoref{sec:signal-dataset} to a catalog of known stations in the vicinity of the 
 shower core. The ratio of simulated stations divided by all stations at a specific SPD is the LPP at a given (slice of) energy $E$ and zenith $\theta$. A 
 function like in \autoref{eq:my-ltp} is fitted to the data to extrapolate values at arbitrary SPD. The result of this analysis for all energies and zenith angles
-is shown in \autoref{fig:LPP-fits}. The best fit parameters are listed in \autoref{app:LPP-fit-parameters}.
+is shown in \autoref{fig:fitfunction-comparison}. The best fit parameters are listed in \autoref{app:lpp-fit-parameters}.
 
 \begin{figure}
 	\centering
@@ -170,9 +171,42 @@ is shown in \autoref{fig:LPP-fits}. The best fit parameters are listed in \autor
 	\label{fig:fitfunction-comparison}
 \end{figure}
 
-The comparison between the LTP gathered via Bayesian folding is compared to the \Offline approach in \autoref{sec:offline-ltp}. This is done for every classical
-trigger individually. It is found that no remarkable difference between both results exists. As a consequence, this method of evaluating the LTP allows for an 
-easy comparison of neural network triggers to the algorithms discussed in the following. 
+The comparison between the LTP gathered via Bayesian folding is compared to the \Offline station counting approach in \autoref{sec:trigger-implementation}. This is
+done for every classical trigger individually. It is found that no remarkable difference between both results exists. As a consequence, this method of evaluating 
+the LTP allows for an easy comparison of neural network triggers to the algorithms discussed in the following. 
+
+\subsection{Calculation of T3 efficiency}
+\label{ssec:t3-calculation}
+
+When transitioning from station- to event-level, the important variable becomes the T3 efficiency. It states the probability of a shower not only being detected
+in individual stations, but also identified as such by the CDAS T3 triggers. In the end, the only measured data that is available comes from extensive air showers
+which passed this final hurdle.
+
+With the lateral trigger probability at hand, a simple Monte-Carlo simulation can recover the T3 efficiency. Recall that the probability of a single station $i$
+detecting a shower at distance $r_i$, with energy $E$ and arrival direction $(\theta, \phi$) is given by \autoref{eq:station-trigger-probability}.
+
+\begin{equation}
+	\label{eq:station-trigger-probability}
+	\text{LTP}^*(r_i) = \min\left(1,\,\epsilon^*(E, \theta)\,\left(1 - \frac{1}{1+e^{-\frac{r_i-R_0(E, \theta)}{\sigma_R(E, \theta)}}}\right)\right).
+\end{equation}
+
+In the simplest case, this results in a T3 trigger if the three closest stations raise a T2 within \SI{11}{\micro\second} of one another. By simulating a random
+core position and determining the detector response, one can calculate the event detection numerically. The approach presented here does not take into account 
+timing differences resulting from the finite propagation speed of the shower front. Instead, it is assumed that all stations simultaneously receive a signal. This
+is only accurate if the primary particle initiated a perfectly vertical cascade infinitely far away from the SD. However, due to the permissivity of the T3 
+triggers such considerations need not be accounted for. Even in the most suboptimal case of a horizontal shower ($\theta = 90^\circ$), the furthest station in the 
+triangle receives a signal latest around $\frac{\SI{1.5}{\kilo\meter}}{c} = \SI{5}{\micro\second}$ after the closest one. Exemplary simulations and resulting T3 
+efficiencies for classical triggers are shown in \autoref{fig:t3-mc-simulation} and further discussed in \autoref{ssec:combined-performance}.
+
+
+\begin{figure}
+	\centering
+	\includegraphics[width=1\textwidth]{./plots/t3_mc_simulation.png}
+	\caption{(\textit{Left}) An example of randomized core positions color- and size-coded according to zenith and primary energy. Showers that raised a T3 are 
+	shown in the green unit triangle. The ones that do not are displayed in the red part. The stations at the vertices of the SD unit triangle are shown as black
+	circles. (\textit{Right}) The ratio of triggered vs. all showers, with respect to primary energy and shower inclination.}
+	\label{fig:t3-mc-simulation}
+\end{figure}
 
 \section{Implementation}
 \label{sec:trigger-implementation}
@@ -227,14 +261,20 @@ In the case of faulty electronics, where only a subset of the WCD PMTs are avail
 \label{ssec:th-performance}
 
 The average trigger rate for the Th-T2 trigger per station is \textit{defined} to be $\approx\SI{20}{\hertz}$ (c.f. \autoref{ssec:online-calibration}). Comparing 
-this to the nominal T3 trigger rate at CDAS level ($\approx\SI{0.03}{\hertz}$ \cite{abraham2010trigger}), it becomes obvious that a lot of background events pass 
-this threshold. Consequently, the trigger has a very high false discovery rate 
-$\text{FDR}\approx\frac{\SI{20}{\hertz} - \SI{0.03}{\hertz}}{\SI{20}{\hertz} + \SI{0.03}{\hertz}}=0.997$.
+this to the nominal T3 trigger rate at CDAS level ($\approx\SI{0.03}{\hertz}$ \cite{abraham2010trigger}) over the entire array, it becomes obvious that a lot of 
+background events pass this threshold. Consequently, the trigger has a very high false discovery rate on a station to station level
+$\text{FDR}\approx\frac{\SI{20}{\hertz} - \SI{0.03}{\hertz}/1600}{\SI{20}{\hertz} + \SI{0.03}{\hertz}/1600}=0.999998$.
 
 The efficiency of the threshold trigger is comparably poor. Only every fifth trace ($\epsilon = 0.2$) is detected as such. This number must however be taken with 
 context. In \autoref{chap:neural-network-data}, a signal is considered to be any kind of detector response from an extensive air shower. This includes single muons
 injected into WCDs faraway from the shower core. As such, the dataset that triggers are being tested on contain a lot of information algorithms were designed to 
 ignore. This drops the efficiency considerably. Nevertheless, it serves as a gauge to compare this trigger to the ones discussed on the following pages.
+
+While this may seem like an indigent method of shower detection, the threshold trigger is invaluable in the search for neutrino cosmic rays. The EM component of 
+such showers is heavily attenuated due to their inclination ($\theta \geq 65^\circ$). Only the muonic component reaches the SD detector. The threshold trigger 
+ensures the array is sensitive to such events, at the cost of a high background noise. 
+
+The lateral trigger probability for the Th-T2 type trigger is shown in \autoref{fig:th2-ltp-comparison}
 
 \begin{figure}
 	\centering
@@ -283,9 +323,21 @@ A pseudocode example is given below.
 \subsubsection{Performance}
 \label{ssec:tot-performance}
 
-\todo{write}
+The nominal operation of the ToT algorithm sees a trigger rate of \SI{2}{\hertz}. While this still corresponds to a relatively large $\text{FDR}$, the signal to 
+noise ratio is at least an order of magnitude better than Th-T2, simply by arguments of trigger frequency. Moreover, coincidences between neighbouring stations are
+likely to be extensive air showers. Events selected from ToT issued T3s have a purity of 90\%, and are the main detection channel for showers with inclination 
+$\theta < 60^\circ$ \cite{abraham2010trigger}. The ToT trigger itself has an efficiency of $\epsilon = 0.3969$ when evaluated over the neural network training 
+dataset. The trigger probability w.r.t shower plane distance is shown for different primary energies and different arrival directions in 
+\autoref{fig:tot-ltp-comparison}.
 
-\subsection{Time over Threshold deconvoluted trigger (Totd)}
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{./plots/tot_LTP_comparison.png}
+	\caption{The lateral trigger probability for the time-over-threshold trigger for Bayesian folding and \Offline station counting.} 
+	\label{fig:tot-ltp-comparison}
+\end{figure}
+
+\subsection{Time over Threshold deconvoluted trigger (ToTd)}
 \label{ssec:time-over-threshold-deconvoluted}
 
 An extension to even lower signal strengths is given by the \textbf{ToT}-\textbf{d}econvoluted trigger (ToTd). As the name implies, the implementation of the 
@@ -307,7 +359,16 @@ $\Delta t$ is explained in more detail in \cite{ToTtriggerIdea}.
 \subsubsection{Performance}
 \label{ssec:totd-performance}
 
-\todo{write}
+The performance of the ToTd trigger is very similar to that of the ToT discussed in \autoref{ssec:tot-performance}. It posesses a comparable efficiency
+$\epsilon = 0.4027$ to its' convoluted counterpart. The lateral trigger probability for this algorithm is shown in \autoref{fig:totd-ltp-comparison}.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{./plots/totd_LTP_comparison.png}
+	\caption{The lateral trigger probability for the time-over-threshold-deconvoluted trigger. Errorbars are plotted transparently in order to not overcrowd the 
+	figure.} 
+	\label{fig:totd-ltp-comparison}
+\end{figure}
 
 \subsection{Multiplicity of Positive Steps (MoPS)}
 \label{ssec:multiplicity-of-positive-steps}
@@ -323,25 +384,47 @@ Once such a positive step has been identified, a (MoPS) trigger veto is applied 
     n_\text{skip} = \lfloor \left( \log_2(\Delta y) + 1 \right) - 3\rceil
 \end{equation}
 
-bins, where $\Delta y$ refers to the total vertical increase in the step from first to last bin. Note that in \autoref{eq:MoPS-veto} the notation $\lfloor x \rceil$ 
-is used as shorthand notation to round $x$ to the nearest integer. If $\Delta y$ is bigger than $y_\text{min} = \SI{3}{\ADC}$ (to filter random fluctuations), but 
-does not exceed $y_\text{max} = \SI{31}{\ADC}$ (to prevent triggering on muonic coincidences), it is added to a ledger. If the number of rising flanks in the ledger
-is bigger than $m>4$ for at least two PMTs, a final check regarding the integral of the FADC trace is performed. If this check passes, a MoPS-T2 trigger is issued 
-to CDAS. An in-depth discussion of the different hyperparameters for this trigger is offered e.g. in \cite{gapMoPS}.
+bins, where $\Delta y$ refers to the total vertical increase in the step from first to last bin. Note that in \autoref{eq:MoPS-veto} the notation 
+$\lfloor x \rceil$ is used as shorthand notation to round $x$ to the nearest integer. If $\Delta y$ is bigger than $y_\text{min} = \SI{3}{\ADC}$ (to filter random 
+fluctuations), but does not exceed $y_\text{max} = \SI{31}{\ADC}$ (to prevent triggering on muonic coincidences), it is added to a ledger. If the number of rising 
+flanks in the ledger is bigger than $m>4$ for at least two PMTs, a final check regarding the integral of the FADC trace is performed. If this check passes, a 
+MoPS-T2 trigger is issued to CDAS. An in-depth discussion of the different hyperparameters for this trigger is offered e.g. in \cite{gapMoPS}.
 
 It is impossible to accurately recreate the MoPS trigger in simulations. The integral test above compares the sum of the last 250 bins against a threshold 
 ($\sum a_i$ > 75). Since not all 250 bin values are available to CDAS, differing results are to be expected when comparing the implementation of the algorithm in 
 the SD field versus its' counterpart in analysis software. 
 
-For this purpose, the MoPs trigger is not considered in the analysis presented in \autoref{chap:neural-network-triggers}. The implications of this choice are layed
-out in the following paragraph.
+For this purpose, the MoPs trigger is not considered when comparing performances of classical triggers to those in \autoref{chap:neural-network-triggers}. The 
+implications of this choice are layed out in the following paragraph.
 
 \subsubsection{Performance}
 \label{ssec:mops-performance}
 
-\todo{write}
-
+By examining monitoring data, it follows that $1-2$ MoPS triggers are issued per station each minute. This corresponds to a trigger rate of 
+$\SIrange[range-phrase = \,\text{to}\,]{0.02}{0.03}{\hertz}$. This is orders of magnitude lower than other discussed trigger mechanisms. While the MoPS trigger 
+consequently can be seen as a relatively noise free trigger, events in which a MoPS is critically required to form a T3 are extremely sparse. From a total of 
+$20000$ (simulated) showers at lower energies, none had a three-fold coincidence where at least one station only detected a MoPS T2 trigger. Considering this 
+result, it is expected that T3 efficiencies are largely independant of the fact whether or not MoPS is considered or not.
 
 \subsection{Combined performance}
 \label{ssec:combined-performance}
 
+In the field, all above discussed algorithms are run simultaneously. That is, a T2 trigger is issued whenever any of the Th-T2, ToT, ToTd, or MoPS trigger become 
+active. This results in an overall trigger rate of roughly \SIrange{22}{23}{\hertz}, with a combined efficiency of $\epsilon = 0.4070$. The combined lateral 
+trigger probability with respect to shower plane distance is shown in \autoref{fig:all-triggers-ltp}. The overall T3 efficiency as calculated in 
+\autoref{ssec:t3-calculation} is shown in \autoref{fig:t3-efficiency-all-triggers}.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{./plots/all_LTP_comparison.png}
+	\caption{The lateral trigger probability for the combination of all previously discussed trigger algorithms.} 
+	\label{fig:all-triggers-ltp}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{./plots/classical_t3_efficiency.png}
+	\caption{The corresponding T3 efficiency for all triggers with respect to primary energy and shower inclination. Full efficiency for all angles is reached at 
+	roughly $\SI{3}{\exa\electronvolt}$ ($10^{18}\SI{}{\electronvolt}$).} 
+	\label{fig:t3-efficiency-all-triggers}
+\end{figure}

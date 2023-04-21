@@ -178,5 +178,5 @@ class HardwareClassifier(Classifier):
         # normal treatment for all other predictions
         scaled_indices = [idx != unscaled_index for idx in range(len(x))]
 
-        ax.scatter(x[scaled_indices], y[scaled_indices], c = "k", lw = 2)
+        ax.plot(x[scaled_indices], y[scaled_indices], c = "k", lw = 2)
         ax.fill_between(x[scaled_indices], y[scaled_indices] - yerr[scaled_indices], y[scaled_indices] + yerr[scaled_indices], color = "k", alpha = 0.15)

@@ -14,6 +14,7 @@ from scipy.optimize import curve_fit
 # import seaborn as sns                                                         # causes problems on HTCondor cluster
 import tensorflow as tf
 import numpy as np
+import functools
 import warnings
 import sys, os
 import typing
@@ -25,17 +26,26 @@ class SignalError(Exception): pass
 class RandomTraceError(Exception): pass
 class ElectronicsError(Exception): pass
 
-pgf_with_latex = \
-    {
-        "pgf.preamble": "\n".join([
+pgf_with_latex = {                      # setup matplotlib to use latex for output
+    "pgf.texsystem": "pdflatex",        # change this if using xetex or lautex
+    "text.usetex": True,                # use LaTeX to write all text
+    "font.family": "serif",
+    "font.serif": [],                   # blank entries should cause plots 
+    "font.sans-serif": [],              # to inherit fonts from the document
+    "font.monospace": [],
+    # "axes.labelsize": 10,               # LaTeX default is 10pt font.
+    # "font.size": 10,
+    # "legend.fontsize": 8,               # Make the legend/label fonts 
+    # "xtick.labelsize": 8,               # a little smaller
+    # "ytick.labelsize": 8,
+    "pgf.preamble": "\n".join([ # plots will use this preamble
         r"\usepackage[utf8]{inputenc}",
         r"\usepackage[T1]{fontenc}",
-        r"\usepackage[detect-all]{siunitx}",
-        r"\usepackage{upgreek}",
+        r"\usepackage[detect-all,locale=DE]{siunitx}",
         ])
     }
+plt.rcParams.update(pgf_with_latex)
 
-plt.rcParams["pgf.preamble"] = pgf_with_latex
 plt.rcParams["text.usetex"] = True
 plt.rcParams["font.size"] = 40
 plt.rcParams['figure.figsize'] = [30, 15]
@@ -84,6 +94,7 @@ class GLOBAL():
     early_stopping_patience     = 7500                                          # number of batches for early stopping patience
     early_stopping_accuracy     = 0.95                                          # activate early stopping above this accuracy
 
+@functools.cache
 def get_fit_function(root_path : str, e : int, t : int) -> np.ndarray : 
 
     c = lambda x, i : x.split("_")[i]
@@ -142,5 +153,4 @@ def progress_bar(current_step : int, total_steps : int, start_time : int) -> Non
     eta = strftime('%H:%M:%S', gmtime(time_spent * (total_steps - current_step)/(current_step + 1) ))
     percentage = int((current_step + 1) / total_steps * 100)
     
-    end = f"{' ' * len(str(total_steps))}\r" if current_step != total_steps - 1 else "\n"
-    print(f"Step {current_step + 1}/{total_steps} | {elapsed} elapsed ||{'-' * (percentage // 5):20}|| {percentage}% -- {ms_per_iteration:.3f} ms/step, ETA: {eta}", end = end)
+    print(f"Step {current_step + 1}/{total_steps} | {elapsed} elapsed ||{'-' * (percentage // 5):20}|| {percentage}% -- {ms_per_iteration:.3f} ms/step, ETA: {eta}", end = "\r")
