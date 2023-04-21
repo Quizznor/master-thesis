@@ -172,8 +172,9 @@ class HardwareClassifier(Classifier):
         coordinate = ordinate * y[unscaled_index]/x[unscaled_index]
         # coordinate_err = np.sqrt((1/x[unscaled_index]**2 * yerr[unscaled_index]**2 + (y[unscaled_index]/x[unscaled_index]**2)**2 * xerr[unscaled_index]**2) * ordinate)
 
-        ax.plot(ordinate, coordinate, c = "k", ls = "--", lw = 0.7)
-        ax.errorbar(x[unscaled_index], y[unscaled_index], label = r"Classical triggers, Th, ToT, ToTd", fmt = "-o", markersize = 15, mfc = "w", c = "k")
+        # ax.plot(ordinate, coordinate, c = "k", ls = "--", lw = 0.7)
+        # ax.errorbar(x[unscaled_index], y[unscaled_index], label = r"Classical triggers, Th, ToT, ToTd", fmt = "-o", markersize = 15, mfc = "w", c = "k")
+        ax.errorbar(x[unscaled_index], y[unscaled_index], fmt = "-o", markersize = 15, mfc = "w", c = "k")
 
         # normal treatment for all other predictions
         scaled_indices = [idx != unscaled_index for idx in range(len(x))]

@@ -533,10 +533,10 @@ class Classifier():
 
         if isinstance(n_points, float): n_points = int(n_points)
 
-        if isinstance(self, NNClassifier):
-            root_path = f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/"
-        else:
-            root_path = f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/"
+        # if isinstance(self, NNClassifier):
+        #     root_path = f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/"
+        # else:
+        root_path = f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/"
 
         colormap = cmap.get_cmap("plasma")
         fig, ax = plt.subplots()
@@ -544,6 +544,7 @@ class Classifier():
         dx = 100
         theta = kwargs.get("theta", 38)
         tolerance = kwargs.get("tolerance", 4)
+        efficiencies = []
 
         # set up plot
         ax.text( 635, -55, "T3 detected", fontsize = 22)
@@ -678,6 +679,7 @@ class Classifier():
             n_miss, bins = np.histogram(energy_miss, bins = e_bins_efficiency)
             eff_err = 1/(n_hit + n_miss)**2 * np.sqrt( n_hit**3 + n_miss**3 - 2 * np.sqrt((n_hit * n_miss)**3) )
             eff = n_hit / (n_miss + n_hit)
+            efficiencies.append(eff)
 
             upper = np.clip(eff + eff_err, 0, 1)
             lower = np.clip(eff - eff_err, 0, 1)
@@ -694,6 +696,8 @@ class Classifier():
         cbar = ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"sec$(\theta)$ - 1")
         cbar.set_ticks(theta_bins)
         cbar.set_ticklabels(["0.0", "0.2", "0.4", "0.6", "0.8", "1.4"])
+
+        return 0.5 * (bins[1:] + bins[:-1]), efficiencies
 
     @staticmethod
     def __header__() -> None : 
@@ -732,3 +736,183 @@ class BayesianClassifier(Classifier):
     # return the index of the bin (from self.bin_centers) that value would fall into
     def find_bin(self, value : int) -> int : 
         return np.abs(self.bin_centers - value).argmin()
+
+
+class MockClassifier(Classifier):
+
+    def __init__(self): pass
+
+    def __call__(self, trace : typing.Union[Trace, np.ndarray]) -> bool : 
+        return True
+
+    # relate single station efficiency function to T3 efficiency
+    def do_t3_simulation(self, n_points : int = 1e5, **kwargs) -> tuple :
+
+        import seaborn as sns
+
+        if isinstance(n_points, float): n_points = int(n_points)
+
+        root_path = "/cr/tempdata01/filip/QGSJET-II/LDF/"
+
+        colormap = cmap.get_cmap("plasma")
+        fig, ax = plt.subplots()
+
+        dx = 100
+        theta = kwargs.get("theta", 38)
+        tolerance = kwargs.get("tolerance", 4)
+        efficiencies = []
+
+        # set up plot
+        ax.text( 635, -55, "T3 detected", fontsize = 22)
+        ax.text(1395 + dx, 775, "T3 missed", fontsize = 22)
+        symmetry_line = lambda x : 1500 - x
+        X = np.linspace(700, 1550, 100)
+        ax.scatter([0, 1500, 750], [0, 0, 750], s = 100, c = "k")
+        ax.scatter([1500 + dx, 750 + dx, 2250 + dx], [0, 750, 750], s = 100, c = "k")
+        ax.plot(X + dx/2, symmetry_line(X), ls = "solid", c = "k", zorder = 0, lw = 2)
+        ax.add_patch(Polygon([[0,0], [1500, 0], [750, 750]], closed = True, color = "green", alpha = 0.1, lw = 0))
+        ax.add_patch(Polygon([[750 + dx, 750], [1500 + dx, 0], [2250 + dx, 750]], closed = True, color = "red", alpha = 0.1, lw = 0))
+
+        # create shower cores in target area
+        theta_bins = [0, 26, 38, 49, 60, 90]
+        ys = np.random.uniform(0, 750, n_points)
+        xs = np.random.uniform(0, 1500, n_points) + ys
+        reflect = [ ys[i] > symmetry_line(xs[i]) for i in range(len(xs))]
+        xs[reflect] = -xs[reflect] + 2250
+        ys[reflect] = -ys[reflect] + 750
+
+        energy_hits, energy_miss = [], []
+
+        energy_bins = [10**16, 10**16.5, 10**17, 10**17.5, 10**18, 10**18.5, 10**19, 10**19.5]      # uniform in log(E)
+        theta_bins =  [0.0000, 33.5600, 44.4200, 51.3200, 56.2500, 65.3700]                         # pseudo-uniform in sec(θ)
+
+        start_time = perf_counter_ns()
+
+        # do the T3 simulation
+        t3_hits = [[0 for t in range(len(theta_bins) - 1)] for e in range(len(energy_bins) - 1)]
+        t3_misses = [[0 for t in range(len(theta_bins) - 1)] for e in range(len(energy_bins) - 1)]
+        x_container = [[[] for t in range(len(theta_bins) - 1)] for e in range(len(energy_bins) - 1)]
+        y_container = [[[] for t in range(len(theta_bins) - 1)] for e in range(len(energy_bins) - 1)]
+        container_hits = [[] for t in range(len(theta_bins) - 1)]
+        container_miss = [[] for t in range(len(theta_bins) - 1)]
+        stations = [[0, 0, 0], [1500, 0, 0], [750, 750, 0]]
+
+        for step_count, (x, y) in enumerate(zip(xs, ys)):
+
+            progress_bar(step_count, n_points, start_time)
+
+            random_phi = np.random.uniform(0, 360)
+            random_energy = 10**(np.random.uniform(low = 16, high = 19.5))
+            random_zenith = np.random.uniform(low = 0, high = 65)
+            eb = np.digitize(random_energy, energy_bins) - 1
+            tb = np.digitize(random_zenith, theta_bins) - 1
+
+            _, (eff, prob50, scale) = get_fit_function(root_path, eb, tb)
+            fit_function = lambda x : lateral_distribution_function(x, eff, prob50, 1/scale)
+
+            sp_distances = []
+            
+            for station in stations:
+
+                core_position = np.array([x, y, 0])
+                core_origin = np.sin(random_zenith) * np.array([np.cos(random_phi), np.sin(random_phi), 1/np.tan(random_zenith)]) + core_position
+
+                shower_axis = core_position - core_origin
+                dot_norm = np.dot(shower_axis, shower_axis)
+                perpendicular_norm = np.dot(station - core_origin, shower_axis) / dot_norm
+                sp_distances.append( np.linalg.norm(perpendicular_norm * shower_axis + (core_origin - station)))
+
+            # #  In case of paranoia regarding distance calculation break comment
+            # ax.add_patch(plt.Circle((0, 0), sp_distances[0], color='b', fill=False))
+            # ax.add_patch(plt.Circle((1500, 0), sp_distances[1], color='b', fill=False))
+            # ax.add_patch(plt.Circle((750, 750), sp_distances[2], color='b', fill=False))
+
+            trigger_probabilities = [fit_function(distance) for distance in sp_distances]
+            dice_roll = np.random.uniform(0, 1, 3)
+
+            if np.all(dice_roll < trigger_probabilities):
+                t3_hits[eb][tb] += 1
+                container_hits[tb].append(random_energy)
+
+            else:
+                x, y = 2250 - x + dx, 750 - y
+                t3_misses[eb][tb] += 1
+                container_miss[tb].append(random_energy)
+
+                if theta - tolerance/2 <= random_zenith < theta + tolerance/2:
+                    energy_miss.append(random_energy)
+
+            x_container[eb][tb].append(x)
+            y_container[eb][tb].append(y)
+
+        size_bins = [30, 50, 70, 90, 110, 160, 200]
+        e_labels = [r"$16$", r"$16.5$", r"$17$", r"$17.5$", r"$18$", r"$18.5$", r"$19$", r"$19.5$"]
+
+        for e, (x_energy, y_energy) in enumerate(zip(x_container, y_container)):
+            for t, (x, y) in enumerate(zip(x_energy, y_energy)):
+
+                c = colormap(t / len(x_energy))
+                s = size_bins[e]
+
+                ax.scatter(x[::kwargs.get("step", 50)], y[::kwargs.get("step", 50)], color = c, s = s, marker = "x")
+
+        for e, bin in enumerate(size_bins):
+            ax.scatter([],[], c = "k", s = bin, label = e_labels[e] + r" $\leq$ log$_{10}$($E$ / $\mathrm{eV}$) $<$ " + e_labels[e + 1], marker = "x")
+
+        ax.set_aspect('equal')
+        ax.legend(fontsize = 18)
+        plt.xlabel("Easting / m")
+        plt.ylabel("Northing / m")
+
+        norm = BoundaryNorm(theta_bins, colormap.N)
+        ax2 = fig.add_axes([0.91, 0.2, 0.01, 0.6])
+
+        cbar = ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"sec$(\theta)$ - 1")
+        cbar.set_ticks(theta_bins)
+        cbar.set_ticklabels(["0.0", "0.2", "0.4", "0.6", "0.8", "1.4"])
+
+        plt.figure()
+
+        theta_bins =  [0.0000, 33.5600, 44.4200, 51.3200, 56.2500, 65.3700]                         # pseudo-uniform in sec(θ)
+
+        e_labels = EventGenerator.libraries.keys()
+        t_labels = ["0_34", "34_44", "44_51", "51_56", "56_65"]
+
+        t3_hits = np.array(t3_hits)
+        t3_misses = np.array(t3_misses)
+
+        sns.heatmap(t3_hits / (t3_hits + t3_misses) * 1e2, annot = True, fmt = ".1f", cbar_kws = {"label" : "T3 efficiency / \%"})
+        plt.xticks(ticks = 0.5 + np.arange(0, 5, 1), labels = t_labels, fontsize = 28)
+        plt.yticks(ticks = 0.5 + np.arange(0, 7, 1), labels = e_labels, fontsize = 28)
+        plt.xlabel("Zenith range")
+        plt.ylabel("Energy range")
+
+        fig = plt.figure()
+
+        e_bins_efficiency = np.geomspace(10**16, 10**19.5, kwargs.get("e_bins", len(energy_bins) - 1))
+
+        for t, (energy_hits, energy_miss) in enumerate(zip(container_hits, container_miss)):
+            n_hit, bins = np.histogram(energy_hits, bins = e_bins_efficiency)
+            n_miss, bins = np.histogram(energy_miss, bins = e_bins_efficiency)
+            eff_err = 1/(n_hit + n_miss)**2 * np.sqrt( n_hit**3 + n_miss**3 - 2 * np.sqrt((n_hit * n_miss)**3) )
+            eff = n_hit / (n_miss + n_hit)
+
+            efficiencies.append(eff)
+
+            upper = np.clip(eff + eff_err, 0, 1)
+            lower = np.clip(eff - eff_err, 0, 1)
+
+            plt.errorbar(0.5 * (bins[1:] + bins[:-1]), eff, yerr = [eff - lower, upper - eff], fmt = "-o", c = colormap(t / (len(theta_bins) - 1)))
+
+        plt.ylabel("T3 Trigger efficiency")
+        plt.xlabel("Primary energy / $\mathrm{eV}$")
+        plt.xscale("log")
+
+        norm = BoundaryNorm(theta_bins, colormap.N)
+        ax2 = fig.add_axes([0.91, 0.1, 0.01, 0.8])
+
+        cbar = ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"sec$(\theta)$ - 1")
+        cbar.set_ticks(theta_bins)
+        cbar.set_ticklabels(["0.0", "0.2", "0.4", "0.6", "0.8", "1.4"])
+
+        return 0.5 * (bins[1:] + bins[:-1]), efficiencies
