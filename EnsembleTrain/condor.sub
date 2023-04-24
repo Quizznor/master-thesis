@@ -1,9 +1,9 @@
-JobBatchName    = eCNN_120_prior
-Executable      = /cr/users/filip/EnsembleTrain/prior_estimation/prior.py
+JobBatchName    = eCNN_120_kernel_30
+Executable      = /cr/users/filip/EnsembleTrain/kernel_size/kernel_30.py
 
-error           = /cr/users/filip/EnsembleTrain/output/prior-$(Process).err
-output          = /cr/users/filip/EnsembleTrain/output/prior-$(Process).out
-log             = /cr/users/filip/EnsembleTrain/output/prior-$(Process).log
+error           = /cr/users/filip/EnsembleTrain/output/kernel_30-$(Process).err
+output          = /cr/users/filip/EnsembleTrain/output/kernel_30-$(Process).out
+log             = /cr/users/filip/EnsembleTrain/output/kernel_30-$(Process).log
 
 arguments       = $(Process)
 request_memory  = 5G
@@ -15,4 +15,4 @@ should_transfer_files = YES
 Requirements = (OpSysName == "Ubuntu" && OpSysMajorVer == 22) 
 transfer_input_files  = /cr/work/filip/Binaries
 
-queue 1
+queue 10

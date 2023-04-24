@@ -81,23 +81,14 @@ class MoneyPlot():
 
             if len(acc) != 10: print(f"[WARN] -- Incomplete predictions for {ensemble}: {dataset}... You may want to recalculate this")
 
-            n_rate, bins = np.histogram(rate, bins = 10)
-            current_y, scaling = min(rate), 0.005
-            bin_width = bins[1] - bins[0]
-            boxes = []
-
-            for i, rate_bin in enumerate(n_rate):
-                boxes.append(Rectangle((np.mean(acc) - scaling * rate_bin, current_y), width = 2*scaling*rate_bin, height = bin_width))
-                current_y += bin_width
-            
-            x, y = np.mean(acc), np.mean(rate)
+            best_model = np.argmin(rate / acc)
             color = kwargs.get("color", None)
             label = kwargs.get("label", None)
-            self.ax.add_collection(PatchCollection(boxes, facecolor = "slategray", lw = 0, alpha = 0.2))
-            self.ax.errorbar(x, y, xerr = np.std(acc), yerr = np.std(rate), fmt = "o", markersize = 8, c = color, label = label, capsize = 4)
+            self.ax.errorbar(acc, rate, markersize = 2, c = color, capsize = 2, fmt = kwargs.get("marker", "o"))
+            self.ax.errorbar(acc[best_model], rate[best_model], xerr = acc_err[best_model], yerr = rate_err[best_model], c = color, label = label, markersize = 10, capsize = 4, fmt = kwargs.get("marker", "o"))
 
-            self.buffer_x.append(x)
-            self.buffer_y.append(y)
+            self.buffer_x.append(acc[best_model])
+            self.buffer_y.append(rate[best_model])
 
         except OSError:
             print(f"Crunching numbers for {ensemble}: {dataset}...")

@@ -214,19 +214,19 @@ class Classifier():
 
         if os.stat(save_files['TN']).st_size:
             TN = np.loadtxt(save_files['TN'], usecols = [2, 3, 4, 5, 6, 7])
-        else: TN = np.array([[]])
+        else: TN = np.array([])
 
         if os.stat(save_files['FP']).st_size:
             FP = np.loadtxt(save_files['FP'], usecols = [2, 3, 4, 5, 6, 7])
-        else: FP = np.array([[]])
+        else: FP = np.array([])
 
         if os.stat(save_files['TP']).st_size:
             TP = np.loadtxt(save_files['TP'], usecols = [2, 3, 4, 5, 6, 7])
-        else: TP = np.array([[]])
+        else: TP = np.array([])
         
         if os.stat(save_files['FN']).st_size:
             FN = np.loadtxt(save_files['FN'], usecols = [2, 3, 4, 5, 6, 7])
-        else: FN = np.array([[]])
+        else: FN = np.array([])
 
 
         if not quiet:
@@ -405,64 +405,46 @@ class Classifier():
     # plot the classifiers efficiency in terms of deposited signal    
     def signal_efficiency(self, dataset : str, **kwargs) -> None :
 
+        # load dataset in it's completeness
+        if self.name == "HardwareClassifier":
+            save_files = \
+            {
+                "TP" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/true_positives.csv",
+                "TN" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/true_negatives.csv",
+                "FP" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/false_positives.csv",
+                "FN" : f"/cr/data01/filip/models/{self.name}/ROC_curve/{dataset}/false_negatives.csv"
+            }
+        else:
+            save_files = \
+            {
+                "TP" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/true_positives.csv",
+                "TN" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/true_negatives.csv",
+                "FP" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/false_positives.csv",
+                "FN" : f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/ROC_curve/{dataset}/false_negatives.csv"
+            }
+
+        if os.stat(save_files['TN']).st_size:
+            TN = np.loadtxt(save_files['TN'], usecols = [8])
+        else: TN = np.array([])
+
+        if os.stat(save_files['FP']).st_size:
+            FP = np.loadtxt(save_files['FP'], usecols = [8])
+        else: FP = np.array([])
+
+        if os.stat(save_files['TP']).st_size:
+            TP = np.loadtxt(save_files['TP'], usecols = [8])
+        else: TP = np.array([])
+        
+        if os.stat(save_files['FN']).st_size:
+            FN = np.loadtxt(save_files['FN'], usecols = [8])
+        else: FN = np.array([])
+
         signal_bins = np.geomspace(5e-2, 1e3, kwargs.get("n_bins", 100))
 
-        TP, _, _, FN = self.
+        n_hit, _ = np.histogram(TP, bins = signal_bins)
+        n_miss, _ = np.histogram(FN, bins = signal_bins)      
 
-        # energy_bins = [10**16, 10**16.5, 10**17, 10**17.5, 10**18, 10**18.5, 10**19, 10**19.5]      # uniform in log(E)
-        # theta_bins =  [0.0000, 33.5600, 44.4200, 51.3200, 56.2500, 65.3700]                         # pseudo-uniform in sec(θ)
-        # TP, FP, TN, FN = self.load_and_print_performance(dataset)
-        # # Prediction structure: [ integral, n_signal, energy, SPD, Theta]
-
-        # signal_bins = np.geomspace(1e-1, 1e4, kwargs.get("bins", 50))
-        # colormap = cmap.get_cmap("plasma")
-        
-        # warnings.simplefilter("ignore", RuntimeWarning)
-
-        # miss_sorted = [[ [] for t in range(len(theta_bins) - 1) ] for e in range(len(energy_bins) - 1)]
-        # hits_sorted = [[ [] for t in range(len(theta_bins) - 1) ] for e in range(len(energy_bins) - 1)]
-        # e_labels = [r"$16$", r"$16.5$", r"$17$", r"$17.5$", r"$18$", r"$18.5$", r"$19$", r"$19.5$"]
-        # t_labels = [r"0$^{\circ}$", r"26$^{\circ}$", r"38$^{\circ}$", r"49$^{\circ}$", r"60$^{\circ}$", r"90$^{\circ}$"]
-
-        # # sort predictions into bins of theta and energy
-        # for source, target in zip([TP, FN], [hits_sorted, miss_sorted]):
-
-        #     SPD, E, T = source[:, 0], source[:, 1], source[:, 2]
-
-        #     # sort misses / hits w.r.t zenith and primary energy
-        #     theta_indices = np.digitize(T, theta_bins)
-        #     energy_indices = np.digitize(E, energy_bins)
-
-        #     for e, t, spd in zip(energy_indices, theta_indices, SPD):
-        #         target[e][t].append(spd)
-
-        # for e, (hits_by_energy, misses_by_energy) in enumerate(zip(hits_sorted, miss_sorted)):
-
-        #     fig = plt.figure()
-        #     plt.xscale("log")
-        #     plt.ylim(-0.05, 1.05)
-        #     plt.errorbar([],[], c = "k", ls = "--", label = "Simulated")
-        #     plt.legend(loc = "upper right", title = e_labels[e] + r" $\leq$ log($E$ / eV) < " + e_labels[e + 1], title_fontsize = 19)
-        #     plt.xlabel("Deposited Signal / VEM")
-        #     plt.ylabel("Trigger efficiency / %")
-
-        #     for t, (hits_by_theta, miss_by_theta) in enumerate(zip(hits_by_energy, misses_by_energy)):
-
-        #         c = colormap(t / len(hits_by_energy))
-        #         x, _ = np.histogram(hits_by_theta, bins = signal_bins)
-        #         o, _ = np.histogram(miss_by_theta, bins = signal_bins)
-
-        #         bins, y = 0.5 * (signal_bins[1:] + signal_bins[:-1]), x / (x + o)
-        #         sx, sy = 0.5 * np.diff(signal_bins), x/(x + 0)**2 * np.sqrt(o**2 + (x + 2*o)/(x + o)**2)
-
-        #         plt.errorbar(bins, y, ls = "--", xerr = sx, yerr = sy, label = t_labels[t] + r"$\leq$ $\theta$ < " + t_labels[t + 1], color = c)
-                
-
-        #     norm = BoundaryNorm([0] + theta_bins + [90], colormap.N)
-        #     ax2 = fig.add_axes([0.95, 0.1, 0.01, 0.8])
-        #     ColorbarBase(ax2, cmap=colormap, norm=norm, label = r"Zenith angle")
-
-        # plt.show()
+        plt.scatter(0.5 * (signal_bins[1:] + signal_bins[:-1]), n_hit / (n_hit + n_miss), c = kwargs.get("color", "steelblue"), label = kwargs.get("label", None))
 
     # plot the classifiers efficiency in terms of primary energy
     def energy_efficiency(self, dataset : str, angle : float = 38, tolerance : float = 2, **kwargs) -> None : 
@@ -702,6 +684,22 @@ class Classifier():
         cbar.set_ticklabels(["0.0", "0.2", "0.4", "0.6", "0.8", "1.4"])
 
         return 0.5 * (bins[1:] + bins[:-1]), efficiencies
+
+    # calculate trigger efficiency over predictions scaled by energy (flux)
+    def get_true_accuracy(self, TP : np.ndarray, FN : np.ndarray) -> float : 
+
+        x, e = np.loadtxt("/cr/users/filip/Binaries/energy_histogram.csv", unpack = True)
+
+        efficiency_scaled = 0
+        efficiency_unscaled = 0
+
+        for prediction in TP:
+            print(prediction)
+            raise StopIteration
+
+
+        # print("logl")
+
 
     @staticmethod
     def __header__() -> None : 

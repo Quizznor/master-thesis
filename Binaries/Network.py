@@ -162,6 +162,26 @@ class Architectures():
     def __240_CNN__(self, model) -> None : 
         self.__N_CNN__(self, model, 240)
 
+    # 858 parameters
+    def __kernel_10__(self, model) -> None :
+
+        self.add_input(model, shape = (3, 120, 1))
+        self.add_conv2d(model, filters = 4, kernel_size = (3, 10), strides = 3)
+        self.add_conv1d(model, filters = 2, kernel_size = 5, strides = 1)
+        self.add_flatten(model)
+        self.add_dense(model, units = 10, activation = "relu")
+        self.add_dense(model, units = 2, activation = "softmax")
+
+    # 978 parameters
+    def __kernel_30__(self, model) -> None :
+
+        self.add_input(model, shape = (3, 120, 1))
+        self.add_conv2d(model, filters = 4, kernel_size = (3, 30), strides = 3)
+        self.add_conv1d(model, filters = 2, kernel_size = 5, strides = 1)
+        self.add_flatten(model)
+        self.add_dense(model, units = 10, activation = "relu")
+        self.add_dense(model, units = 2, activation = "softmax")
+
 # Early stopping callback that gets evaluated at the end of each batch
 class BatchwiseEarlyStopping(tf.keras.callbacks.Callback):
 
@@ -211,6 +231,8 @@ class NNClassifier(Classifier):
             "60_CNN" : Architectures.__60_CNN__,
             "40_CNN" : Architectures.__40_CNN__,
             "60_CNN" : Architectures.__60_CNN__,
+            "kernel_10" : Architectures.__kernel_10__,
+            "kernel_30" : Architectures.__kernel_30__,
         }
 
     def __init__(self, name : str, set_architecture = None, supress_print : bool = False) -> None :

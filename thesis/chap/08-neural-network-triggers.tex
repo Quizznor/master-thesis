@@ -55,7 +55,11 @@ This immediately disqualifies powerful candidates like autoencoders or transform
 simple dense-, convolutional-, and recurrent neural networks are viable contenders that could theoretically be implemented in the SD electronics.
 
 The python library TensorFlow \cite{tensorflow2015-whitepaper} is used as a backend to implement the individual classifiers. All discussed architectures are built 
-and trained using the release version 2.8.4 \cite{tensorflowversion}. Due to the 
+and trained with the release version 2.8.4 \cite{tensorflowversion}. Adjustments to the trainable parameters are calculated according to a momentum-based 
+stochastic gradient descent (Adam \cite{kingma2014adam}) on a batch level. In this context, a single batch is made up of all traces that are recorded from a single 
+air shower event. Since batch size grows quickly with increasing energy, a generative approach, where traces are created (c.f. \autoref{sec:trace-building}) at 
+runtime upon requirement, is used in building training data in order to make the process as RAM-efficient as possible.
+
 
 \subsection{Input data}
 \label{ssec:input-data}
