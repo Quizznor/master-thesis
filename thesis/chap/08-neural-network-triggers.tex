@@ -3,22 +3,66 @@
 \chapter{Neural network triggers}
 \label{chap:neural-network-triggers}
 
-\section{Motivation \& Design considerations}
+\section{Motivation}
 \label{sec:motivation}
 
-The station-level triggers in the previous chapter have been shown to perform well enough for the science case of the Pierre Auger Observatory. The combined 
-operation of all triggers guarantee full detection efficiency of air showers from approximately $10^{18.5}\,\SI{}{\electronvolt}$ upwards. 
-\todo{but wouldn't it be nice if we could go lower}
+The station-level triggers in the previous chapter have been shown to perform well enough for the science case of the Pierre Auger Observatory. However, it has 
+also been concluded that a lot of potential data, espically at low energies is ignored. This is by intention in order to keep DAQ readout at feasible levels.
+
+Attempts at improving the overal efficiency of the SD triggers can be made. This is only possible to a certain level. At lowest energies the particle cascade is 
+not big enough to warrant coincident triggers in at least 3 WCD stations. As per \autoref{sssec:bayesian-folding}, the lateral trigger probability a given 
+classification algorithm can maximally achieve is given by the LPP (c.f. \autoref{fig:fitfunction-comparison}). The T3 detection probability of such an ideal 
+trigger, and consequently the maximal efficiency for an array with $\SI{1.5}{\kilo\meter}$ spacing is compared to the efficiency of classical triggers in 
+\autoref{fig:ideal-efficiency-comparison}.
+
+Of course, efficiency can be improved simply by adjusting trigger thresholds of the algorithms in \autoref{sec:trigger-implementation}. However, the more lenient
+these thresholds are, the more background events will be detected. This quickly results in trigger rates that are unmanagable for the infrastructure at the Pierre 
+Auger observatory. The probability with which time traces correctly raise a T2 is shown alongside the resulting random-trace trigger rate for different thresholds
+of classical algorithms in \autoref{fig:classical-trigger-roc}.
+
+Ideally, neural network architectures developed in this chapter should undercut the random-trace trigger rate of classical triggers, while retaining an overall 
+higher accuracy. That is, they lay below and right of the operating point in \autoref{fig:classical-trigger-roc}. For any algorithm that achieves this, the 
+corresponding LTP will be greater than that of classical triggers, resulting in higher event detection efficiency, while not exceeding the bandwidth limitations 
+of the underlaying hardware. 
 
 \begin{figure}
-	\centering
-	\includegraphics[width=\textwidth]{./plots/ideal_t3_efficiency.png}
-	\caption{...} 
-	\label{fig:ideal-efficiency-comparison}
+	\begin{subfigure}[b]{0.49\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{./plots/ideal_t3_efficiency.png}
+		\caption{\textbf{T3 efficiency}}
+		\label{fig:ideal-efficiency-comparison}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.49\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{./plots/classical_trigger_ROC.png}
+		\caption{\textbf{Classical trigger potential}}
+		\label{fig:classical-trigger-roc}
+	\end{subfigure}
+	\caption{\textbf{(a)} Comparison of an ideal trigger sensitive to any shower signal from primary energies $E\geq\SI{10}{\peta\electronvolt}$ to classical 
+    triggers. \textbf{(b)} The noise level over calculated efficiency for classical triggers. The tail ends of the potential curve are calculated by adjusting the
+    trigger thresholds from $+250\%$ to $-95\%$ of the nominal values.}
 \end{figure}
 
+\section{Design considerations}
+\label{sec:design-considerations}
 
-\section{???}
+The hardware specifications at the FPGA level, where trigger conditions are currently checked, are limited. For this reason, NN architectures should be kept as 
+simple as possible. Most importantly, the number of weights, biases and other trainable parameters will need to be hardcoded into station software. Because of 
+minimal available storage space, this number needs to be kept low.
+
+This immediately disqualifies powerful candidates like autoencoders or transformers (compare \autoref{sec:NN-other}) from consideration, due to their size. Only 
+simple dense-, convolutional-, and recurrent neural networks are viable contenders that could theoretically be implemented in the SD electronics.
+
+The python library TensorFlow \cite{tensorflow2015-whitepaper} is used as a backend to implement the individual classifiers. All discussed architectures are built 
+and trained using the release version 2.8.4 \cite{tensorflowversion}. Due to the 
+
+\subsection{Input data}
+\label{ssec:input-data}
+
+
+
+\section{Performance}
 
 \begin{enumerate}
     \item Have problem

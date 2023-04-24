@@ -97,11 +97,34 @@ class GLOBAL():
 @functools.cache
 def get_fit_function(root_path : str, e : int, t : int) -> np.ndarray : 
 
-    c = lambda x, i : x.split("_")[i]
-    checksum = lambda x : sum([10*float(c(x,0)), 10*float(c(x,1)), float(c(x,3))/10, float(c(x,4)[:-4])/10])
-    ldf_files = np.array(os.listdir(root_path + "FITPARAM/"))[np.argsort([checksum(file) for file in os.listdir(root_path + "FITPARAM/")])]
-    ldf_files = [root_path + "FITPARAM/" + ldf_file for ldf_file in ldf_files]
-    fit_parameters = np.loadtxt(ldf_files[e * 5 + t])
+    
+
+    energy_range = {
+        0 : "16_16.5",
+        1 : "16.5_17",
+        2 : "17_17.5",
+        3 : "17.5_18",
+        4 : "18_18.5",
+        5 : "18.5_19",
+        6 : "19_19.5"
+    }
+
+    theta_range = {
+        0 : "0_33",
+        1 : "33_44",
+        2 : "44_51",
+        3 : "51_56",
+        4 : "56_65"
+    }
+
+    try:
+        file = energy_range[e] + "__" + theta_range[t] + ".csv"
+        ldf_file = root_path + "/FITPARAM/" + file
+        fit_parameters = np.loadtxt(ldf_file)
+    except FileNotFoundError:
+        print(f"FITPARAMS {ldf_file} not found")
+        fit_function = lambda x : np.zeros_like(x)
+        fit_parameters = np.array([0., 0., 1.])
     
     if "LDF" in root_path or "LTP" in root_path:
         fit_function = lambda x : lateral_distribution_function(x, *fit_parameters)

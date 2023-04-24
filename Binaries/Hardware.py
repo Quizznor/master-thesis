@@ -163,7 +163,7 @@ class HardwareClassifier(Classifier):
     @staticmethod
     def plot_performance(ax : plt.axes, x : float = None, y : float = None, x_err : float = None, y_err : float = None) -> None :
 
-        x, xerr, y, yerr = np.loadtxt("/cr/data01/filip/models/HardwareClassifier/ROC_curve/money_plot.csv", unpack = True)
+        x, xerr, y, yerr, r_th2, r_tot, r_tod = np.loadtxt("/cr/data01/filip/models/HardwareClassifier/ROC_curve/money_plot.csv", unpack = True)
 
         unscaled_index = np.argmin(abs(x - 3.965828361484564080e-01))
 
@@ -179,5 +179,7 @@ class HardwareClassifier(Classifier):
         # normal treatment for all other predictions
         scaled_indices = [idx != unscaled_index for idx in range(len(x))]
 
+        ax.plot(x[scaled_indices], r_th2[scaled_indices], c = "k", lw = 1, ls = "--")
+        ax.plot(x[scaled_indices], r_tot[scaled_indices], c = "k", lw = 1, ls = ":")
         ax.plot(x[scaled_indices], y[scaled_indices], c = "k", lw = 2)
         ax.fill_between(x[scaled_indices], y[scaled_indices] - yerr[scaled_indices], y[scaled_indices] + yerr[scaled_indices], color = "k", alpha = 0.15)

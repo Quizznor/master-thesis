@@ -67,6 +67,11 @@ class MoneyPlot():
         self.ax.set_xlabel("Trigger efficiency")
         HardwareClassifier.plot_performance(self.ax)
 
+        self.ax.errorbar([], [], c = "k", markersize = 15, mfc = "w", fmt = "-o", ls = "solid", lw = 2, label = "Classical triggers")
+        self.ax.plot([], [], c = "k", ls = "--", label = "Th-T2 only")
+        self.ax.plot([], [], c = "k", ls = ":", label = "ToT + ToTd combined")
+        
+
         self.buffer_x, self.buffer_y = [], []
 
     def add(self, ensemble : str, dataset, **kwargs) -> None :
@@ -114,8 +119,12 @@ class MoneyPlot():
 
         function[fcn]([], [], **kwargs)
 
-    def __call__(self, xlim : tuple = (0, 1.05), ylim : tuple = (1, None)) -> None :
+    def __call__(self, xlim : tuple = (None, 1.05), ylim : tuple = (1, None)) -> None :
         self.ax.set_xlim(xlim[0], xlim[1])
         self.ax.set_ylim(ylim[0], ylim[1])
-        self.ax.legend()
+        
+        handles, labels = self.ax.get_legend_handles_labels()
+        order = [i for i in range(len(handles))]
+        order = [-1] + order[:-1]
+        self.ax.legend([handles[idx] for idx in order],[labels[idx] for idx in order])
         plt.show()

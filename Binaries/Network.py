@@ -42,6 +42,10 @@ class Architectures():
             model.add(tf.keras.layers.BatchNormalization(**kwargs))
 
         @staticmethod
+        def add_flatten(model) -> None:
+            model.add(tf.keras.layers.Flatten())
+
+        @staticmethod
         def add_lstm(**kwargs) -> None :
 
             # doesn't work, since data is 2-dimensional
@@ -129,6 +133,34 @@ class Architectures():
         self.add_conv1d(model, filters = 4, kernel_size = 3, strides = 3)
         self.add_output(model, units = 2, activation = "softmax")
 
+    def __N_CNN__(self, model, input_length) -> None : 
+
+        self.add_input(model, shape = (3, input_length, 1))
+        self.add_conv2d(model, filters = 4, kernel_size = 3, strides = 3)
+        self.add_conv1d(model, filters = 2, kernel_size = 5, strides = 1)
+        self.add_flatten(model)
+        self.add_dense(model, units = 10, activation = "relu")
+        self.add_dense(model, units = 2, activation = "softmax")
+
+    # 294 parameters
+    def __40_CNN__(self, model) -> None : 
+        self.__N_CNN__(self, model, 40)
+
+    # 434 parameters
+    def __60_CNN__(self, model) -> None : 
+        self.__N_CNN__(self, model, 60)
+
+    # 634 parameters
+    def __90_CNN__(self, model) -> None : 
+        self.__N_CNN__(self, model, 90)
+
+    # 834 parameters
+    def __120_CNN__(self, model) -> None : 
+        self.__N_CNN__(self, model, 120)
+
+    # 1634 parameters
+    def __240_CNN__(self, model) -> None : 
+        self.__N_CNN__(self, model, 240)
 
 # Early stopping callback that gets evaluated at the end of each batch
 class BatchwiseEarlyStopping(tf.keras.callbacks.Callback):
@@ -173,6 +205,12 @@ class NNClassifier(Classifier):
             "minimal_conv2d" : Architectures.__minimal_conv2d__,
             "large_conv2d" : Architectures.__large_conv2d__,
             "simple_LSTM" : Architectures.__simple_LSTM__,
+            "240_CNN" : Architectures.__240_CNN__,
+            "120_CNN" : Architectures.__120_CNN__,
+            "90_CNN" : Architectures.__90_CNN__,
+            "60_CNN" : Architectures.__60_CNN__,
+            "40_CNN" : Architectures.__40_CNN__,
+            "60_CNN" : Architectures.__60_CNN__,
         }
 
     def __init__(self, name : str, set_architecture = None, supress_print : bool = False) -> None :

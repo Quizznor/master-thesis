@@ -97,7 +97,7 @@ class Ensemble(NNClassifier):
             TP, FP, TN, FN = prediction
             x, o = float(len(TP)), float(len(FN))
             accuracy = x / (x + o)
-            err = 1/(x+0)**2 * np.sqrt( x**3 + o**3 - 2 * np.sqrt((x * o)**3) )
+            err = 1/(x+o)**2 * np.sqrt( x**3 + o**3 - 2 * np.sqrt((x * o)**3) )
 
             acc.append(accuracy)
             acc_err.append(err)

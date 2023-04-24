@@ -1,18 +1,18 @@
-JobBatchName    = large_CNN_full_energy_downsampled_8_0VEM
-Executable      = /cr/users/filip/EnsembleTrain/full_energy_downsampled_large_CNN/8_0VEM.py
+JobBatchName    = eCNN_120_prior
+Executable      = /cr/users/filip/EnsembleTrain/prior_estimation/prior.py
 
-error           = /cr/users/filip/EnsembleTrain/output/all_energies_downsampled-8_0VEM-$(Process).err
-output          = /cr/users/filip/EnsembleTrain/output/all_energies_downsampled-8_0VEM-$(Process).out
-log             = /cr/users/filip/EnsembleTrain/output/all_energies_downsampled-8_0VEM-$(Process).log
+error           = /cr/users/filip/EnsembleTrain/output/prior-$(Process).err
+output          = /cr/users/filip/EnsembleTrain/output/prior-$(Process).out
+log             = /cr/users/filip/EnsembleTrain/output/prior-$(Process).log
 
 arguments       = $(Process)
-request_memory  = 3G
+request_memory  = 5G
 max_idle        = 150
-max_retries     = 5
+max_retries     = 50
                                                             
 should_transfer_files = YES                      
 
 Requirements = (OpSysName == "Ubuntu" && OpSysMajorVer == 22) 
 transfer_input_files  = /cr/work/filip/Binaries
 
-queue 10
+queue 1

@@ -19,36 +19,33 @@ class EventGenerator():
     def __new__(self, datasets : typing.Union[list, str], **kwargs : dict) -> typing.Union[tuple, "EventGenerator"] :
 
         r'''
-        :datasets ``list[str]``: number of libraries you want included. Note that "all" includes everything.
-
         :Keyword arguments:
         
         __:Generator options:_______________________________________________________
 
-        * *split* (``float``) -- fraction of of training set/entire set
-        * *seed* (``bool``) -- fix randomizer seed for reproducibility
-        * *prior* (``float``) -- p(signal), p(background) = 1 - prior
+        * *prior* (``float``)               -- p(signal), p(background) = 1 - prior
+        * *sliding_window_length* (``int``) -- length of the sliding window
+        * *sliding_window_step* (``int``)   -- stepsize for the sliding window
+        * *real_background* (``bool``)      -- use real background from random traces
+        * *random_index* (``int``)          -- which file to use first in random traces
+        * *force_inject* (``int``)          -- inject <force_inject> background particles
+        * *for_training* (``bool``)         -- return labelled batches if *True* 
 
         __:VEM traces:______________________________________________________________
 
-        * *apply_downsampling* (``bool``) -- make UUB traces resembel UB traces
-        * *random_phase* (``int [0, 1, 2]``) -- the random phase for downsampling
-        * *real_background* (``bool``) -- use real background from random traces
-        * *random_index* (``int``) -- which file to use first in random traces
-        * *q_peak* (``float``) -- ADC to VEM conversion factor, for UB <-> UUB
-        * *q_charge* (``float``) -- Conversion factor for the integral trace
-        * *n_bins* (``int``) -- generate a baseline with <trace_length> bins
-        * *force_inject* (``int``) -- force the injection of <force_inject> background particles
-        * *sigma* (``float``) -- baseline std in ADC counts, ignored for real_background
-        * *mu* (``list``) -- mean ADC level in ADC counts, ignored for real_background
-
+        * *apply_downsampling* (``bool``)   -- make UUB traces resembel UB traces
+        * *q_peak* (``float``)              -- ADC to VEM conversion factor, for ADC <-> VEM
+        * *q_charge* (``float``)            -- Conversion factor for the integral trace
+        * *n_bins* (``int``)                -- generate a baseline with <trace_length> bins
+        * *floor_trace* (``bool``)          -- floor trace before dividing by q_peak/q_charge
+        * *sigma* (``float``)               -- standard deviation of gaussian baseline
+        * *is_vem* (``bool``)               -- the library contains already calibrated traces
 
         __:Classifier:______________________________________________________________
 
-        * *window* (``int``) -- the length of the sliding window
-        * *step* (``int``) -- step size of the sliding window analysis
-        * *ignore_low_vem* (``float``) -- intentionally mislabel low VEM_charge signals
-        * *ignore_particles* (``int``) -- intentionally mislabel few-particle signals
+        * *ignore_low_vem* (``float``)      -- intentionally mislabel low VEM_charge signals
+        * *ignore_particles* (``int``)      -- intentionally mislabel few-particle signals
+        * *particle_type* (``list[str]``)   -- what particles to consider in particle cut
 
         '''
 
@@ -118,8 +115,8 @@ class EventGenerator():
                 all_files.append(EventGenerator.get_signal_files(item))
 
         # check Ensemble first, due to Ensemble.__super__ == NNClassifier evaluating to true
-        elif isinstance(user_choice, Ensemble): all_files = user_choice.models[0].get_files("validation")   # add validation files from ensemble            
-        elif isinstance(user_choice, NNClassifier): all_files =  user_choice.get_files("validation")        # add validation files from classifier
+        elif hasattr(user_choice, models): all_files = user_choice.models[0].get_files("validation")        # add validation files from ensemble            
+        elif hasattr(user_choice, epochs): all_files =  user_choice.get_files("validation")                 # add validation files from classifier
 
         else: raise NotImplementedError(f"input {type(user_choice)} is not supported as argument for 'dataset'")
         
@@ -190,8 +187,8 @@ class Generator(tf.keras.utils.Sequence):
         self.q_charge = kwargs.get("q_charge", np.array([GLOBAL.q_charge for _ in range(3)]))
         self.trace_options = \
         {
-            "window_length"         : kwargs.get("window_length", GLOBAL.window),
-            "window_step"           : kwargs.get("window_step", GLOBAL.step),
+            "window_length"         : kwargs.get("sliding_window_length", GLOBAL.window),
+            "window_step"           : kwargs.get("sliding_window_step", GLOBAL.step),
             "floor_trace"           : kwargs.get("floor_trace", GLOBAL.floor_trace),
             "random_phase"          : kwargs.get("random_phase", GLOBAL.random_phase),
             "is_vem"                : kwargs.get("is_vem", GLOBAL.is_vem),

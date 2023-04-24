@@ -54,10 +54,27 @@ $\text{FDR}$ drastically raises the amount of potential events and hence load on
 	\text{FDR} = \frac{\text{FP}}{\text{TP} + \text{FP}}.
 \end{equation}
 
+In this work, the trigger rate on random-traces $f_\text{Random}$ is used as an alias for the $\text{FDR}$. Of course, this is not completely accurate, as these 
+to a small fraction contain signal from air showers. In any case, the distinction does not matter. Any trigger algorithm must have a sufficiently low trigger 
+frequency on measured data - be it extensive air showers or background events - as to not overload CDAS readout capabilities.
+
+Consequently a pseudo-score can be assigned to each classification algorithm in order to compare them. This score $a$ is given by \autoref{eq:comparison-score}.
+
+\begin{equation}
+	\label{eq:comparison-score}
+	a = \frac{\epsilon}{f_\text{Random}\;[\SI{}{\hertz}]}
+\end{equation}
+
+The physical interpretation of this variable is not straight forward. If labels were known for random-trace datasets, $a$ would be equivalent to the 
+\textbf{S}ignal-to-\textbf{N}oise \textbf{R}atio (SNR) of the classifier. However, since $f_\text{Random}$ and the T2 efficiency across all primary energies and 
+zenith angles, must be determined using two different sets of data, only a (positive) correlation between the two exists.
+
+In conclusion, all algorithms should maximize $a$, i.e. boost the T2 trigger efficiency, while keeping the random-trace trigger rate as low as possible.
+
 \subsection{Lateral Trigger Probability (LTP)}
 \label{ssec:lateral-trigger-probability}
 
-Ultimately, all test statistics constructed by classical station triggers (ignoring MoPS, c.f. \autoref{sec:trigger-implementation}) are aliases for the deposited 
+Ultimately, all test statistics constructed by classical station triggers (ignoring MoPS, c.f. \autoref{sec:trigger-implementation}) are correlated to the deposited 
 charge $S$ in the WCD. Because $S$ is heavily influenced by the primary particle energy, zenith and distance to the shower core, as well as to a lesser extent by 
 shower age and statistical fluctuations, it makes sense to parametrize the trigger efficiency $\epsilon(E, \theta, \text{SPD})$ in terms of these observables. 
 
@@ -197,7 +214,6 @@ is only accurate if the primary particle initiated a perfectly vertical cascade 
 triggers such considerations need not be accounted for. Even in the most suboptimal case of a horizontal shower ($\theta = 90^\circ$), the furthest station in the 
 triangle receives a signal latest around $\frac{\SI{1.5}{\kilo\meter}}{c} = \SI{5}{\micro\second}$ after the closest one. Exemplary simulations and resulting T3 
 efficiencies for classical triggers are shown in \autoref{fig:t3-mc-simulation} and further discussed in \autoref{ssec:combined-performance}.
-
 
 \begin{figure}
 	\centering
@@ -404,15 +420,16 @@ By examining monitoring data, it follows that $1-2$ MoPS triggers are issued per
 $\SIrange[range-phrase = \,\text{to}\,]{0.02}{0.03}{\hertz}$. This is orders of magnitude lower than other discussed trigger mechanisms. While the MoPS trigger 
 consequently can be seen as a relatively noise free trigger, events in which a MoPS is critically required to form a T3 are extremely sparse. From a total of 
 $20000$ (simulated) showers at lower energies, none had a three-fold coincidence where at least one station only detected a MoPS T2 trigger. Considering this 
-result, it is expected that T3 efficiencies are largely independant of the fact whether or not MoPS is considered or not.
+result, it is expected that T3 efficiencies are largely independant of the fact whether MoPS is considered or not.
 
 \subsection{Combined performance}
 \label{ssec:combined-performance}
 
 In the field, all above discussed algorithms are run simultaneously. That is, a T2 trigger is issued whenever any of the Th-T2, ToT, ToTd, or MoPS trigger become 
-active. This results in an overall trigger rate of roughly \SIrange{22}{23}{\hertz}, with a combined efficiency of $\epsilon = 0.4070$. The combined lateral 
-trigger probability with respect to shower plane distance is shown in \autoref{fig:all-triggers-ltp}. The overall T3 efficiency as calculated in 
-\autoref{ssec:t3-calculation} is shown in \autoref{fig:ideal-efficiency-comparison}.
+active. This results in an overall trigger rate of roughly \SIrange[range-phrase = \,\text{to}\,]{22}{23}{\hertz}, with a combined efficiency of 
+$\epsilon = 0.4070$. The combined lateral trigger probability with respect to shower plane distance is shown in \autoref{fig:all-triggers-ltp}. The overall T3 
+efficiency as calculated in \autoref{ssec:t3-calculation} is shown in \autoref{fig:ideal-efficiency-comparison}. As can be seen in the plot, detection of air 
+showers is guaranteed at primary energies of around $10^{18}\,\SI{}{\electronvolt}$ and upwards.
 
 \begin{figure}
 	\centering
