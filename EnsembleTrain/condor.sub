@@ -1,9 +1,9 @@
-JobBatchName    = kernel_30
-Executable      = /cr/users/filip/EnsembleTrain/kernel_size/kernel_30.py
+JobBatchName    = eCNN_120
+Executable      = /cr/users/filip/EnsembleTrain/CNN_input_size/eCNN_120.py
 
-error           = /cr/users/filip/EnsembleTrain/output/kernel_30-$(Process).err
-# output          = /cr/users/filip/EnsembleTrain/output/kernel_30-$(Process).out
-# log             = /cr/users/filip/EnsembleTrain/output/kernel_30-$(Process).log
+error           = /cr/users/filip/EnsembleTrain/output/eCNN_120-$(Process).err
+# output          = /cr/users/filip/EnsembleTrain/output/eCNN_120-$(Process).out
+# log             = /cr/users/filip/EnsembleTrain/output/eCNN_120-$(Process).log
 
 arguments       = $(Process)
 request_memory  = 5G

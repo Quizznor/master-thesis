@@ -46,18 +46,8 @@ of the underlaying hardware.
     trigger thresholds from $+250\%$ to $-95\%$ of the nominal values.}
 \end{figure}
 
-\section{Design considerations}
-\label{sec:design-considerations}
-
-The hardware specifications at the FPGA level, where trigger conditions are currently checked, are limited. For this reason, NN architectures should be kept as 
-simple as possible. Most importantly, the number of weights, biases and other trainable parameters will need to be hardcoded into station software. Because of 
-minimal available storage space, this number needs to be kept low.
-
-This immediately disqualifies powerful candidates like autoencoders or transformers (compare \autoref{sec:NN-other}) from consideration, due to their size. Only 
-simple dense-, convolutional-, and recurrent neural networks are viable contenders that could theoretically be implemented in the SD electronics.
-
-\subsection{Implementation}
-\label{ssec:implementation}
+\section{Implementation}
+\label{sec:implementation}
 
 The python library TensorFlow \cite{tensorflow2015-whitepaper} is used as a backend to implement the individual classifiers. All discussed architectures are built 
 and trained with the release version 2.8.4 \cite{tensorflowversion}. Adjustments to the trainable parameters are calculated according to a momentum-based 
@@ -67,39 +57,66 @@ runtime upon requirement, is used in building training data in order to make the
 building relies heavily on randomization, the actual training data will not be the same if the random number generators are not seeded beforehand. This has been
 taken into account. All networks are - unless specifically stated otherwise - trained and validated using the same signal input data.
 
+\section{Design consideration}
+\label{sec:design-considerations}
+
+\subsection{Architecture}
+\label{ssec:architecture}
+
+The hardware specifications at the FPGA level, where trigger conditions are currently checked, are limited. For this reason, NN architectures should be kept as 
+simple as possible. Most importantly, the number of weights, biases and other trainable parameters will need to be hardcoded into station software. Because of 
+minimal available storage space, this number needs to be kept low.
+
+This immediately disqualifies powerful candidates like autoencoders or transformers (compare \autoref{sec:NN-other}) from consideration. Only  relatively simple 
+dense-, convolutional-, or recurrent neural network architectures are viable contenders and might be implementable in the SD electronics.
+
 \subsection{Choice of input data}
 \label{ssec:input-data}
 
-As stated in the previous chapters, neural networks learn by example.
+As stated in the previous chapters, neural networks learn by example. It is imperative that the input data propagating through the network during training 
+resembles later use-case inputs as much as possible. However, some choices in how data is represented can and need to be made in order to benefit loss 
+minimization. 
 
 \subsubsection{Prior probability}
 \label{sssec:prior-discussion}
 
 The flux of cosmic rays with energies exceeding the proton knee is tiny ($\mathcal{O}(\SI[per-mode=power]{1}{\per\meter\per\year})$ \cite{dembinski2017data}). 
-While the size of the SD guarantees decent exposure over the entire array, an individual station will mostly measure background. In fact, the prior probability $p$ 
-of encountering such events in a given random time trace is roughly 1 in 1 000 000. Of course, an accurate prior during training would thus result in poor network 
-performance. On the notion of a broken clock being correct twice a day, a naive classifier can have near perfect accuracy by labelling every input as background. 
-Such behaviour is not desired. The prior probability must be artificially inflated. The influence of prior probability on subsequent trigger sensitivity is shown 
-in \autoref{fig:prior-discussion}. No strong correlation between prior and network performance is found in the range $0.05 \leq p \leq 0.95$. As long as the 
-fraction of signal over entire training set is statistically relevant, the network learns to discern between the signal and background. Nevertheless, a 
-conservative prior of $p=0.5$ is picked for the following analysis.
+While the size of the SD guarantees decent exposure over the entire array, an individual station will mostly measure background. In fact, the prior probability $p$
+of encountering events beyond the kee in a random time trace is roughly one in one million. Of course, if this were reflected in the training dataset, neural 
+networks would show very poor performance. On the notion of a broken clock being correct twice a day, a naive classifier would naively label every input as 
+background and retain almost perfect accuracy. Such behaviour is not desired. The prior probability must be artificially inflated. The influence of prior 
+probability on subsequent trigger sensitivity is shown in \autoref{fig:prior-discussion}. No strong correlation between prior and network performance is found in
+the range $0.05 \leq p \leq 0.95$. As long as the fraction of signal over entire training set is statistically relevant, the network learns to discern between 
+signal and background events. For all further analysis a conservative prior of $p=0.5$ is picked.
 
 \begin{figure}
 	\centering
-	\includegraphics[width=1\textwidth]{REPLACE ME}
-	\caption{A very faint positive slope ($m = 0.02\pm0.01$) is observed when relating prior probability to trigger sensitivity (blue dots). This could however be 
-	attributed to statistical fluctuations in the training fit. An ensemble of networks trained on the same data and with the same prior shows a comparable spread
-	(orange dots).}
+	\includegraphics[width=1\textwidth]{./plots/prior_discussion}
+	\caption{A very faint positive slope ($m = 0.02\pm0.01$) is observed when relating prior probability to trigger sensitivity (blue dots) of an example 
+	convolutional neural network. This could however be attributed to statistical fluctuations in the training fit. An ensemble of networks with the same 
+	architecture trained on the same data and with a single prior shows a comparable spread (orange dots).}
 	\label{fig:prior-discussion}
 \end{figure}
 
 \subsubsection{Filtering \& Downsampling}
 \label{sssec:filtering-and-downsampling}
 
+Classical triggers are run in compatibility mode, where 3 UUB bins (\SI{8.3}{\nano\second}) are filtered and downsampled to resemble a single UB bin 
+(\SI{25}{\nano\second}). Some information about the trace shape is lost in the process. Logically, a neural network should be able to identify original UUB signal 
+traces with more ease than their filtered and downsampled counterparts. Ideal triggers should therefore have a higher efficiency when tested on full bandwidth 
+traces
+
+This does not render compatibility mode completely uninteresting for the analysis here. Since network depth and size is an issue, the input size for the machine 
+learning algorithms must be minimized. 
+
+issue
+
+\subsection{Loss function weighting}
+\label{ssec:loss-function-weighting}
 
 
-\subsubsection{Loss function weighting}
-\label{sssec:loss-function-weighting}
+
+\subsubsection{}
 
 \subsection{Further hyperparameters}
 \label{ssec:hyperparameters}
@@ -108,7 +125,10 @@ conservative prior of $p=0.5$ is picked for the following analysis.
 
 
 
-\section{Performance}
+\section{Convolutional neural networks}
+
+
+\section{LSTM}
 
 \begin{enumerate}
     \item Have problem
