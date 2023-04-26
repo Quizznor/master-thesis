@@ -3,7 +3,7 @@
 from Binaries import *
 # ensemble_no = int(sys.argv[1]) + 1
 priors = np.linspace(0.05, 0.95, 10)
-ensemble_no = 0
+ensemble_no = int(sys.argv[1])
 
 event_kwargs = {
                 "apply_downsampling" : True, 

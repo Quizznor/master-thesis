@@ -3,11 +3,13 @@
 \chapter{Neural network triggers}
 \label{chap:neural-network-triggers}
 
+\todo{write introductory shit here?}
+
 \section{Motivation}
 \label{sec:motivation}
 
-The station-level triggers in the previous chapter have been shown to perform well enough for the science case of the Pierre Auger Observatory. However, it has 
-also been concluded that a lot of potential data, espically at low energies is ignored. This is by intention in order to keep DAQ readout at feasible levels.
+The station-level triggers in the previous chapter have been shown to perform well for the science case of the Pierre Auger Observatory. However, it has 
+also been concluded that a lot of potential data, especially at low energies is ignored. This is by intention in order to keep DAQ readout at feasible levels.
 
 Attempts at improving the overal efficiency of the SD triggers can be made. This is only possible to a certain level. At lowest energies the particle cascade is 
 not big enough to warrant coincident triggers in at least 3 WCD stations. As per \autoref{sssec:bayesian-folding}, the lateral trigger probability a given 
@@ -54,15 +56,55 @@ minimal available storage space, this number needs to be kept low.
 This immediately disqualifies powerful candidates like autoencoders or transformers (compare \autoref{sec:NN-other}) from consideration, due to their size. Only 
 simple dense-, convolutional-, and recurrent neural networks are viable contenders that could theoretically be implemented in the SD electronics.
 
+\subsection{Implementation}
+\label{ssec:implementation}
+
 The python library TensorFlow \cite{tensorflow2015-whitepaper} is used as a backend to implement the individual classifiers. All discussed architectures are built 
 and trained with the release version 2.8.4 \cite{tensorflowversion}. Adjustments to the trainable parameters are calculated according to a momentum-based 
 stochastic gradient descent (Adam \cite{kingma2014adam}) on a batch level. In this context, a single batch is made up of all traces that are recorded from a single 
 air shower event. Since batch size grows quickly with increasing energy, a generative approach, where traces are created (c.f. \autoref{sec:trace-building}) at 
-runtime upon requirement, is used in building training data in order to make the process as RAM-efficient as possible.
+runtime upon requirement, is used in building training data in order to make the process as RAM-efficient as possible. This has important implications. As trace 
+building relies heavily on randomization, the actual training data will not be the same if the random number generators are not seeded beforehand. This has been
+taken into account. All networks are - unless specifically stated otherwise - trained and validated using the same signal input data.
 
-
-\subsection{Input data}
+\subsection{Choice of input data}
 \label{ssec:input-data}
+
+As stated in the previous chapters, neural networks learn by example.
+
+\subsubsection{Prior probability}
+\label{sssec:prior-discussion}
+
+The flux of cosmic rays with energies exceeding the proton knee is tiny ($\mathcal{O}(\SI[per-mode=power]{1}{\per\meter\per\year})$ \cite{dembinski2017data}). 
+While the size of the SD guarantees decent exposure over the entire array, an individual station will mostly measure background. In fact, the prior probability $p$ 
+of encountering such events in a given random time trace is roughly 1 in 1 000 000. Of course, an accurate prior during training would thus result in poor network 
+performance. On the notion of a broken clock being correct twice a day, a naive classifier can have near perfect accuracy by labelling every input as background. 
+Such behaviour is not desired. The prior probability must be artificially inflated. The influence of prior probability on subsequent trigger sensitivity is shown 
+in \autoref{fig:prior-discussion}. No strong correlation between prior and network performance is found in the range $0.05 \leq p \leq 0.95$. As long as the 
+fraction of signal over entire training set is statistically relevant, the network learns to discern between the signal and background. Nevertheless, a 
+conservative prior of $p=0.5$ is picked for the following analysis.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=1\textwidth]{REPLACE ME}
+	\caption{A very faint positive slope ($m = 0.02\pm0.01$) is observed when relating prior probability to trigger sensitivity (blue dots). This could however be 
+	attributed to statistical fluctuations in the training fit. An ensemble of networks trained on the same data and with the same prior shows a comparable spread
+	(orange dots).}
+	\label{fig:prior-discussion}
+\end{figure}
+
+\subsubsection{Filtering \& Downsampling}
+\label{sssec:filtering-and-downsampling}
+
+
+
+\subsubsection{Loss function weighting}
+\label{sssec:loss-function-weighting}
+
+\subsection{Further hyperparameters}
+\label{ssec:hyperparameters}
+
+
 
 
 

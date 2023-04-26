@@ -91,29 +91,31 @@ class Ensemble(NNClassifier):
     
     def get_accuracy(self, dataset : str) -> tuple : 
 
-        acc, acc_err = [], []
+        acc, acc_err, true_acc = [], [], []
 
         for prediction in self.load_and_print_performance(dataset, quiet = True):
-            TP, FP, TN, FN = prediction
+            TP, _, _, FN = prediction
             x, o = float(len(TP)), float(len(FN))
             accuracy = x / (x + o)
             err = 1/(x+o)**2 * np.sqrt( x**3 + o**3 - 2 * np.sqrt((x * o)**3) )
+            epsilon = get_true_accuracy(TP, FN)
+            true_acc.append(epsilon)
 
             acc.append(accuracy)
             acc_err.append(err)
 
-        return np.array(acc), np.array(acc_err)
+        return np.array(acc), np.array(acc_err), true_acc
 
     def money_plot(self, dataset : str) -> None :
 
         rate, rate_err = self.get_background_rates()
-        acc, acc_err = self.get_accuracy(dataset)
+        acc, acc_err, true_acc = self.get_accuracy(dataset)
         x, y = np.mean(acc), np.mean(rate)
 
         if not os.path.isdir(f"/cr/users/filip/MoneyPlot/data/{self.name.split('/')[-1][9:]}"):
             os.makedirs(f"/cr/users/filip/MoneyPlot/data/{self.name.split('/')[-1][9:]}")
 
-        save_matrix = np.dstack([acc, acc_err, rate, rate_err])[0]
+        save_matrix = np.dstack([acc, acc_err, rate, rate_err, true_acc])[0]
         np.savetxt(f"/cr/users/filip/MoneyPlot/data/{self.name.split('/')[-1][9:]}/{dataset}.csv", save_matrix)
 
 

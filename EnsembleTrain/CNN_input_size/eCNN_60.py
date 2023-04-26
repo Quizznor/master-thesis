@@ -10,7 +10,7 @@ event_kwargs = {
                 }
 
 try:
-    ThisNN = NNClassifier(f"ENSEMBLES/60_LargeCNN_Downsampled_AllEnergies_4_0VEM/ensemble_{ensemble_no:02}")
+    ThisNN = NNClassifier(f"ENSEMBLES/60_eCNN_Downsampled_AllEnergies_4_0VEM/ensemble_{ensemble_no:02}")
 except FileNotFoundError:
     MockNN = NNClassifier("ENSEMBLES/120_TwoLayer_Downsampled_AllEnergies_NoCuts/ensemble_01", supress_print = True)
     Events = EventGenerator([], **event_kwargs, ignore_low_vem = 4.0)      # cut goes here

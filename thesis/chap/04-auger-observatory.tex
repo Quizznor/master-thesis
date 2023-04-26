@@ -290,15 +290,6 @@ thresholds are altered according to \autoref{tab:calib-trigger-thresholds}. What
 	\end{center}
 \end{table}
 
-\section{Event Reconstruction}
-\label{sec:event-reconstruction}
-
-If an event has been detected (\autoref{ssec:trigger-procedure}) it is reconstructed at CDAS level, where information from all relevant detectors is conglomerated.
-From the observed shower footprint in the SD array as well as the (if available) longitudinal profile measured by the FD stations follows an estimate on arrival 
-direction (\autoref{ssec:arrival-direction}), energy (\autoref{ssec:energy-estimation}) and primary particle (\autoref{ssec:primary-particle}). As the work 
-presented in this thesis solely deals with the surface detector of the Auger observatory, this section focuses heavily on the SD reconstruction. Addendums towards
-FD reconstruction are given where needed.
-
 \subsection{Trigger procedure}
 \label{ssec:trigger-procedure}
 
@@ -341,6 +332,15 @@ stations. Their recorded FADC traces as well as calibration information are forw
 of order $\mathcal{O}(\SI{}{\micro\second})$ before or after the T3 pattern occurence. Such a modus operandi enables an accurate reconstruction of the shower 
 footprint by including stations that did not participate in the initial T3 trigger. This extends to FD issued T3 triggers, where potential information from SD 
 stations in the vicinity of the FD-reconstructed shower core position is requested.
+
+\section{Event Reconstruction}
+\label{sec:event-reconstruction}
+
+If an event has been detected (\autoref{ssec:trigger-procedure}) it is reconstructed at CDAS level, where information from all relevant detectors is conglomerated.
+From the observed shower footprint in the SD array as well as the (if available) longitudinal profile measured by the FD stations follows an estimate on arrival 
+direction (\autoref{ssec:arrival-direction}), energy (\autoref{ssec:energy-estimation}) and primary particle (\autoref{ssec:primary-particle}). As the work 
+presented in this thesis solely deals with the surface detector of the Auger observatory, this section focuses heavily on the SD reconstruction. Addendums towards
+FD reconstruction are given where needed.
 
 \subsection{Core position}
 \label{ssec:core-position}
@@ -391,7 +391,7 @@ $0.6^\circ$ \cite{bonifazi2005angular}.
 	\label{fig:offline-calibration}
 \end{figure}
 
-\subsection{Energy estimation}
+\subsection{Energy estimator}
 \label{ssec:energy-estimation}
 
 After a shower core has been pinpointed and the shower axis was determined, all information to fit an LDF is present. The \textbf{S}hower\textbf{P}lane 

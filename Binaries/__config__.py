@@ -177,3 +177,25 @@ def progress_bar(current_step : int, total_steps : int, start_time : int) -> Non
     percentage = int((current_step + 1) / total_steps * 100)
     
     print(f"Step {current_step + 1}/{total_steps} | {elapsed} elapsed ||{'-' * (percentage // 5):20}|| {percentage}% -- {ms_per_iteration:.3f} ms/step, ETA: {eta}", end = "\r")
+
+def get_true_accuracy(TP : np.ndarray, FN : np.ndarray) -> float : 
+
+    x, n_e = np.loadtxt("/cr/users/filip/Binaries/energy_histogram.csv", unpack = True)
+    
+    # calculated in /cr/users/filip/Trigger/BuildDataset/true_efficiency.ipynb
+    best_efficiency = 332917555840.5355
+
+    efficiency_scaled, weights = 0, 0
+    n_all = len(TP) + len(FN)
+    weights = 0
+
+    for prediction in TP[:, 1]:
+        idx = np.digitize(prediction, x) - 1
+        weight = 100 * n_e[idx] * n_e[np.argmax(n_e)]/n_e[idx] * x[idx]**(-3) / x[np.argmin(x)]**(-3)
+        efficiency_scaled += 1/(weight) * 1/n_all
+        weights += weight
+
+    efficiency_scaled *= weights * 50072/n_all
+
+    # return efficiency_scaled
+    return 1 - (best_efficiency - efficiency_scaled) / best_efficiency

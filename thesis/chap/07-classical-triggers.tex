@@ -40,6 +40,7 @@ From this, other potentially interesting variables can be derived. Of particular
 \textbf{D}iscovery \textbf{R}ate (FDR). The former is the probability that a signal event will be classified correctly, i.e. an extensive air shower hits a 
 water tank and correctly raises a T2 trigger. The sensitivity - in the following also called the trigger efficiency $\epsilon$ - is defined as
 
+
 \begin{equation}
 	\label{eq:statistics-efficiency}
 	\epsilon = \frac{\text{TP}}{\text{TP} + \text{FN}}.
@@ -48,6 +49,8 @@ water tank and correctly raises a T2 trigger. The sensitivity - in the following
 The latter is a measure of how readily the triggers (wrongly) identify background events like stray cosmic muons as extensive air showers. It is imperative 
 for any trigger algorithm operating in the SD to minimize this probability. Simply due to the number of operating stations in the field, a small increase in 
 $\text{FDR}$ drastically raises the amount of potential events and hence load on the central analysis server of the observatory.
+
+\todo{revisions regarding flux scaled efficiency}
 
 \begin{equation}
 	\label{eq:statistics-efficiency}

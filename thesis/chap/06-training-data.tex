@@ -1,7 +1,5 @@
 % !TEX root = ../thesis.tex
 
-\todo{physics statistics test???}
-
 \chapter{Neural network training data}
 \label{chap:neural-network-data}
 
@@ -211,17 +209,28 @@ These are a total of $40557$ simulated showers with a proton primary of energy $
 using the hadronic interaction model QGSJET-II.04 \cite{ostapchenko2007status}.
 
 In the process, the electronic feedback of the WCD PMTs is evaluated without any disturbance factor (see \autoref{sec:background-dataset}). That is to say that 
-the time trace obtained from such simulations is identically zero (in units of \SI{}{\ADC}) at any point in time where no ionizing particles are present in the WCD. 
-An example trace that visualizes this is shown in \autoref{fig:component_adding}. Next, the trigger conditions both for individual stations and on the event-level 
-are altered to trigger on everything. This step is needed in order to save all traces to the simulation output, an \textbf{A}dvanced \textbf{D}ata \textbf{S}ummary 
-\textbf{T}ree (ADST). If this was not the case, only traces that already satisfy current trigger conditions would be written to disk. A neural network training on 
-such data could therefore at best be as efficient as the current triggers.
+the time trace obtained from such simulations is identically zero (in units of \SI{}{\ADC}) at any point in time where no ionizing particles are present in the 
+WCD. An example trace that visualizes this is shown in \autoref{fig:component_adding}. Next, the trigger conditions both for individual stations and on the 
+event-level are altered to trigger on everything. This step is needed in order to save all traces to the simulation output, an \textbf{A}dvanced \textbf{D}ata 
+\textbf{S}ummary \textbf{T}ree (ADST). If this was not the case, only traces that already satisfy current trigger conditions would be written to disk. A neural 
+network training on such data could therefore at best be as efficient as the current triggers.
 
 The choice of this approach forces some detours in the ADST readout. Instead of extracting the VEM calibrated traces directly, individual component traces, i.e. 
 the PMT signal caused by muons, electrons and photons individually are summed to yield a total \SI{}{\ADC} trace. Signal stemming from hadrons or other components 
 in the cascade is neglected. This does not impose any errors in the analysis, as the hadronic component espically lays close to the shower core, where the EM- and 
-muonic component of the shower alone should already enable easy detection. Finally, the total trace as calculated above is extracted to a more easily accessible data 
-format alongside shower metadata like primary energy, zenith, but also SPD, and particle count in the station the trace was recorded from.
+muonic component of the shower alone should already enable easy detection. Finally, the total trace as calculated above is extracted to a more easily accessible 
+data format alongside shower metadata like primary energy, zenith, but also SPD, and particle count in the station the trace was recorded from.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=1\textwidth]{./plots/physics_statistics.png}
+	\caption{The distribution of primary energy (\textit{top left}), shower inclination (\textit{top right}), separation from shower axis (\textit{bottom left}), 
+	and number of particles in a tank (\textit{bottom right}) is histogrammed for each trace available in the dataset. Since showers with higher primary energy 
+	reach a larger number of stations, traces from showers with increasing energy are overrepresented in this dataset. The dashed lines in each subplot represent 
+	the population of traces that deposit a signal 
+	$S>\SI{}{\Charge}$ in the tank.}
+	\label{fig:physics-data}
+\end{figure}
 
 \section{Trace building}
 \label{sec:trace-building}
@@ -230,11 +239,11 @@ With the componentwise traces at hand, the total trace as would be recorded in t
 default UUB trace length ($2048\,\text{bins}\cdot8.3\,\mathrm{ns}\,/\,\text{bin}=\SI{17.07}{\micro\second}$) and three components per bin (the three WCD PMTs) is 
 initialized with all values equal to zero. Next, an arbitrary random-trace is selected as baseline. Since the FPGAs fundamentally count in the integer domain, the 
 \SI{}{\ADC} data in the random-trace contains only whole numbers. As is, this wouldn't correctly model rollover when adding integer random-traces to floating point
-simulation information. There two \SI{}{ADC} signals by themself might not exceed the threshold to cross to the next higher value, but the sum would; 
+simulation information. While two \SI{}{ADC} signals by themself might not exceed the threshold to cross to the next higher value, their sum would might; 
 $\lfloor \SI{0.7}{\ADC} \rfloor + \lfloor \SI{0.4}{\ADC} \rfloor = \SI{0}{\ADC} \neq \SI{1}{\ADC} = \lfloor \SI{0.7}{\ADC} + \SI{0.4}{\ADC} \rfloor$. To account 
-for this, uniformly distributed random numbers from 0 (inclusive) to 1 (exclusive)are added to the random-trace. 
+for this, uniformly distributed random numbers from 0 (inclusive) to 1 (exclusive) are added to the random-trace. 
 
-Furthermore the $I_\text{VEM, Rand.}$ from random-traces (c.f. \autoref{ssec:random-traces}) will in general be different from \Ipeak simulated by 
+Furthermore, the $I_\text{VEM, Rand.}$ from random-traces (c.f. \autoref{ssec:random-traces}) will in general be different from \Ipeak simulated by 
 \Offline ($I_\text{VEM, Off.} = \SI{215.781}{\ADC}$ compare \cite{offlineSource}). Thus the random-trace must be scaled by a factor 
 $\frac{I_\text{VEM, Off.}}{I_\text{VEM, Rand.}}$ before being added to the container. 
 
@@ -244,7 +253,7 @@ traces from \cite{DavidBackgroundSim} is drawn and each sample added to every PM
 \autoref{fig:component_adding} shows an example where five muons are injected into the trace.
 
 Last, the actual shower signal is added to the trace container. In principle, it can be added at any random position, similar to the random injections. However, 
-for continuity reasons and ease of comparing to plots generated with other software, the latch bin for signal insertion is hardcoded to be the same as in \Offline, 
+for continuity reasons and ease of comparing to plots generated with other software, the latch bin for signal insertion is hardcoded to be the same as in \Offline,
 bin $660$. Since otherwise the data is in the correct $\SI{}{\ADC}$ format, no further manipulation of the data is necessary.
 
 The trace container now holds all necessary components together, but remains in units of \SI{}{\ADC}. To convert to \SI{}{\Peak}, each bin in each PMT trace is 

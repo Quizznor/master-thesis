@@ -21,10 +21,10 @@ class Classifier():
 
         os.system(f"mkdir -p /cr/users/filip/plots/production_tests/{self.name.replace('/','-')}/{start_time}/")
 
-        window_length = 120
-        window_step = int(window_length / 3)
+        window_length = kwargs.get("window_length", 120)
+        window_step =  kwargs.get("window_step", 10)
 
-        RandomTraces = EventGenerator("19_19.5", split = 1, force_inject = 0, real_background = True, prior = 0, window_length = window_length, window_step = window_step, **kwargs)
+        RandomTraces = EventGenerator("19_19.5", split = 1, force_inject = 0, prior = 0, sliding_window_length = window_length, sliding_window_step = window_step, **kwargs)
         RandomTraces.files = np.zeros(n_traces)
         total_trace_duration = GLOBAL.trace_length * GLOBAL.single_bin_duration * len(RandomTraces)
 
@@ -685,20 +685,59 @@ class Classifier():
 
         return 0.5 * (bins[1:] + bins[:-1]), efficiencies
 
-    # calculate trigger efficiency over predictions scaled by energy (flux)
-    def get_true_accuracy(self, TP : np.ndarray, FN : np.ndarray) -> float : 
+    # calculate T3 efficiency from actual shower on trace level
+    def do_true_t3_simulation(self, Dataset : "Generator") -> None : 
 
-        x, e = np.loadtxt("/cr/users/filip/Binaries/energy_histogram.csv", unpack = True)
+        import seaborn as sns
 
-        efficiency_scaled = 0
-        efficiency_unscaled = 0
+        energy_bins = [10**16, 10**16.5, 10**17, 10**17.5, 10**18, 10**18.5, 10**19, 10**19.5]      # uniform in log(E)
+        theta_bins =  [0.0000, 33.5600, 44.4200, 51.3200, 56.2500, 65.3700]                         # pseudo-uniform in sec(θ)
 
-        for prediction in TP:
-            print(prediction)
-            raise StopIteration
+        t3_hits = [[0 for t in range(len(theta_bins) - 1)] for e in range(len(energy_bins) - 1)]
+        t3_misses = [[0 for t in range(len(theta_bins) - 1)] for e in range(len(energy_bins) - 1)]
 
+        start_time = perf_counter_ns()
 
-        # print("logl")
+        for i, batch in enumerate(Dataset):
+
+            progress_bar(i, len(Dataset), start_time)
+
+            if len(batch) == 0:
+                continue
+
+            energy, zenith = batch[0].Energy, batch[0].Zenith
+            e_bin = np.digitize(energy, energy_bins) - 1
+            t_bin = np.digitize(zenith, theta_bins) - 1
+
+            SPDs = [trace.SPDistance for trace in batch]
+
+            if len(SPDs) < 3:
+                t3_misses[e_bin][t_bin] += 1
+                continue
+            elif len(SPDs) == 3:
+                closest_traces = batch
+            else:
+                SPD_sorted = np.argpartition(SPDs, 3)
+                closest_traces = np.array(batch)[SPD_sorted[:3]]
+
+            for trace in closest_traces:
+                if not self.__call__(trace): 
+                    t3_misses[e_bin][t_bin] += 1
+                    break
+            else:
+                t3_hits[e_bin][t_bin] += 1
+
+        t3_hits = np.array(t3_hits)
+        t3_misses = np.array(t3_misses)
+
+        e_labels = EventGenerator.libraries.keys()
+        t_labels = ["0_34", "34_44", "44_51", "51_56", "56_65"]
+
+        sns.heatmap(t3_hits / (t3_hits + t3_misses) * 1e2, annot = True, fmt = ".1f", cbar_kws = {"label" : "T3 efficiency / \%"})
+        plt.xticks(ticks = 0.5 + np.arange(0, 5, 1), labels = t_labels, fontsize = 28)
+        plt.yticks(ticks = 0.5 + np.arange(0, 7, 1), labels = e_labels, fontsize = 28)
+        plt.xlabel("Zenith range")
+        plt.ylabel("Energy range")
 
 
     @staticmethod

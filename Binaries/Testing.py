@@ -67,9 +67,9 @@ class MoneyPlot():
         self.ax.set_xlabel("Trigger efficiency")
         HardwareClassifier.plot_performance(self.ax)
 
-        self.ax.errorbar([], [], c = "k", markersize = 15, mfc = "w", fmt = "-o", ls = "solid", lw = 2, label = "Classical triggers")
-        self.ax.plot([], [], c = "k", ls = "--", label = "Th-T2 only")
-        self.ax.plot([], [], c = "k", ls = ":", label = "ToT + ToTd combined")
+        self.ax.errorbar([], [], c = "k", markersize = 15, mfc = "w", fmt = "-o", lw = 2, label = "Classical triggers")
+        # self.ax.plot([], [], c = "k", ls = "--", label = "Th-T2 only")
+        # self.ax.plot([], [], c = "k", ls = ":", label = "ToT + ToTd combined")
         
 
         self.buffer_x, self.buffer_y = [], []
@@ -77,17 +77,17 @@ class MoneyPlot():
     def add(self, ensemble : str, dataset, **kwargs) -> None :
 
         try:
-            acc, acc_err, rate, rate_err = np.loadtxt(f"/cr/users/filip/MoneyPlot/data/{ensemble}/{dataset}.csv", unpack = True)
+            acc, acc_err, rate, rate_err, true_acc = np.loadtxt(f"/cr/users/filip/MoneyPlot/data/{ensemble}/{dataset}.csv", unpack = True)
 
             if len(acc) != 10: print(f"[WARN] -- Incomplete predictions for {ensemble}: {dataset}... You may want to recalculate this")
 
-            best_model = np.argmin(rate / acc)
+            best_model = np.argmin(np.log10(rate) / acc)
             color = kwargs.get("color", None)
             label = kwargs.get("label", None)
-            self.ax.errorbar(acc, rate, markersize = 2, c = color, capsize = 2, fmt = kwargs.get("marker", "o"))
-            self.ax.errorbar(acc[best_model], rate[best_model], xerr = acc_err[best_model], yerr = rate_err[best_model], c = color, label = label, markersize = 10, capsize = 4, fmt = kwargs.get("marker", "o"))
+            self.ax.errorbar(true_acc, rate, markersize = 2, c = color, capsize = 2, fmt = kwargs.get("marker", "o"))
+            self.ax.errorbar(true_acc[best_model], rate[best_model], xerr = acc_err[best_model], yerr = rate_err[best_model], c = color, label = label, markersize = 10, capsize = 4, fmt = kwargs.get("marker", "o"))
 
-            self.buffer_x.append(acc[best_model])
+            self.buffer_x.append(true_acc[best_model])
             self.buffer_y.append(rate[best_model])
 
         except OSError:

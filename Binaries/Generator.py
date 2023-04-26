@@ -115,8 +115,8 @@ class EventGenerator():
                 all_files.append(EventGenerator.get_signal_files(item))
 
         # check Ensemble first, due to Ensemble.__super__ == NNClassifier evaluating to true
-        elif hasattr(user_choice, models): all_files = user_choice.models[0].get_files("validation")        # add validation files from ensemble            
-        elif hasattr(user_choice, epochs): all_files =  user_choice.get_files("validation")                 # add validation files from classifier
+        elif hasattr(user_choice, "epochs"): all_files =  user_choice.get_files("validation")               # add validation files from classifier
+        elif hasattr(user_choice, "models"): all_files = user_choice.models[0].get_files("validation")      # add validation files from ensemble            
 
         else: raise NotImplementedError(f"input {type(user_choice)} is not supported as argument for 'dataset'")
         
@@ -468,8 +468,8 @@ class Generator(tf.keras.utils.Sequence):
                             has_label = True
                             break
 
-                max_sig = trace.Signal.max() / np.mean(trace.simulation_q_peak)
-                max_bkg = trace.Baseline.max() / np.mean(trace.simulation_q_peak)
+                # max_sig = trace.Signal.max() / np.mean(trace.simulation_q_peak)
+                # max_bkg = trace.Baseline.max() / np.mean(trace.simulation_q_peak)
                                     
                 # Shower metadata
                 if trace.has_signal:
@@ -480,10 +480,10 @@ class Generator(tf.keras.utils.Sequence):
                     all_electrons.append(trace.particles["electrons"])
                     all_photons.append(trace.particles["photons"])
 
-                    x_sig.append(max_sig)
-                    x_bkg.append(max_bkg)
+                    # x_sig.append(max_sig)
+                    # x_bkg.append(max_bkg)
 
-                all_integral.append(np.mean(trace.deposited_signal))              
+                # all_integral.append(np.mean(trace.deposited_signal))              
 
                 if has_label:
                     sel_energy.append(trace.Energy)
@@ -492,22 +492,24 @@ class Generator(tf.keras.utils.Sequence):
                     sel_muons.append(trace.particles["muons"])
                     sel_electrons.append(trace.particles["electrons"])
                     sel_photons.append(trace.particles["photons"])
-                    sel_integral.append(np.mean(trace.deposited_signal))
 
-                    sel_x_sig.append(max_sig)
-                    sel_x_bkg.append(max_bkg)
+
+                    # sel_integral.append(np.mean(trace.deposited_signal))
+
+                    # sel_x_sig.append(max_sig)
+                    # sel_x_bkg.append(max_bkg)
 
                 # Injection component
                 # TODO ...
 
             if batch == n_showers: break
 
-        _, ((ax0, ax1, ax2), (ax3, ax4, ax5)) = plt.subplots(2, 3)
+        _, ((ax0, ax1), (ax3, ax4)) = plt.subplots(2, 2)
 
         # Energy distribution
         ax0.set_title("Energy distribution")
         ax0.hist(all_energy, histtype = "step", bins = np.geomspace(10**16, 10**19.5, 100), label = "All showers")
-        ax0.hist(sel_energy, histtype = "step", bins = np.geomspace(10**16, 10**19.5, 100), label = "Selected showers")
+        ax0.hist(sel_energy, histtype = "step", bins = np.geomspace(10**16, 10**19.5, 100), label = "Selected showers", ls = "--")
         ax0.legend(fontsize = 16)
 
         for e_cut in [10**16, 10**16.5, 10**17, 10**17.5, 10**18, 10**18.5, 10**19, 10**19.5]:
@@ -519,24 +521,24 @@ class Generator(tf.keras.utils.Sequence):
         # Zenith distribution
         ax1.set_title("Zenith distribution")
         ax1.hist(all_zenith, histtype = "step", bins = np.linspace(0, 90, 100), label = "All showers")
-        ax1.hist(sel_zenith, histtype = "step", bins = np.linspace(0, 90, 100), label =" Selected showers")
+        ax1.hist(sel_zenith, histtype = "step", bins = np.linspace(0, 90, 100), label =" Selected showers", ls = "--")
         ax1.set_xlabel("Zenith / $^\circ$")
         ax1.legend(fontsize = 16)
 
-        # Charge integral
-        ax2.set_title("Deposited signal in tank")
-        n, _, _ = ax2.hist(all_integral, histtype = "step", bins = np.geomspace(1e-1, 1e3, 100), label = "All showers")
-        ax2.hist(sel_integral, histtype = "step", bins = np.geomspace(1e-1, 1e3, 100), label = "Selected showers")
-        self.ignore_low_VEM and ax2.axvline(self.ignore_low_VEM, ls = "--", c = "gray")
-        ax2.set_xlabel("Integral signal / $\mathrm{{VEM}}_\mathrm{{Ch.}}$")
-        ax2.set_xscale("log")
-        ax2.set_ylim(0, 1.1 * max(n))
-        ax2.legend(fontsize = 16)
+        # # Charge integral
+        # ax2.set_title("Deposited signal in tank")
+        # n, _, _ = ax2.hist(all_integral, histtype = "step", bins = np.geomspace(1e-1, 1e3, 100), label = "All showers")
+        # ax2.hist(sel_integral, histtype = "step", bins = np.geomspace(1e-1, 1e3, 100), label = "Selected showers", ls = "--")
+        # # self.ignore_low_VEM and ax2.axvline(self.ignore_low_VEM, ls = "--", c = "gray")
+        # ax2.set_xlabel("Integral signal / $\mathrm{{VEM}}_\mathrm{{Ch.}}$")
+        # ax2.set_xscale("log")
+        # ax2.set_ylim(0, 1.1 * max(n))
+        # ax2.legend(fontsize = 16)
 
         # SPDistance distribution
         ax3.set_title("Shower plane distance distribution")
         ax3.hist(all_spd, histtype = "step", bins = np.linspace(0, 6e3, 100), label = "All showers")
-        ax3.hist(sel_spd, histtype = "step", bins = np.linspace(0, 6e3, 100), label = "Selected showers")
+        ax3.hist(sel_spd, histtype = "step", bins = np.linspace(0, 6e3, 100), label = "Selected showers", ls = "--")
         ax3.set_xlabel("Shower plane distance / m")
         ax3.legend(fontsize = 16)
         
@@ -557,30 +559,32 @@ class Generator(tf.keras.utils.Sequence):
         ax4.set_yscale("log")
         ax4.legend(fontsize = 16)
 
-        # Component information
-        ax5.set_title("Component information")
-        ax5.set_yscale("log")
-        ax5.plot([],[], ls ="--", c = "k", label = "selected")
+        # # Component information
+        # ax5.set_title("Component information")
+        # ax5.set_yscale("log")
+        # ax5.plot([],[], ls ="--", c = "k", label = "selected")
 
-        x_sig = np.clip(x_sig, -1, 5)
-        x_bkg = np.clip(x_bkg, -1, 5)
-        ax5.hist(x_sig, bins = 100, histtype = "step", label = "Signal", color = "steelblue")
-        n, _, _ = ax5.hist(x_bkg, bins = 100, histtype = "step", label = "Baseline", color = "orange")
-        ax5.hist(sel_x_sig, bins = 100, histtype = "step", ls = "--", color = "steelblue")
-        ax5.hist(sel_x_bkg, bins = 100, histtype = "step", ls = "--", color = "orange")
-        ax5.legend(fontsize = 16)
+        # x_sig = np.clip(x_sig, -1, 5)
+        # x_bkg = np.clip(x_bkg, -1, 5)
+        # ax5.hist(x_sig, bins = 100, histtype = "step", label = "Signal", color = "steelblue")
+        # n, _, _ = ax5.hist(x_bkg, bins = 100, histtype = "step", label = "Baseline", color = "orange")
+        # ax5.hist(sel_x_sig, bins = 100, histtype = "step", ls = "--", color = "steelblue")
+        # ax5.hist(sel_x_bkg, bins = 100, histtype = "step", ls = "--", color = "orange")
+        # ax5.legend(fontsize = 16)
 
-        ax5.set_ylim(1e1, 1.1 * max(n))
-        ax5.set_xlim(-0.2, 5)
-        ax5.set_xlabel("Signal strength / VEM")
+        # ax5.set_ylim(1e1, 1.1 * max(n))
+        # ax5.set_xlim(-0.2, 5)
+        # ax5.set_xlabel("Signal strength / VEM")
 
-        plt.subplots_adjust(
-            top=0.93,
-            bottom=0.111,
-            left=0.053,
-            right=0.982,
-            hspace=0.441,
-            wspace=0.302)
+        # plt.subplots_adjust(
+        #     top=0.93,
+        #     bottom=0.111,
+        #     left=0.053,
+        #     right=0.982,
+        #     hspace=0.441,
+        #     wspace=0.302)
+
+        plt.tight_layout()
         
         self.for_training = temp
         

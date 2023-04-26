@@ -321,8 +321,11 @@ class NNClassifier(Classifier):
         self.make_signal_dataset(ValidationSet, f"validation_data")
 
         # calculate trigger rate on random traces
+        window_step = TrainingSet.trace_options["window_step"]
+        window_length = TrainingSet.trace_options["window_length"]
+
         print(f"\ncalculating trigger rate on 0.5s (~30 000 Traces) of random traces now")
-        f, df, n, n_trig, t = self.production_test(30000, apply_downsampling = kwargs.get("apply_downsampling", False))
+        f, df, n, n_trig, t = self.production_test(30000, apply_downsampling = kwargs.get("apply_downsampling", False), window_length = window_length, window_step = window_step)
 
         with open(f"/cr/data01/filip/models/{self.name}/model_{self.epochs}/production_test.csv", "w") as random_file:
             random_file.write("# f  df  n_traces  n_total_triggered  total_trace_duration\n")
