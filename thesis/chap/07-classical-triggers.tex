@@ -38,19 +38,30 @@ signal event $\mathcal{C}_1$ in the form of an extensive air shower, versus back
 
 From this, other potentially interesting variables can be derived. Of particular interest for the Auger observatory are the sensitivity and \textbf{F}alse 
 \textbf{D}iscovery \textbf{R}ate (FDR). The former is the probability that a signal event will be classified correctly, i.e. an extensive air shower hits a 
-water tank and correctly raises a T2 trigger. The sensitivity - in the following also called the trigger efficiency $\epsilon$ - is defined as
+water tank and correctly raises a T2 trigger. The sensitivity - or \textbf{T}rue \textbf{P}ositive \textbf{R}ate (TPR) - is the ratio of correctly identified
+signals over all signals.
 
-
-\begin{equation}
+\begin{align}
 	\label{eq:statistics-efficiency}
-	\epsilon = \frac{\text{TP}}{\text{TP} + \text{FN}}.
-\end{equation}
+	\text{TPR} &= \sum\limits_{\{\text{TP}\}} \frac{1}{w}, \qquad\text{where}\;w = \text{TP} + \text{FN}, \\
+	\Leftrightarrow \qquad\qquad &= \frac{\text{TP}}{\text{TP} + \text{FN}}.
+\end{align}
 
-The latter is a measure of how readily the triggers (wrongly) identify background events like stray cosmic muons as extensive air showers. It is imperative 
-for any trigger algorithm operating in the SD to minimize this probability. Simply due to the number of operating stations in the field, a small increase in 
-$\text{FDR}$ drastically raises the amount of potential events and hence load on the central analysis server of the observatory.
+The $\text{TPR}$ for a given sample heavily depends on the underlaying distribution of data. While the distribution of zenith angles is correctly modeled, the 
+simulated showers at hand do not accurately match the energy flux seen in real data (compare \autoref{fig:physics-data} and \autoref{fig:cr-energy-spectrum}). For
+this purpose, the TPR for a given dataset is transformed to a conditional trigger efficiency $\epsilon$ by recalculating the weights $w_i$ based on the primary 
+energy $E_i$ of a shower. First, the overrepresentation of higher energy traces is eliminated. Every prediction is weighted by a factor 
+$b_{E_i}/b_{E_\text{ref}}$, where $b_{E_i}$ is the number of traces in a bin corresponding to energy $E_i$ (see \autoref{fig:physics-data}). Afterwards, a flux 
+factor is multiplied to the weight. It is of the form $E_i^{-3}/{E_\text{ref}}$. Lastly, the thus calculated sum is normalized to the weight 
+$W = \sum\limits_{\{\text{TP}, \text{FN}\}} \frac{1}{w_i}$ of the entire dataset.
 
-\todo{revisions regarding flux scaled efficiency}
+The physical interpretation of $\epsilon$ for a classifier is as follows: (At station level) It represents the ratio of air showers that \textit{are} detected over
+all air showers that \textit{can} in principle be detected. It is a conditional probability dependant on the WCD receiving a particle from an air shower. An 
+efficiency of $epsilon = 1$ thus implies that if at least one particle in the shower cascade hits a tank, the tank raises a T2 trigger.
+
+The false discovery rate is a measure of how readily the triggers (wrongly) identify background events like stray cosmic muons as extensive air showers. It is 
+imperative for any trigger algorithm operating in the SD to minimize this probability. Simply due to the number of operating stations in the field, a small 
+increase in $\text{FDR}$ drastically raises the amount of potential events and hence load on the central analysis server of the observatory.
 
 \begin{equation}
 	\label{eq:statistics-efficiency}
@@ -70,7 +81,7 @@ Consequently a pseudo-score can be assigned to each classification algorithm in 
 
 The physical interpretation of this variable is not straight forward. If labels were known for random-trace datasets, $a$ would be equivalent to the 
 \textbf{S}ignal-to-\textbf{N}oise \textbf{R}atio (SNR) of the classifier. However, since $f_\text{Random}$ and the T2 efficiency across all primary energies and 
-zenith angles, must be determined using two different sets of data, only a (positive) correlation between the two exists.
+zenith angles must be determined using two different sets of data, only a (positive) correlation between the two exists.
 
 In conclusion, all algorithms should maximize $a$, i.e. boost the T2 trigger efficiency, while keeping the random-trace trigger rate as low as possible.
 

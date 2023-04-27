@@ -3,7 +3,7 @@
 \chapter{Neural network triggers}
 \label{chap:neural-network-triggers}
 
-\todo{write introductory shit here?}
+% \todo{write introductory shit here?}
 
 \section{Motivation}
 \label{sec:motivation}
@@ -113,28 +113,110 @@ three. This is done in such a way that the UB-like trace contains trace informat
 Consequently, by filtering and downsampling input data it becomes possible to hand the classifiers additional information while keeping the network size at a fixed
 level. The effects this has on predictive power of neural networks is further discussed in \autoref{sec:cnn-performance}. 
 
-% \subsection{Loss function weighting}
-% \label{ssec:loss-function-weighting}
+\subsection{Choice of labelling}
+\label{ssec:choice-of-labelling}
 
+\todo{Muon cut}
+\todo{integr. charge cut}
 
+\subsection{Further hyperparameters}
+\label{ssec:further-hyperparameters}
 
-% \subsection{Further hyperparameters}
-% \label{ssec:further-hyperparameters}
-
+\todo{Loss function weighting}
+\todo{Loss function background rate pull term}
 
 \section{Convolutional neural networks}
 \label{sec:cnn-performance}
 
+\subsection{Architecture}
+\label{ssec:cnn-architecture}
 
+\begin{itemize}
+	\item Conv2d layer to pool information from 3 PMTs
+	\item Conv1d layer to pick up on trace shape
+	\item Dense layer to reduce to binary output choice
+\end{itemize}
+
+\todo{plot of architecture?}
+
+\subsection{Input size}
+\label{ssec:input-size}
+
+\begin{itemize}
+	\item Larger input size positively influences efficiency, same SNR level though
+\end{itemize}
+
+\todo{signal-to-noise-ratio plot for the same cut values}
+\begin{figure}
+	\centering
+	\includegraphics[width=1\textwidth]{./plots/prelim/input_size.png}
+	\caption{Input size vs. observed operation parameters}
+\end{figure}
+
+\subsection{Kernel size}
+\label{ssec:kernel-size}
+
+\begin{itemize}
+	\item Larger kernel positively influence efficiency, same SNR level though
+\end{itemize}
+
+\todo{signal-to-noise-ratio plot}
+\begin{figure}
+	\centering
+	\includegraphics[width=1\textwidth]{./plots/prelim/kernel_size.png}
+	\caption{Convolutional kernel size vs. observed operation parameters}
+\end{figure}
+
+\subsection{Muon cut}
+\label{ssec:muon-cut}
+
+\begin{itemize}
+	\item Muons not a viable hyperparameter for network training
+	\item Does not decrease trigger rate by sufficient amount
+	\item Networks don't converge reproducibly
+\end{itemize}
+
+\todo{signal-to-noise-ratio plot}
+\begin{figure}
+	\centering
+	\includegraphics[width=1\textwidth]{./plots/prelim/cut_comparison.png}
+	\caption{comparison between muon cut and charge cut}
+\end{figure}
+
+\subsection{Charge cut}
+\label{ssec:cnn-charge-cut}
+
+\begin{itemize}
+	\item Works well with data at hand
+	\item offers finer (infinite) resolution in setting cut threshold
+\end{itemize}
+
+\todo{signal-to-noise-ratio plot}
+\todo{discuss filtering \& downsampling here?}
+\todo{signal efficiency ratio}
+\begin{figure}
+	\centering
+	\includegraphics[width=1\textwidth]{./plots/prelim/charge_cut.png}
+	\caption{charge cut for full bandwidth and filtered \& downsampled input data}
+\end{figure}
 
 \section{LSTM}
 \label{sec:lstm-performance}
 
-\begin{enumerate}
-    \item Have problem
-    \item Throw math at problem
-    \item ???
-    \item Profit
-\end{enumerate}
+\subsection{Architecture}
+\label{ssec:lstm-architecture}
 
-\todo{write this}
+\begin{itemize}
+	\item Discuss choice of architecture
+	\item Discuss possibility of using a single layer (instead of 3)
+\end{itemize}
+
+\subsection{Charge cut}
+\label{ssec:cnn-charge-cut}
+
+\todo{signal-to-noise-ratio plot}
+\begin{figure}
+	\centering
+	\includegraphics[width=1\textwidth]{./plots/prelim/LSTM.png}
+	\caption{performance of LSTM}
+\end{figure}
