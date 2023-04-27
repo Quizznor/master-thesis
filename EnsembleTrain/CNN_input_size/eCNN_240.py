@@ -10,14 +10,14 @@ event_kwargs = {
                 }
 
 try:
-    ThisNN = NNClassifier(f"ENSEMBLES/240_eCNN_Downsampled_AllEnergies_8_0VEM/ensemble_{ensemble_no:02}")
+    ThisNN = NNClassifier(f"ENSEMBLES/240_eCNN_Downsampled_AllEnergies_5_0VEM/ensemble_{ensemble_no:02}")
 except FileNotFoundError:
     MockNN = NNClassifier("ENSEMBLES/120_TwoLayer_Downsampled_AllEnergies_NoCuts/ensemble_01", supress_print = True)
-    Events = EventGenerator([], **event_kwargs, ignore_low_vem = 8.0)      # cut goes here
+    Events = EventGenerator([], **event_kwargs, ignore_low_vem = 5.0)      # cut goes here
     Events[0].files += MockNN.get_files("training")
     Events[1].files += MockNN.get_files("validation")
 
-    ThisNN = NNClassifier(f"ENSEMBLES/240_eCNN_Downsampled_AllEnergies_8_0VEM/ensemble_{ensemble_no:02}", "240_CNN")
+    ThisNN = NNClassifier(f"ENSEMBLES/240_eCNN_Downsampled_AllEnergies_5_0VEM/ensemble_{ensemble_no:02}", "240_CNN")
     ThisNN.train(Events, 10, apply_downsampling = True)
 
 try:

@@ -122,9 +122,9 @@ class Ensemble(NNClassifier):
     def get_best_model(self, dataset : str) -> NNClassifier : 
 
         try:
-            acc, acc_err, rate, rate_err = np.loadtxt(f"/cr/users/filip/MoneyPlot/data/{self.name[9:]}/{dataset}.csv", unpack = True)
+            acc, acc_err, rate, rate_err, true_acc = np.loadtxt(f"/cr/users/filip/MoneyPlot/data/{self.name[9:]}/{dataset}.csv", unpack = True)
 
-            SN_ratios = rate / acc                              # this is technically a noise to signal ratio, hence we must MINIMIZE
+            SN_ratios = rate / true_acc                              # this is technically a noise to signal ratio, hence we must MINIMIZE
             
             return self.models[np.argmin(SN_ratios)]
 

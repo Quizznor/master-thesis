@@ -106,33 +106,29 @@ Classical triggers are run in compatibility mode, where 3 UUB bins (\SI{8.3}{\na
 traces with more ease than their filtered and downsampled counterparts. Ideal triggers should therefore have a higher efficiency when tested on full bandwidth 
 traces
 
-This does not render compatibility mode completely uninteresting for the analysis here. An effective way of minimizing the trainable parameters in a neural network
-is reducing its' number of input parameters. For a given number of bins, 
+This does not render compatibility mode completely uninteresting for analysis. An effective way of minimizing the trainable parameters in a neural network is 
+reducing its' number of input parameters. Filtering and dowmsampling encodes - albeit imperfectly - the input data and reduces the dimensionality by a factor of 
+three. This is done in such a way that the UB-like trace contains trace information from a time window that is three times as long for a given number of bins.
 
+Consequently, by filtering and downsampling input data it becomes possible to hand the classifiers additional information while keeping the network size at a fixed
+level. The effects this has on predictive power of neural networks is further discussed in \autoref{sec:cnn-performance}. 
 
-Since network depth and size is an issue, the input size for the machine 
-learning algorithms must be minimized. 
-
-issue
-
-\subsection{Loss function weighting}
-\label{ssec:loss-function-weighting}
-
-
-
-\subsubsection{}
-
-\subsection{Further hyperparameters}
-\label{ssec:hyperparameters}
+% \subsection{Loss function weighting}
+% \label{ssec:loss-function-weighting}
 
 
 
+% \subsection{Further hyperparameters}
+% \label{ssec:further-hyperparameters}
 
 
 \section{Convolutional neural networks}
+\label{sec:cnn-performance}
+
 
 
 \section{LSTM}
+\label{sec:lstm-performance}
 
 \begin{enumerate}
     \item Have problem

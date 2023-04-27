@@ -116,6 +116,6 @@ class MoneyPlot():
         
         handles, labels = self.ax.get_legend_handles_labels()
         order = [i for i in range(len(handles))]
-        order = [-1] + order[:-1]
+        # order = [-1] + order[:-1]
         self.ax.legend([handles[idx] for idx in order],[labels[idx] for idx in order])
         plt.show()

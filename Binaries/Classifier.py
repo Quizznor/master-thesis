@@ -439,12 +439,12 @@ class Classifier():
             FN = np.loadtxt(save_files['FN'], usecols = [8])
         else: FN = np.array([])
 
-        signal_bins = np.geomspace(5e-2, 1e3, kwargs.get("n_bins", 100))
+        signal_bins = np.geomspace(5e-2, 1e3, kwargs.pop("n_bins", 100))
 
         n_hit, _ = np.histogram(TP, bins = signal_bins)
         n_miss, _ = np.histogram(FN, bins = signal_bins)      
 
-        plt.scatter(0.5 * (signal_bins[1:] + signal_bins[:-1]), n_hit / (n_hit + n_miss), c = kwargs.get("color", "steelblue"), label = kwargs.get("label", None))
+        plt.errorbar(0.5 * (signal_bins[1:] + signal_bins[:-1]), n_hit / (n_hit + n_miss), **kwargs)
 
     # plot the classifiers efficiency in terms of primary energy
     def energy_efficiency(self, dataset : str, angle : float = 38, tolerance : float = 2, **kwargs) -> None : 
