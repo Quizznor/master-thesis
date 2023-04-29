@@ -26,22 +26,12 @@ corresponding LTP will be greater than that of classical triggers, resulting in 
 of the underlaying hardware. 
 
 \begin{figure}
-	\begin{subfigure}[b]{0.49\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{./plots/ideal_t3_efficiency.png}
-		\caption{\textbf{T3 efficiency}}
-		\label{fig:ideal-efficiency-comparison}
-	\end{subfigure}
-	\hfill
-	\begin{subfigure}[b]{0.49\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{./plots/classical_trigger_ROC.png}
-		\caption{\textbf{Classical trigger potential}}
-		\label{fig:classical-trigger-roc}
-	\end{subfigure}
-	\caption{\textbf{(a)} Comparison of an ideal trigger sensitive to any shower signal from primary energies $E\geq\SI{10}{\peta\electronvolt}$ to classical 
-    triggers. \textbf{(b)} The noise level over calculated efficiency for classical triggers. The tail ends of the potential curve are calculated by adjusting the
-    trigger thresholds from $+250\%$ to $-95\%$ of the nominal values.}
+	\centering
+	\includegraphics[width=1\textwidth]{./plots/classical_triggers.png}
+	\caption{(\textit{Left}) Comparison of an ideal trigger sensitive to any shower signal from primary energies $E\geq\SI{10}{\peta\electronvolt}$ to classical 
+    triggers. (\textit{Right}) The noise level over calculated efficiency for classical triggers. The tail ends of the potential curve are calculated by adjusting the
+    trigger thresholds from $+250\%$ to $-95\%$ of the nominal values. The black circle corresponds to the operational setting of a $~\SI{20}{\hertz}$ rate.}
+	\label{fig:classical-trigger-performance}
 \end{figure}
 
 \section{Implementation}
@@ -89,7 +79,7 @@ signal and background events. For all further analysis a conservative prior of $
 
 \begin{figure}
 	\centering
-	\includegraphics[width=1\textwidth]{./plots/prior_discussion}
+	\includegraphics[width=0.9\textwidth]{./plots/prior_discussion}
 	\caption{A very faint positive slope ($m = 0.02\pm0.01$) is observed when relating prior probability to trigger sensitivity (blue dots) of an example 
 	convolutional neural network. This could however be attributed to statistical fluctuations in the training fit. An ensemble of networks with the same 
 	architecture trained on the same data and with a single prior shows a comparable spread (orange dots).}
@@ -99,17 +89,7 @@ signal and background events. For all further analysis a conservative prior of $
 \subsubsection{Filtering \& Downsampling}
 \label{sssec:filtering-and-downsampling}
 
-Classical triggers are run in compatibility mode, where 3 UUB bins (\SI{8.3}{\nano\second}) are filtered and downsampled to resemble a single UB bin 
-(\SI{25}{\nano\second}). Some information about the trace shape is lost in the process. Logically, a neural network should be able to identify original UUB signal 
-traces with more ease than their filtered and downsampled counterparts. Ideal triggers should therefore have a higher efficiency when tested on full bandwidth 
-traces
 
-This does not render compatibility mode completely uninteresting for analysis. An effective way of minimizing the trainable parameters in a neural network is 
-reducing its' number of input parameters. Filtering and downsampling encodes - albeit imperfectly - the input data and reduces the dimensionality by a factor of 
-three. This is done in such a way that the UB-like trace contains trace information from a time window that is three times as long for a given number of bins.
-
-Consequently, by filtering and downsampling input data it becomes possible to hand the classifiers additional information while keeping the network size at a fixed
-level. The effects this has on predictive power of neural networks is further discussed in \autoref{sec:cnn-performance}. 
 
 \subsection{Further hyperparameters}
 \label{ssec:further-hyperparameters}
@@ -117,7 +97,7 @@ level. The effects this has on predictive power of neural networks is further di
 The number of ways both input data and the network architecture can be tweaked to minimize loss is extensive. Further optimization methods, like the choice of 
 labelling, are motivated and discussed in the performance reports in \autoref{sec:cnn-performance}.
 
-One promising approach of optimizing trigger performance that was not examined in this thesis is the adjustment of the neural network loss function. Several reasons
+One promising approach of optimizing trigger performance that is not examined in this thesis is the adjustment of the neural network loss function. Several reasons
 exist that motivate an analysis in this direction:
 
 \begin{itemize}
@@ -127,10 +107,19 @@ exist that motivate an analysis in this direction:
 	sensitive to CR flux (compare \autoref{eq:statistics-efficiency}) or other parameters is possible.
 	\item \textbf{Random-trace trigger rate pull term:} For the most part, the analysis presented here will introduce a neural network distinguished by some 
 	feature, optimize its performance, and check whether the resulting random-trace trigger rate is in an acceptable range. However, it is possible to go the 
-	opposite way and specify a target trigger rate first and then train the network. In this fashion, one could hope that the algorithms optimize efficiency for a
-	given bandwidth by adding a pull term to the loss function. The challenge of this approach is weighting the pull term in a way that it does not dominate the 
+	opposite way and specify a target trigger rate first and then train the network. In this fashion, one could hope that the algorithm efficiency is optimized for
+	a given bandwidth by adding a pull term to the loss function. The challenge of this approach is weighting the pull term in a way that it does not dominate the 
 	loss function in different fringe cases. An important drawback of this method is that training will be very slow.
 \end{itemize}
+
+\subsection{Training procedure}
+\label{ssec:training-procedure}
+
+In order to make informed statements about the capability of a given network architecture an ensemble of 10 networks are trained - unless specified otherwise - for 
+10 epochs. Per epoch, 80\% of the available showers are examined to calculate gradients, the remaining 20\% are set aside for validation purposes. This is a standard 
+procedure to prevent the network from overfitting training data \cite{nasteski2017overview}. Since the training dataset is extensive ($0.8\cdot40557\approx32445$ 
+Showers), convergence to a local minimum is typically observed already within a single epoch. For this purpose training is halted early if the training accuracy
+is greater than $\alpha = 0.95$ and no decrease in loss has been observed for at least $75\% \hat{=} 24334\,\text{Showers}$ of the epoch
 
 \section{CNN Trigger}
 \label{sec:cnn-performance}
@@ -139,7 +128,7 @@ exist that motivate an analysis in this direction:
 \label{ssec:cnn-architecture}
 
 The convolutional neural networks presented in this chapter all have a very similar architecture, which was shown to slightly outperform other candidates during 
-prototyping tests. It is likely that this is due to design ideas that are closely related to the information structure in the time traces:
+prototyping tests. It is likely that this is due to design ideas that are closely related to the way information is structured in the time traces:
 
 \begin{itemize}
 	\item A \textbf{2D convolutional input layer} (c.f. \autoref{sec:CNN}) pools together the information of the three different WCD PMTs.
@@ -147,92 +136,200 @@ prototyping tests. It is likely that this is due to design ideas that are closel
 	\item A \textbf{Dense layer} reduces the extracted features to a binary choice of signal and background.
 \end{itemize}
 
-In subsequent tests it was furthermore concluded that extending the architecture by an intermediate dense layer between the time convolution layer and the dense 
-output layer is beneficial for signal to noise ratio. An example of this is given in \todo{CNN vs. eCNN score plot}, but comes at the cost of a large increase in 
-network parameters. The precise implementation design is shown in \todo{Archtecture plot}
+In subsequent tests it is furthermore concluded that extending the architecture by an intermediate dense layer between the time convolution layer and the dense 
+output layer is on average beneficial for signal to noise ratio. However, because both approaches arrive at a similar best score, the smaller, non-extended network
+is seen as more viable for the use case in the Pierre Auger Observatory. An example performance of both models is given in \autoref{fig:cnn-vs-ecnn}. The 
+corresponding number of trainable parameters is given in \autoref{tab:network-parameters}. The precise implementation designs for both cases are shown in 
+\todo{Architecture plot}
 
 \todo{Architecture plot}
+\todo{Network Parameter tweakable}
 
 \begin{figure}
 	\centering
-	\includegraphics[width=1\textwidth]{./plots/CNN_vs_eCNN.png}
+	\includegraphics[width=0.9\textwidth]{./plots/CNN_vs_eCNN.png}
 	\caption{The network score as calculated in \autoref{eq:comparison-score} is compared from original network architecture (CNN, left, in blue) to the extended
-	architecture featuring an additional dense layer (eCNN, right, in orange). Shown here are 10 networks of each architecture trained on the same dataset. Both
-	architecture find a comparable best solution (squares), while the mean and spread of the population are smaller for the extended network.}
-	\label{fig:prior-discussion}
+	architecture featuring an additional dense layer (eCNN, right, in orange). Shown are 10 networks of each architecture trained on the same dataset. Both
+	architectures find a similar best solution (squares), while the mean and spread of the population (circles) are smaller for the extended network.}
+	\label{fig:cnn-vs-ecnn}
 \end{figure}
-
-
-
-
 
 \subsection{Performance}
 
+Training a convolutional neural network with the data from \autoref{chap:neural-network-data} as is results in near perfect accuracy. The lateral trigger 
+probability obtained after training is equal to the LPP (see \autoref{fig:NN-LPP} and \autoref{fig:lateral-particle-probability}), which quantifies the probability
+of particle existance at station level. This implies that the networks are able to identify even single particles in the WCD with very high confidence. However, 
+they have not learned to distinguish muonic events from actual extensive air showers. This results in a very high random-trace trigger rate of 
+$f_\text{Random} > \SI{2}{\kilo\hertz}$. In order to decrease this value, the training data must be altered.
 
-
-
-
-
-\subsection{Input size}
-\label{ssec:input-size}
-
-\begin{itemize}
-	\item Larger input size positively influences efficiency, same SNR level though
-\end{itemize}
-
-\todo{signal-to-noise-ratio plot for the same cut values}
 \begin{figure}
 	\centering
-	\includegraphics[width=1\textwidth]{./plots/prelim/input_size.png}
-	\caption{Input size vs. observed operation parameters}
+	\includegraphics[width=1\textwidth]{./plots/ideal_classifier_LTP.png}
+	\caption{The lateral trigger probability is equal to the laterap particle probability shown in \autoref{fig:lateral-particle-probability} for almost all 
+	$E$ and $\theta$. Discrepancies occur at low primary energies and high inclinations due to low statistics complicating the LTP fit. In any case, this implies 
+	that the chance of raising a T2 provided a station was hit by an air shower is 1.}
+	\label{fig:NN-LPP}
+\end{figure}
+
+\subsubsection{Muon cut}
+
+As discussed in \autoref{chap:neural-network-data} atmospheric muons from very low-energy showers represent the dominant background (that is not just electronic 
+noise) in measured data. The most straight forward approach of lowering the network sensitivity for such signals is requiring muonic coincidences. This means only 
+data from tanks which were hit by at least 2, 3, ..., $n_\mu$ muons are assigned a signal label, where $n_\mu$ is a tweakable hyperparameter. Traces can be 
+selected based on other particles as well. \Offline saves the number of muons, electrons and photons for simulated stations. All three, or even a (weighted) sum
+are candidate discriminators. In this work, only the muon cut is analyzed with greater detail in \autoref{ssec:cnn-muon-cut}, as it is thought to be more closely 
+tied to the problem of distinguishing signal from background.
+
+Several ensembles are trained with different $n_\mu$ to test the quality of this cut. Their subsequent performance is shown in \autoref{fig:CNN-muon-cut}. The 
+results are inconclusive. While low cut thresholds requiring a coincidence of $\gtrsim 2$ muons seem to represent a solid way of lowering $f_\text{Random}$, the 
+trigger rates are not brought down to acceptable levels by this cut alone. Even worse, the training fits do not converge uniquely at higher cut thresholds.
+This indicates the number of muons is not (at least at higher muon counts) a great discriminator. This may be attributed to several reasons:
+
+\begin{itemize}
+	\item \textbf{Lack of strict temporal coincidence}: The imposed cut only requires at least $n_\mu$ muons to hit the tank at some point during a shower event. 
+	Without a more stringent requirement it is possible that a network sees not a trace stemming from $n_mu$ muons, but rather $n_\mu$ traces from 
+	individual particles during a sliding window analysis. Since all of these fit the cut criterion and are hence labelled as signal, the network does not learn
+	to ignore such traces.
+	\item \textbf{Variety in single muon traces}: The detector response to a single muon varies based on muon inclination, detector specifics and statistics. All
+	of these are parameters that are not available to the CNN. The combination of all fluctuations might be too complex for a convolutional neural network with 
+	limited size to learn.
+\end{itemize}
+
+Nevertheless, a hybrid cut requiring at least 2 muons in a tank on top of some other trace characteristic might hold potential in further analysis. A muon cut by
+itself is shown to not work ideal for the data at hand.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.9\textwidth]{./plots/CNN_muon_cut.png}
+	\caption{The performance of convolutional neural networks trained on data with a muon cut of different thresholds. The optimizers don't seem to identify a 
+	unique local minimum at very high cut thresholds. For all intermediate cuts $1 < n_\mu < 17$ the convolutional neural networks offer a better trigger 
+	efficiency compared to the Th-T2 trigger at the same random-trace trigger rate. The performance of the ToT trigger is not reached.}
+	\label{fig:CNN-muon-cut}
+\end{figure}
+
+\subsubsection{Charge cut}
+\label{sssec:charge-cut}
+
+Another method of teaching a network to ignore certain signals is given by imposing a cut $t_S$ on the integral $S$ of the trace. One advantage of this approach is
+the fact that the choice of labelling in this case is fully determined by the input data. Another edge is the granularity of the cut. Whereas only integer values 
+of $n_\mu$ are sensible in the previous paragraph, the integral is discretized in much smaller steps of $\SI[per-mode=power]{1}{\per\Charge}$. This allows for 
+finer tuning of the network performance.
+
+By increasing $t_\mu$, the network will learn to ignore increasingly larger signal. This is shown in \autoref{fig:CNN-charge-tpr}. The performance arising from 
+different $t_S$ is shown in \autoref{fig:CNN-charge-cut}.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.9\textwidth]{./plots/CNN_charge_TPR.png}
+	\caption{The true positive rate (TPR) in terms of deposited signal for different classifiers. Networks that were trained with a cut threshold of $t_S$ will not
+	trigger on traces that have a lower integral $t_S > S$, dropping the sensitivity in this region. This is precisely the desired effect. Classical triggers 
+	become fully efficient at around $\SI{1}{\Charge}$.}
+	\label{fig:CNN-charge-tpr}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.9\textwidth]{./plots/CNN_charge_cut.png}
+	\caption{Network performance in relation to different integral thresholds. With an increasingly stringent cut, the networks learn to ignore more and more
+	low-energy events, which quickly drops the trigger efficiency. On the other hand, the classifiers random-trace trigger rate drops to more acceptable levels.}
+	\label{fig:CNN-charge-cut}
+\end{figure}
+
+\subsubsection{Full Bandwidth vs. Filtering \& Downsampling}
+\label{sssec:full-bandwidth-filtering-downsampling}
+
+Charge cutting provides a powerful method to control the conservativity of the classifier and force discrimination between muonic background and extensive air 
+showers. Equipped with this tool, other questions can be answered in an attempt to optimize network performance.
+
+For example, classical triggers are run in compatibility mode, where 3 UUB bins (\SI{8.3}{\nano\second}) are filtered and downsampled to resemble a single UB bin 
+(\SI{25}{\nano\second}). Some information about the trace shape is lost in the process. Logically, a neural network should be able to identify original UUB signal 
+traces with more ease than their filtered and downsampled counterparts. Ideal triggers should have a higher efficiency when tested on full bandwidth traces.
+
+This does not render compatibility mode uninteresting for analysis. An effective way of minimizing the trainable parameters in a neural network is reducing its' 
+number of input parameters. Filtering and downsampling encodes - albeit imperfectly - the input data and reduces the dimensionality by a factor of three. This is
+done in such a way that the UB-like trace contains trace information from a time window that is three times as long for a given number of bins.
+
+Consequently, by filtering and downsampling input data it becomes possible to hand the classifiers additional information while keeping the network size at a fixed
+level. The effects this has on predictive power of neural networks is shown in \autoref{fig:CNN-filtering-vs-downsampling}.
+
+Classifiers trained on compatibility mode traces consistently have a lower random-trace trigger rate while operating at the same efficiency. Whether this is caused
+by the above discussed difference in (temporal) input size or other trace characteristics is determined in the next paragraph.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.9\textwidth]{./plots/full_bandwidth_vs_filtering.png}
+	\caption{Neural networks trained on compatibility mode traces compared to networks trained on full bandwidth traces. Compatibility-trained networks 
+	consistently have a lower random-trace trigger rate}
+	\label{fig:CNN-filtering-vs-downsampling}
+\end{figure}
+
+\subsubsection{Input size}
+\label{sssec:input-size}
+
+To test whether filtering and downsampling input data gives the classifiers an edge when predicting labels, multiple ensembles are trained on the same dataset with 
+the same charge cut $t_S = \SI{0.5}{\Charge}$. Each ensemble differs in the size of the input trace. If compatibility-trained networks are still outperforming full 
+bandwith ones that have an input size three times the size, filtering \& downsampling is the preferred method for classifying air showers with convolutional neural
+networks.
+
+Indeed, this is found. While the compared networks converge to a similar trigger efficiency, the networks that receive filtered and downsampled traces show a lower 
+random-trace trigger rate. Furthermore, a larger input size slightly positively influences trigger efficiency at the cost of increased network size. This is 
+expected.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.9\textwidth]{./plots/CNN_input_size.png}
+	\caption{The comparison between a compatibility mode network (blue) that has the same input size in time to a full bandwidth network (orange) reveals the 
+	advantage of filtering \& downsampling. Both networks have a comparable efficiency, but the compatibility mode network is less sensitive to background
+	triggers from random-traces.}
+	\label{fig:CNN-input-size}
 \end{figure}
 
 \subsection{Kernel size}
 \label{ssec:kernel-size}
 
-\begin{itemize}
-	\item Larger kernel positively influence efficiency, same SNR level though
-\end{itemize}
+The presented models so far show a performance that is similar to the Th-T2 threshold trigger. In an attempt to boost performance, the network architecture is 
+altered. Namely, the kernel size of the 2D convolutional input layer is increased. While this extends the network size, it could be expected that the 
+consideration of a larger window during convolution helps the network extract more meaningful features, and increases predictive power in the process.
 
-\todo{signal-to-noise-ratio plot}
+Three architectures are examined to check for a trend in prediction efficiency. The original $(3, 3)$-kernel only takes a minimum window into consideration. 
+It has the lowest accuracy out of all models. The two other candidates have a kernel size of $(3, 10)$ and $(3, 30)$ respectively. Both have a very similar 
+performance as can be seen in \autoref{fig:CNN-kernel-size}. 
+
+It seems trigger efficiency is not strongly correlated to kernel size beyond a certain level. An increase in network score is not achieved by increasing it. 
+All architectures have a performance very similar to the threshold trigger.
+
 \begin{figure}
 	\centering
-	\includegraphics[width=1\textwidth]{./plots/prelim/kernel_size.png}
-	\caption{Convolutional kernel size vs. observed operation parameters}
+	\includegraphics[width=0.9\textwidth]{./plots/CNN_kernel_size.png}
+	\caption{All listed networks are trained with $t_S = \SI{0.5}{\Charge}$. An increase in kernel size benefits trigger efficiency to some extent. On the other
+	hand, random-trace trigger rate increases. No clear trend in network score can be seen.}
+	\label{fig:CNN-kernel-size}
 \end{figure}
 
-\subsection{Muon cut}
-\label{ssec:cnn-muon-cut}
 
-\begin{itemize}
-	\item Muons not a viable hyperparameter for network training
-	\item Does not decrease trigger rate by sufficient amount
-	\item Networks don't converge reproducibly
-\end{itemize}
 
-\todo{signal-to-noise-ratio plot}
-\begin{figure}
-	\centering
-	\includegraphics[width=1\textwidth]{./plots/prelim/cut_comparison.png}
-	\caption{comparison between muon cut and charge cut}
-\end{figure}
 
-\subsection{Charge cut}
-\label{ssec:cnn-charge-cut}
 
-\begin{itemize}
-	\item Works well with data at hand
-	\item offers finer (infinite) resolution in setting cut threshold
-\end{itemize}
 
-\todo{signal-to-noise-ratio plot}
-\todo{discuss filtering \& downsampling here?}
-\todo{signal efficiency ratio}
-\begin{figure}
-	\centering
-	\includegraphics[width=1\textwidth]{./plots/prelim/charge_cut.png}
-	\caption{charge cut for full bandwidth and filtered \& downsampled input data}
-\end{figure}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 \section{LSTM Trigger}
 \label{sec:lstm-performance}
@@ -240,10 +337,7 @@ network parameters. The precise implementation design is shown in \todo{Archtect
 \subsection{Architecture}
 \label{ssec:lstm-architecture}
 
-\begin{itemize}
-	\item Discuss choice of architecture
-	\item Discuss possibility of using a single layer (instead of 3)
-\end{itemize}
+
 
 \subsection{Charge cut}
 \label{ssec:cnn-charge-cut}
@@ -262,28 +356,4 @@ network parameters. The precise implementation design is shown in \todo{Archtect
 
 
 
-
-
-\subsection{Choice of labelling}
-\label{ssec:choice-of-labelling}
-
-From comments in \autoref{sec:signal-dataset} it is clear that it is not a priori desirable to trigger on any kind of signal induced by extensive air showers.
-Especially at high separations between shower axis and station location recorded time traces look very similar to background muon events. Triggering on such events
-will induce an infeasible T2 rate. Certain types of signal traces must therefore be ignored, and labelled as background. Several ways of distinguishing interesting
-traces from uninteresting ones exist
-
-\subsubsection{Muon cut}
-\label{sssec:muon-cut}
-
-As discussed in \autoref{chap:neural-network-data} atmospheric muons from very low-energy showers represent the dominant background (that is not just electronic 
-noise) in measured data. The most straight forward approach of lowering the network sensitivity for such signals is requiring muonic coincidences. This means only 
-data from tanks which were hit by at least 2, 3, ..., $n_\mu$ muons are assigned a signal label, where $n_\mu$ is a tweakable hyperparameter. Traces can be 
-selected based on other particles as well. \Offline saves the number of muons, electrons and photons for simulated stations. All three, or even a (weighted) sum
-are candidate discriminators. In this work, only the muon cut is analyzed with greater detail in \autoref{ssec:cnn-muon-cut}, as it is thought to be more closely 
-tied to the problem of distinguishing signal from background.
-
-\subsubsection{Charge cut}
-\label{sssec:charge-cut}
-
-The integral of a (slice of a) time trace is directly correlated to the energy deposited in the WCD. By requiring the integral to exceed a value of $S$ \todo{continue}
 

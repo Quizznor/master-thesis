@@ -58,13 +58,15 @@ def confidence_comparison(confidence_level, *args, **kwargs):
 
 class MoneyPlot():
      
-    def __init__(self, name : str) -> None : 
+    def __init__(self, name : str, axis : plt.Axes = None) -> None : 
 
-        self.fig, self.ax = plt.subplots()
+        if axis is None: 
+            _, self.ax = plt.subplots()
+        else: self.ax = axis
         self.ax.set_title(name)
         self.ax.set_yscale("log")
         self.ax.set_ylabel("Random trace trigger rate / $\mathrm{Hz}$")
-        self.ax.set_xlabel("Trigger efficiency")
+        self.ax.set_xlabel("cond. trigger efficiency")
         HardwareClassifier.plot_performance(self.ax)
 
         self.ax.errorbar([], [], c = "k", markersize = 15, mfc = "w", fmt = "-o", lw = 2, label = "Classical triggers")
@@ -82,10 +84,11 @@ class MoneyPlot():
             if len(acc) != 10: print(f"[WARN] -- Incomplete predictions for {ensemble}: {dataset}... You may want to recalculate this")
 
             best_model = np.argmin(np.log10(rate) / acc)
-            color = kwargs.get("color", None)
-            label = kwargs.get("label", None)
-            self.ax.errorbar(true_acc, rate, markersize = 2, c = color, capsize = 2, fmt = kwargs.get("marker", "o"))
-            self.ax.errorbar(true_acc[best_model], rate[best_model], xerr = acc_err[best_model], yerr = rate_err[best_model], c = color, label = label, markersize = 10, capsize = 4, fmt = kwargs.get("marker", "o"))
+            color = kwargs.pop("color", None)
+            label = kwargs.pop("label", None)
+            fmt = kwargs.pop("marker", "o")
+            self.ax.errorbar(true_acc, rate, markersize = 2, c = color, capsize = 2, fmt = fmt, **kwargs)
+            self.ax.errorbar(true_acc[best_model], rate[best_model], xerr = acc_err[best_model], yerr = rate_err[best_model], c = color, label = label, markersize = 10, capsize = 4, fmt = fmt, **kwargs)
 
             self.buffer_x.append(true_acc[best_model])
             self.buffer_y.append(rate[best_model])

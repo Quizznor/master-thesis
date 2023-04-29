@@ -279,7 +279,7 @@ class Classifier():
 
         if kwargs.get("draw_plot", True):
             fig, axes = plt.subplots(3,3, sharex = False, sharey = True, figsize = [50, 25])
-            fig.suptitle(f"{self.name} - {dataset}", fontsize = 50)
+            # fig.suptitle(f"{self.name} - {dataset}", fontsize = 50)
             axes[-1][-1].axis("off"), axes[-1][-2].axis("off")
             plt.ylim(-0.05, 1.05)
 
@@ -289,7 +289,7 @@ class Classifier():
 
             if kwargs.get("draw_plot", True): 
                 ax = axes[e // 3][e % 3]
-                ax.axvline(1500, c = "k", ls = "--")
+                # ax.axvline(1500, c = "k", ls = "--")
                 ax.set_xlim(0, 6000),
                 ax.plot([], [], ls = "solid", c = "k", label = "Extrapolated")
                 ax.legend(loc = "upper right", title = annotate(e))
@@ -444,7 +444,7 @@ class Classifier():
         n_hit, _ = np.histogram(TP, bins = signal_bins)
         n_miss, _ = np.histogram(FN, bins = signal_bins)      
 
-        plt.errorbar(0.5 * (signal_bins[1:] + signal_bins[:-1]), n_hit / (n_hit + n_miss), **kwargs)
+        plt.errorbar(0.05 * (signal_bins[1:] + signal_bins[:-1]), n_hit / (n_hit + n_miss), **kwargs)
 
     # plot the classifiers efficiency in terms of primary energy
     def energy_efficiency(self, dataset : str, angle : float = 38, tolerance : float = 2, **kwargs) -> None : 

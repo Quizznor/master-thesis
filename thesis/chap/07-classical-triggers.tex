@@ -192,14 +192,14 @@ The LTP of an ideal classifier that is able to identify individual particles wou
 For this work, the LPP is calculated by comparing the simulated stations in \autoref{sec:signal-dataset} to a catalog of known stations in the vicinity of the 
 shower core. The ratio of simulated stations divided by all stations at a specific SPD is the LPP at a given (slice of) energy $E$ and zenith $\theta$. A 
 function like in \autoref{eq:my-ltp} is fitted to the data to extrapolate values at arbitrary SPD. The result of this analysis for all energies and zenith angles
-is shown in \autoref{fig:fitfunction-comparison}. The best fit parameters are listed in \autoref{app:lpp-fit-parameters}.
+is shown in \autoref{fig:lateral-particle-probability}. The best fit parameters are listed in \autoref{app:lpp-fit-parameters}.
 
 \begin{figure}
 	\centering
 	\includegraphics[width=1\textwidth]{./plots/LPP.png}
 	\caption{The probability of a station receiving a particle in relation to its' separation from the shower core axis. The probability at a constant SPD 
 	increases with increasing primary energy, but decreases with increasing zenith angle.}
-	\label{fig:fitfunction-comparison}
+	\label{fig:lateral-particle-probability}
 \end{figure}
 
 The comparison between the LTP gathered via Bayesian folding is compared to the \Offline station counting approach in \autoref{sec:trigger-implementation}. This is
