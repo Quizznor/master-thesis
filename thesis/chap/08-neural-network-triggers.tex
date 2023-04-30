@@ -86,11 +86,6 @@ signal and background events. For all further analysis a conservative prior of $
 	\label{fig:prior-discussion}
 \end{figure}
 
-\subsubsection{Filtering \& Downsampling}
-\label{sssec:filtering-and-downsampling}
-
-
-
 \subsection{Further hyperparameters}
 \label{ssec:further-hyperparameters}
 
@@ -140,10 +135,39 @@ In subsequent tests it is furthermore concluded that extending the architecture 
 output layer is on average beneficial for signal to noise ratio. However, because both approaches arrive at a similar best score, the smaller, non-extended network
 is seen as more viable for the use case in the Pierre Auger Observatory. An example performance of both models is given in \autoref{fig:cnn-vs-ecnn}. The 
 corresponding number of trainable parameters is given in \autoref{tab:network-parameters}. The precise implementation designs for both cases are shown in 
-\todo{Architecture plot}
+\autoref{fig:cnn-architecture}.
 
-\todo{Architecture plot}
-\todo{Network Parameter tweakable}
+\begin{figure}
+	\centering
+	\includegraphics[width=0.9\textwidth]{./imgs/CNN_architecture.png}
+	\caption{The convolutional neural networks take a two-dimensional input consisting of a time trace excerpt of the three WCD PMTs. On this input data a 
+	two-dimensional convolution is performed with four different filters, resulting in four one-dimensional vectors that are propagated further. A one-dimensional
+	convolutional layer scans the previous outputs and extracts two features per vector, these are finally reduced to a binary output via a dense layer with 
+	softmax axtivation. For extended CNNs, a dense layer with 10 neurons is interposed with a relu activation function.}
+	\label{fig:cnn-architecture}
+\end{figure}
+
+\begin{table}[h]
+	\begin{center}
+	\caption{Number of training parameters $n_\text{Train}$ for different network architectures}
+	\begin{tabular*}{0.8\textwidth}{@{\extracolsep{\fill}} ccccc}
+		\toprule
+		Type & Input size & Kernel size & $n_\text{train}$ & w/ dense extension \\
+		\midrule
+		CNN & $(3, 120)$ & $(3, 3)$ & $\mathbf{140}$ & $\mathbf{834}$ \\
+		CNN & $(3, 120)$ & $(3, 10)$ & $\mathbf{216}$ & $\mathbf{534}$ \\
+		CNN & $(3, 120)$ & $(3, 30)$ & $\mathbf{444}$ & $\mathbf{714}$ \\
+		CNN & $(3, 40)$ & $(3, 3)$ & $\mathbf{84}$ & $\mathbf{210}$ \\
+		CNN & $(3, 60)$ & $(3, 3)$ & $\mathbf{100}$ & $\mathbf{290}$ \\
+		CNN & $(3, 90)$ & $(3, 3)$ & $\mathbf{120}$ & $\mathbf{390}$ \\
+		CNN & $(3, 240)$ & $(3, 3)$ & $\mathbf{220}$ & $\mathbf{890}$ \\
+		LSTM & $(3, 120)$ & $-$ & $\mathbf{12}$ & (single layer) \\
+		LSTM & $(3, 120)$ & $-$ & (three layers) & $\mathbf{44}$ \\
+		\bottomrule
+	\label{tab:network-parameters}
+	\end{tabular*}
+	\end{center}
+\end{table}
 
 \begin{figure}
 	\centering
@@ -284,8 +308,8 @@ expected.
 	\label{fig:CNN-input-size}
 \end{figure}
 
-\subsection{Kernel size}
-\label{ssec:kernel-size}
+\subsubsection{Kernel size}
+\label{sssec:kernel-size}
 
 The presented models so far show a performance that is similar to the Th-T2 threshold trigger. In an attempt to boost performance, the network architecture is 
 altered. Namely, the kernel size of the 2D convolutional input layer is increased. While this extends the network size, it could be expected that the 
@@ -295,8 +319,8 @@ Three architectures are examined to check for a trend in prediction efficiency. 
 It has the lowest accuracy out of all models. The two other candidates have a kernel size of $(3, 10)$ and $(3, 30)$ respectively. Both have a very similar 
 performance as can be seen in \autoref{fig:CNN-kernel-size}. 
 
-It seems trigger efficiency is not strongly correlated to kernel size beyond a certain level. An increase in network score is not achieved by increasing it. 
-All architectures have a performance very similar to the threshold trigger.
+Trigger efficiency is not strongly correlated to kernel size beyond a certain level. An increase in network score is not achieved by increasing it. All 
+architectures have a performance very similar to the threshold trigger.
 
 \begin{figure}
 	\centering
@@ -306,54 +330,77 @@ All architectures have a performance very similar to the threshold trigger.
 	\label{fig:CNN-kernel-size}
 \end{figure}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 \section{LSTM Trigger}
 \label{sec:lstm-performance}
 
-\subsection{Architecture}
+\subsection{Architecture \& training procedure}
 \label{ssec:lstm-architecture}
 
+From \autoref{chap:neural-networks} it follows that LSTMs are especially adept at handling temporally correlated data. The deployment of RNN-based triggers thus 
+seems promising for the problem at hand. The special architecture of LSTMs must however be incorporated in a larger network, as the input of an LSTM is a 
+vector of single dimension, and incompatible with the data structure of a time trace. In the following, the time traces from each PMT will individually be passed
+through an LSTM layer. The information extracted by the different layers will then be combined via a densely connected layer that propagates features to a binary
+output representing the signal labels. This philosophy of propagating data is very similar to the ToT-like triggers, which first check trigger conditions per PMT,
+and then require coincident trigger conditions for at least two PMTs (compare \autoref{ssec:threshold-trigger}).
 
+While the chosen architectures represent very small networks ($<50$ trainable parameters, c.f. \autoref{tab:network-parameters}), calculating gradients for the 
+special layout is intensive. A training step for LSTM networks takes approximately ten times as long as for CNN networks. For this purpose, the LSTMs are only 
+trained for a maximum number of 5 epochs. In practice, this restriction was never needed, as the recurrent networks showed convergence after $1$ epoch.
 
-\subsection{Charge cut}
+The hyperparameters used in training LSTMs are the ones that show the most promising results in the analysis of CNN trigger performance. Most importantly, this 
+means that the input data of classifiers in this section are filtered \& downsampled.
+
+\subsection{Performance}
 \label{ssec:cnn-charge-cut}
 
-\todo{signal-to-noise-ratio plot}
+\subsubsection{Single layer LSTM}
+\label{sssec:single-layer-lsmt}
+
+Since the arrival direction ($\theta, \phi$) is a priori random, there should be no distinguished PMT in the WCD that takes a precedent role in triggering. This 
+implies that the input time trace should be treated equally whether it is coming from PMT \#1, PMT \#2, or PMT \#3. Logically, a single layer for all three input
+dimensions should show the same performance as three different layers. 
+
+This cannot be verified. An attempt to fit such an architecture to data fails. However, this is likely due to limitations of the underlaying TensorFlow 
+optimization method. With a more elaborate training setup, it is expected that a single-layer LSTM performs as good as a multi-layer LSTM. With a number of just 12
+parameters per layer, this will drop the network size considerably.
+
+\subsubsection{Multi layer LSTM}
+\label{sssec:multi-layer-lsmt}
+
+Using a more involved network with three distinct LSTM layers as well as dense output layer, the performance after training for given charge cuts is presented in
+\autoref{fig:LSTM-money-plot}. As can be seen, the performance of LSTMs is - for specific hyperparameters - at least on par with that of the ToT trigger.
+
+The model with the highest ratio of trigger efficiency to random-trace trigger rate increases the sensitivity of station level triggers at full efficiency from 
+$\approx\SI{1}{\Charge}$ to $\SI{0.5}{\Charge}$, as shown in \autoref{fig:LSTM-charge-TPR}. This is achievend via a higher lateral trigger probability, espically
+for inclined showers (compare \autoref{fig:LSTM-LTP}). A resulting overall increased T3 efficiency as shown in \autoref{fig:LSTM-t3-efficiency} can be observed.
+
 \begin{figure}
 	\centering
-	\includegraphics[width=1\textwidth]{./plots/prelim/LSTM.png}
-	\caption{performance of LSTM}
+	\includegraphics[width=0.9\textwidth]{./plots/LSTM_money_plot.png}
+	\caption{LSTMs are consistently better than CNNs at charge thresholds $t_S > \SI{0.05}{\Charge}$. The purple line connects the best performing models (as 
+	measured by network score $a$) for the ensembles with $t_S$ (from right to left) equal to $\SI{0.02}{\Charge}$, $\SI{0.05}{\Charge}$, $\SI{0.1}{\Charge}$,
+	$\SI{0.2}{\Charge}$, and $\SI{0.5}{\Charge}$. At the highest examined cut, LSTMs show a score that is better than the ToT trigger.}
+	\label{fig:LSTM-money-plot}
 \end{figure}
 
+\begin{figure}
+	\centering
+	\includegraphics[width=0.9\textwidth]{./plots/LSTM_charge_TPR.png}
+	\caption{The sensitivity of the LSTM is superior to that of classical triggers for all deposited signals. Full sensitivity, where all signals raise a T2 is 
+	reached at approximately $\SI{0.5}{\Charge}$.}
+	\label{fig:LSTM-charge-TPR}
+\end{figure}
 
+\begin{figure}
+	\centering
+	\includegraphics[width=0.9\textwidth]{./plots/LSTM_LTP.png}
+	\caption{The lateral trigger probability for the best performing LSTM. }
+	\label{fig:LSTM-LTP}
+\end{figure}
 
-
-
-
-
-
-
+\begin{figure}
+	\centering
+	\includegraphics[width=0.9\textwidth]{./plots/LSTM_T3_efficiency.png}
+	\caption{Resulting T3 efficiency of the best performing LSTM, compared to classical T3 efficiency of current triggers.}
+	\label{fig:LSTM-t3-efficiency}
+\end{figure}

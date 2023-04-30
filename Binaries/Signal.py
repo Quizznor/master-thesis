@@ -291,33 +291,33 @@ class Trace(Signal):
         return "||" + "".join(trace) + "||" + metadata
 
     # wrapper for plotting a trace
-    def __plot__(self, **kwargs) -> None :
+    def __plot__(self, axis = plt.gca(), **kwargs) -> None :
 
         x = range(self.trace_length)
         sig = lambda x : f"$S={x:.1f}\,\\mathrm{{VEM}}_\\mathrm{{Ch.}}$"
 
-        try:
-            plt.title(f"Station {self.StationID} - {sig(np.mean(self.deposited_signal))}", pad = 20)
-        except AttributeError:
-            plt.title(f"Background trace - {sig(self.deposited_signal)}", pad = 20)
+        # try:
+        #     axis.set_title(f"Station {self.StationID} - {sig(np.mean(self.deposited_signal))}", pad = 20)
+        # except AttributeError:
+        #     axis.set_title(f"Background trace - {sig(self.deposited_signal)}", pad = 20)
 
-        plt.plot(x, self.pmt_1, c = "steelblue", label = f"PMT \#1{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[0])}", lw = 1, **kwargs)
-        plt.plot(x, self.pmt_2, c = "orange", label = f"PMT \#2{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[1])}", lw = 1, **kwargs)
-        plt.plot(x, self.pmt_3, c = "green", label = f"PMT \#3{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[2])}", lw = 1, **kwargs)
+        axis.plot(x, self.pmt_1, c = "steelblue", label = f"PMT \#1{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[0])}", lw = 1, **kwargs)
+        axis.plot(x, self.pmt_2, c = "orange", label = f"PMT \#2{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[1])}", lw = 1, **kwargs)
+        axis.plot(x, self.pmt_3, c = "green", label = f"PMT \#3{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[2])}", lw = 1, **kwargs)
 
         if self.has_signal:
-            plt.axvline(self.signal_start, ls = "--", c = "red", lw = 2)
-            plt.axvline(self.signal_end, ls = "--", c = "red", lw = 2)
+            axis.axvline(self.signal_start, ls = "--", c = "red", lw = 2)
+            axis.axvline(self.signal_end, ls = "--", c = "red", lw = 2)
 
         if self.has_accidentals:
             for start, stop in zip(self.injections_start, self.injections_end):
-                plt.axvline(start, ls = "--", c = "gray")
-                plt.axvline(stop, ls = "--", c = "gray")
+                axis.axvline(start, ls = "--", c = "gray")
+                axis.axvline(stop, ls = "--", c = "gray")
 
-        plt.xlim(0, self.trace_length)
-        plt.ylabel("Signal strength / $\mathrm{VEM}_\mathrm{Peak}$")
-        plt.xlabel("Bin / 25 ns" if self.downsampled else "Bin / $8.3\,\mathrm{ns}$")
-        plt.legend()
+        axis.set_xlim(0, self.trace_length)
+        axis.set_ylabel("Signal strength / $\mathrm{VEM}_\mathrm{Peak}$")
+        axis.set_xlabel("Bin / 25 ns" if self.downsampled else "Bin / $8.3\,\mathrm{ns}$")
+        # axis.legend()
         # plt.show()
 
 # container for reading signal files
