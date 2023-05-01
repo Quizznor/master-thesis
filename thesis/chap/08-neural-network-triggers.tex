@@ -205,8 +205,8 @@ As discussed in \autoref{chap:neural-network-data}, atmospheric muons from very 
 noise) in measured data. The most straight forward approach of lowering the network sensitivity for such signals is requiring muonic coincidences. This means only 
 data from tanks which were hit by at least 2, 3, ..., $n_\mu$ muons are assigned a signal label, where $n_\mu$ is a tweakable hyperparameter. Traces can be 
 selected based on other particles as well. \Offline saves the number of muons, electrons and photons for simulated stations. All three, or even a (weighted) sum
-are candidate discriminators. In this work, only the muon cut is analyzed with greater detail in \autoref{ssec:cnn-muon-cut}, as it is thought to be more closely 
-tied to the problem of distinguishing signal from background.
+are candidate discriminators. In this work, only the muon cut is analyzed with greater detail, as it is thought to be more closely tied to the problem of 
+distinguishing signal from background.
 
 Several ensembles are trained with different $n_\mu$ to test the quality of this cut. Their subsequent performance is shown in \autoref{fig:CNN-muon-cut}. The 
 results are inconclusive. While low cut thresholds requiring a coincidence of $\gtrsim 2$ muons seem to represent a solid way of lowering $f_\text{Random}$, the 

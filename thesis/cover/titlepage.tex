@@ -31,7 +31,7 @@
 		\coordinate (pagetopcenter) at ($0.5*(current page.north west) + 0.5*(current page.north east) + (0.5*\tpbinding,0mm)$);
 		\coordinate (pagebotcenter) at ($0.5*(current page.south west) + 0.5*(current page.south east) + (0.5*\tpbinding,0mm)$);
 
-		\node[anchor=north] at ($(pagetopcenter) + (0mm,-\tpborder -55mm)$)
+		\node[anchor=north] at ($(pagetopcenter) + (0mm,-\tpborder -100mm)$)
 		{
 			\begin{minipage}{160mm}
 				\centering
@@ -41,25 +41,25 @@
 			\end{minipage}
 		};
 
-		\draw[line width = 0.8mm, color=gray]
-			($(current page.north west) + (31mm, -120mm)$)
-			--
-			($(current page.north west) + (31mm, -100mm)$)
-			arc (180:90:2mm)
-			($(current page.north west) + (33mm, -98mm)$)
-			--
-			($(current page.north west) + (53mm, -98mm)$);
+		% \draw[line width = 0.8mm, color=gray]
+		% 	($(current page.north west) + (31mm, -120mm)$)
+		% 	--
+		% 	($(current page.north west) + (31mm, -100mm)$)
+		% 	arc (180:90:2mm)
+		% 	($(current page.north west) + (33mm, -98mm)$)
+		% 	--
+		% 	($(current page.north west) + (53mm, -98mm)$);
 
-			\draw[line width = 0.8mm, color=gray]
-			($(current page.north west) + (148mm, -183mm)$)
-			--
-			($(current page.north west) + (178mm, -183mm)$)
-			arc (270:360:2mm)
-			($(current page.north west) + (180mm, -181mm)$)
-			--
-			($(current page.north west) + (180mm, -161mm)$);
+		% 	\draw[line width = 0.8mm, color=gray]
+		% 	($(current page.north west) + (148mm, -183mm)$)
+		% 	--
+		% 	($(current page.north west) + (178mm, -183mm)$)
+		% 	arc (270:360:2mm)
+		% 	($(current page.north west) + (180mm, -181mm)$)
+		% 	--
+		% 	($(current page.north west) + (180mm, -161mm)$);
 
-		\node[anchor=north west] at ($(current page.north west) + (33mm, -100mm)$){\includegraphics[width=14.5cm]{cover/cover.png}};
+		% \node[anchor=north west] at ($(current page.north west) + (33mm, -100mm)$){\includegraphics[width=14.5cm]{cover/cover.png}};
 
 		\node[anchor=north] at ($(pagetopcenter) + (0mm,-\tpborder - 180mm)$)
 		{
