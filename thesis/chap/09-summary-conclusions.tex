@@ -4,48 +4,51 @@
 \label{chap:summary-and-conclusions}
 
 A lot is left to learn about the physics of high-energy cosmic rays. Of special interest in research is the detection of photon or neutrino primaries. This is in 
-part due to different - and possibly unknown - underlaying acceleration mechanisms boosting the particles to incredible energies, but also the possibility of 
+part due to different - and possibly unknown - underlying acceleration mechanisms boosting the particles to incredible energies, but also the possibility of 
 source identification for neutral particles. The Pierre Auger Observatory offers a unique hope in answering currently unanswered questions. Due to its enormous 
-exposure it may be sensitive to very rare events that have not been seen anywhere else in the world. 
+exposure, it may be sensitive to very rare events that have not been seen anywhere else in the world. 
 
-As of the completion of this thesis, only upper limits for the flux of exotic primaries have been identified. In order to push the boundaries to new levels the 
-surface detector of the Pierre Auger Observatory is equipped with new electronics and additional detectors. In this context, the entire chain of operations from 
-shower detection to event reconstruction is revisited and examined for improvement. This thesis represents one such revision and attempts to revamp the station
-level triggers of the surface detector, which are required to initialize the process of event readout. 
+As of the completion of this thesis, only upper limits for the flux of exotic primaries at ultra-high energies have been identified. With the ongoing AugerPrime 
+detector upgrade, the surface detector of the Pierre Auger Observatory is equipped with new electronics and additional measurement channels. This will push 
+reconstruction and detection boundaries to new levels. In this context, the entire chain of operations from shower detection to event reconstruction is revisited 
+and examined for improvement. This thesis represents one such revision and attempts to revamp the station level triggers of the surface detector, which are 
+required to initialize the process of event readout. 
 
 A lot of the presented results are non-exhaustive. The possibility for tweaks to hyperparameters is virtually endless. Especially the performance of neural network
 triggers on non-proton primaries, and on additional shower simulations using different interaction models remains. Still, several milestones and key insights can 
 be identified from the previous chapters.
 
-\subsubsection{Bayesian folding accelerates analysis}
+\subsubsection{Bayesian folding accelerates prototyping studies}
 
 The standard way of calculating lateral trigger probabilities and T3 efficiencies is done by running an \Offline simulation and examining the appropriate detector 
 response. In this work, it was shown that a reparametrization of the LTP to easily accessible parameters arrives at the same results. This massively speeds up 
-the calculation of critical detector parameters. More importantly, the entire process can be completely detached from \Offline. This enables the usage of arbitrary
-external tools (such as TensorFlow) and will streamline analysis especially in prototyping studies. 
+the calculation of critical detector parameters. More importantly, the entire process can be completely detached from \Offline once simulation data has been 
+collected. This enables the usage of arbitrary external tools for implementing new triggers (such as TensorFlow) and will streamline analysis especially in 
+prototyping studies. 
 
-\subsubsection{DNN-based algorithms profit from compatibility mode}
+\subsubsection{neural-network-based algorithms profit from filtered \& downsampled input data}
 
 For the considered networks, a trend to lower random-trace trigger rates was observed when training on filtered \& downsampled traces, while the trigger efficiency
 remained the same. This implies that - at least for the considered input sizes - compatibility mode is preferred for neural networks. It is theorized that this is
-caused due to the filtering part in the conversion algorith, as it smoothes out electronic noise in the time trace. 
+caused due to the filtering part in the conversion algorith, as it smoothes out electronic noise in the time trace., and therefore reduced the complexity a network 
+must interpret. 
 
-\subsubsection{CNN architecture on par with classical trigger performance}
+\subsubsection{CNN architecture on par with classical threshold trigger performance}
 
 The trigger efficiency of convolutional neural networks coincides with that of the classical threshold Th-T2 trigger within the range of acceptable random-trace 
-trigger rates. This in itself is a promising result. It shows that DNN-based trigger algorithms can be at least as efficient as the currently employed triggers.
+trigger rates. This in itself is a promising result. It shows that neural network trigger algorithms can be at least as efficient as the currently employed triggers.
 It is expected that with a more in-depth analysis of additional hyperparameters the CNN trigger performance can be boosted further.
 
-\subsubsection{LSTM architecture outperforms CNN architecture}
+\subsubsection{LSTM architecture outperforms CNN architecture \& classical triggers}
 
 The LSTM architecture is designed to efficiently recognize patterns in a temporal input. Consequently, the performance boost seen from using such architectures is
-very promising. With minimal tweaks to hyperparameters, the recurrent networks show a signal to noise ratio that is larger than that of the main SD trigger, the 
-time-over-threshold algorithm. Due to very time-intensive training periods, a lot of the hyperparameter optimization done for CNNs remains undiscussed for LSTMs.
-The full potential of LSTM-based triggers is thought to not have been reached yet.
+very promising. With minimal tweaks to hyperparameters, the recurrent networks show a signal to noise ratio that is larger than that of the main SD trigger at 
+shower inclinations below $\theta < 60^\circ$, the time-over-threshold algorithm. Due to very time-intensive training periods, a lot of the hyperparameter 
+optimization done for CNNs remains unexplored for LSTMs. The full potential of LSTM-based triggers is thought to not have been reached yet.
 
-\subsubsection{Trigger efficiencies untested for very inclined showers}
+\subsubsection{Hints at higher efficiency gains for very inclined showers}
 
 The gain in T3 efficiency when using LSTM triggers over classical ones is largest for inclined showers with $\theta\approx65^\circ$. Since no showers at higher 
-inclinations were simulated, the performance of neural networks on such data remains unknown. If the trend of efficient detection at high inclinations continues up
-to $\theta = 90^\circ$, massive improvements to sensitivity for such events are to be expected. This has far-reaching implications, as it might enable more accurate
-detection and reconstruction of highly inclined showers, where neutrino primaries are expected.
+inclinations were simulated, the performance of neural networks on such data remains unknown. Massive improvements to sensitivity for such events would be 
+expected. This has far-reaching implications, as it might enable more accurate detection and reconstruction of highly inclined showers, where a large aperature for 
+neutrino primaries are expected.

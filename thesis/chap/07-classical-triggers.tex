@@ -6,9 +6,8 @@
 As mentioned in \autoref{chap:auger-observatory}, continously analyzing data sent to CDAS from each of the 1600 SD water tanks would quickly exceed the 
 computational capabilites of Augers' main servers. For this purpose, trace information is only collected from a station, once a nearby T3 event 
 (c.f. \autoref{sssec:t3-trigger}) has been detected. The formation of a T3 trigger is dependant on several T2, or station-level, triggers, which will
-be discussed in detail in this chapter. First, general comments about evaluation of trigger performances are given in 
-\autoref{sec:classical-triggers-performance}. Then the precise implementation of SD station level triggers, as well as their individual performance is given in 
-\autoref{sec:trigger-implementation}.
+be discussed in detail in this chapter. First, general comments about evaluation of trigger performances are given in \autoref{sec:classical-triggers-performance}.
+Then, the precise implementation of SD station level triggers, as well as their individual performance is given in \autoref{sec:trigger-implementation}.
 
 \section{Performance evaluation}
 \label{sec:classical-triggers-performance}
@@ -47,7 +46,7 @@ signals over all signals.
 	\Leftrightarrow \qquad\qquad &= \frac{\text{TP}}{\text{TP} + \text{FN}}.
 \end{align}
 
-The $\text{TPR}$ for a given sample heavily depends on the underlaying distribution of data. While the distribution of zenith angles is correctly modeled, the 
+The $\text{TPR}$ for a given sample heavily depends on the underlying distribution of data. While the distribution of zenith angles is correctly modeled, the 
 simulated showers at hand do not accurately match the energy flux seen in real data (compare \autoref{fig:physics-data} and \autoref{fig:cr-energy-spectrum}). For
 this purpose, the TPR for a given dataset is transformed to a conditional trigger efficiency $\epsilon$ by recalculating the weights $w_i$ based on the primary 
 energy $E_i$ of a shower. First, the overrepresentation of higher energy traces is eliminated. Every prediction is weighted by a factor 
@@ -57,11 +56,11 @@ $W = \sum\limits_{\{\text{TP}, \text{FN}\}} \frac{1}{w_i}$ of the entire dataset
 
 The physical interpretation of $\epsilon$ for a classifier is as follows: (At station level) It represents the ratio of air showers that \textit{are} detected over
 all air showers that \textit{can} in principle be detected. It is a conditional probability dependant on the WCD receiving a particle from an air shower. An 
-efficiency of $epsilon = 1$ thus implies that if at least one particle in the shower cascade hits a tank, the tank raises a T2 trigger.
+efficiency of $\epsilon = 1$ thus implies that if at least one particle in the shower cascade hits a tank, the tank raises a T2 trigger.
 
-The false discovery rate is a measure of how readily the triggers (wrongly) identify background events like stray cosmic muons as extensive air showers. It is 
-imperative for any trigger algorithm operating in the SD to minimize this probability. Simply due to the number of operating stations in the field, a small 
-increase in $\text{FDR}$ drastically raises the amount of potential events and hence load on the central analysis server of the observatory.
+The false discovery rate is a measure of how readily the station-level triggers (wrongly) identify background events like stray cosmic muons as extensive air 
+showers. It is imperative for any trigger algorithm operating in the SD to minimize this probability. Simply due to the number of operating stations in the field, 
+a small increase in $\text{FDR}$ drastically raises the amount of T2 triggers, and hence load on the central analysis server of the observatory.
 
 \begin{equation}
 	\label{eq:statistics-efficiency}
@@ -69,8 +68,9 @@ increase in $\text{FDR}$ drastically raises the amount of potential events and h
 \end{equation}
 
 In this work, the trigger rate on random-traces $f_\text{Random}$ is used as an alias for the $\text{FDR}$. Of course, this is not completely accurate, as these 
-to a small fraction contain signal from air showers. In any case, the distinction does not matter. Any trigger algorithm must have a sufficiently low trigger 
-frequency on measured data - be it extensive air showers or background events - as to not overload CDAS readout capabilities.
+to contain a small fraction of signals from air showers interesting to the science case of the Pierre Auger Observatory. In any case, the distinction does not 
+matter. Any trigger algorithm must have a sufficiently low trigger frequency on measured data - be it extensive air showers or background events - as to not 
+overload CDAS readout capabilities.
 
 Consequently a pseudo-score can be assigned to each classification algorithm in order to compare them. This score $a$ is given by \autoref{eq:comparison-score}.
 
@@ -88,15 +88,16 @@ In conclusion, all algorithms should maximize $a$, i.e. boost the T2 trigger eff
 \subsection{Lateral Trigger Probability (LTP)}
 \label{ssec:lateral-trigger-probability}
 
-Ultimately, all test statistics constructed by classical station triggers (ignoring MoPS, c.f. \autoref{sec:trigger-implementation}) are correlated to the deposited 
-charge $S$ in the WCD. Because $S$ is heavily influenced by the primary particle energy, zenith and distance to the shower core, as well as to a lesser extent by 
-shower age and statistical fluctuations, it makes sense to parametrize the trigger efficiency $\epsilon(E, \theta, \text{SPD})$ in terms of these observables. 
+Ultimately, all test statistics constructed by classical station triggers (ignoring MoPS, c.f. \autoref{sec:trigger-implementation}) are correlated with the 
+deposited charge $S$ in the WCD. Because $S$ is heavily influenced by the primary particle energy, zenith and distance to the shower core, as well as to a lesser
+extent by shower age and statistical fluctuations, it makes sense to parametrize the trigger efficiency $\epsilon(E, \theta, \text{SPD})$ in terms of these 
+observables. 
 
 From a heuristic consideration, it can immediately be concluded that large separations between station and shower axis affect efficiencies negatively, because the 
-particle distribution function monotonically decreases with increasing $r$ (compare \autoref{fig:component-LDF}). Similarly, inclined showers with a large $\theta$
-are more attenuated compared to vertical showers, as they have to traverse a larger atmospheric depth ($\propto\sec\left(\theta\right)$) before reaching the 
-detector. Lastly, primaries with large $E$ on average deposit higher $S$ in the WCD due to unleashing bigger particle cascades. Consequently $\epsilon$ is 
-positively correlated with $E$.
+lateral particle distribution function monotonically decreases with increasing $r$ (compare \autoref{fig:component-LDF} on page \pageref{fig:component-LDF}). 
+Similarly, inclined showers with a large $\theta$ are more attenuated compared to vertical showers, as they have to traverse a larger atmospheric depth 
+($\propto\sec\left(\theta\right)$) before reaching the detector. Lastly, primaries with large $E$ on average deposit higher $S$ in the WCD due to unleashing bigger
+particle cascades. Consequently, $\epsilon$ is positively correlated with $E$.
 
 The functional form that can be obtained by evaluating trigger efficiencies for a given (slice of) $E$ and $\theta$ is labelled the \textbf{L}ateral 
 \textbf{T}rigger \textbf{P}robability (LTP). It will be one of the main comparison metrics, by which different trigger algorithms are compared in this work. For 
@@ -106,10 +107,10 @@ estimator for the neural network LTPs discussed in \autoref{chap:neural-network-
 \subsubsection{\Offline lateral trigger probability}
 \label{sssec:offline-ltp}
 
-\Offline can simulate the SD detector response given a preprocessed shower footprint as given by e.g. CORSIKA. As such, calculating the LTP for a given event
+\Offline can simulate the SD detector response given a simulated shower footprint as given by e.g. CORSIKA. As such, calculating the LTP for a given event
 condenses to counting the number of triggered and non-triggered stations at specific distances from the shower axis. If this is done for a large enough sample size
-of showers, one eliminates noise induced by shower-to-shower fluctuations and arrives at an independent estimator for the probability of a T2 trigger given a 
-shower at a shower plane distance $r$, with energy $E$ and zenith $\theta$. As per \cite{abreu2011lateral}, the closed form approximation of the LTP is given as
+of showers, one eliminates noise induced by shower-to-shower fluctuations and arrives at an independent estimator for the probability of a T2 trigger at a given 
+shower plane distance $r$, for primaries of energy $E$ and zenith $\theta$. As per \cite{abreu2011lateral}, the closed form approximation of the LTP is given as
 
 \begin{equation}
 	\label{eq:offline-ltp}
@@ -120,7 +121,7 @@ shower at a shower plane distance $r$, with energy $E$ and zenith $\theta$. As p
 	\end{dcases}
 \end{equation}
 
-In \autoref{eq:offline-ltp}, $R_0$, $\sigma_R$ and $C$ are all fit constants that will in general depend on $E$ and $\theta$. Most importantly, $R_0$ marks the 
+In \autoref{eq:offline-ltp}, $R_0$, $\sigma_R$ and $C$ are all fit constants that will, in general, depend on $E$ and $\theta$. Most importantly, $R_0$ marks the 
 shower plane distance where $\text(R_0) = 0.5$. This is connected to a steepening of the rising flank in the efficiency curve. Whereas an exponential function with
 decay constant $C<0$ describes data well for large $r$, a logistic function with scaling factor $1/\sigma_R$ must account for the asymptotic transition to full 
 efficiency closer to the core.
@@ -152,18 +153,19 @@ The reasoning for this choice is as follows:
 	\item There exists an imbalance in training data. Due to the geometry of the SD array, more traces at smaller $r$ are available. In an attempt to reduce 
 	possible biases resulting from low statistics at small SPD, the form is kept as simple as possible.
 
-	\item The function is guaranteed to be continously differentiable in $R_0$. For values $\epsilon^* > 1$ this is replaced with a kink at 
+	\item $\text{LTP}^*(r)$ is guaranteed to be continously differentiable in $R_0$. For values $\epsilon^* > 1$ this is replaced with a kink at 
 	$R^* = R_0 - \frac{\log\left(\left(1 - 1/\epsilon^*\right)^{-1}-1\right)}{\sigma_R}$, where $\text{LTP}^*(r)$ would exceed $1$ if not for clipping. There 
-	exists some physical motivations for this however. Due to the phase transition, namely to full efficiency, at this point, discontinuities in the lateral 
-	trigger probability are allowed.
+	exists some mathematical motivation for this however. For $\epsilon^* > 1$ a phase transition, namely to full efficiency, exists at this point, discontinuities 
+	in the lateral trigger probability are thus allowed/expected. Whether full efficiency is ever reached for a given classifier is however questionable due to 
+	shower-to-shower fluctuations.
 \end{itemize}
 
-This approach only marginally takes into account shower-to-shower-fluctuations. Such statistic perturbations are responsible for a smearing of the (initially)
-hard transition from sub- to full efficiency. The parametrization used by the Pierre Auger collaboration takes this into consideration by design.The presented 
-$\text{LTP}^*(r)$ does - at least explicitly - not. As a result, one could expect a bias, where $\text{LTP}^*(R^*)$ over- or underestimates the actual trigger 
-probability. This is however not the case when examining the residuals of the performance fit that is done in \autoref{ssec:combined-performance}. A plot 
-showcasing this is offered in \autoref{fig:fitfunction-comparison}. Still, results at low energies ($\log(E\,/\,\mathrm{eV}) < 17.5$) must be taken with a hint of 
-skepticism, as only very little data is available for such showers.
+As stated above, this approach only marginally takes into account shower-to-shower-fluctuations. Such statistic perturbations are in part responsible for a 
+smearing of the (initially) hard transition from sub- to full efficiency. The parametrization used by the Pierre Auger collaboration takes this into consideration 
+by design.The presented $\text{LTP}^*(r)$ does - at least explicitly - not. As a result, one could expect a bias, where $\text{LTP}^*(R^*)$ over- or underestimates
+the actual trigger probability. This is however not the case when examining the residuals of the performance fit that is done in 
+\autoref{ssec:combined-performance}. A plot showcasing this is offered in \autoref{fig:fitfunction-comparison}. Still, results at low energies 
+($\log(E\,/\,\mathrm{eV}) < 17.5$) must be taken with a hint of skepticism, as only very little data is available for such showers.
 
 \begin{figure}
 	\centering
@@ -189,16 +191,17 @@ $P(\mathcal{C}_1)$ in \autoref{eq:bayesian-folding} is the \textbf{L}ateral \tex
 receiving a signal from an extensive air shower. It is the probabilistic interpretation of the lateral distribution function (c.f. \autoref{fig:component-LDF}). 
 The LTP of an ideal classifier that is able to identify individual particles would be equal to the LPP.
 
-For this work, the LPP is calculated by comparing the simulated stations in \autoref{sec:signal-dataset} to a catalog of known stations in the vicinity of the 
-shower core. The ratio of simulated stations divided by all stations at a specific SPD is the LPP at a given (slice of) energy $E$ and zenith $\theta$. A 
-function like in \autoref{eq:my-ltp} is fitted to the data to extrapolate values at arbitrary SPD. The result of this analysis for all energies and zenith angles
-is shown in \autoref{fig:lateral-particle-probability}. The best fit parameters are listed in \autoref{app:lpp-fit-parameters}.
+For this work, the LPP is calculated by comparing the simulated stations which received at least one particle from an air shower in \autoref{sec:signal-dataset} to
+a catalog of known stations in the vicinity of the shower core. The ratio of simulated stations divided by all stations at a specific SPD is the LPP at a given 
+(slice of) energy $E$ and zenith $\theta$. A function like in \autoref{eq:my-ltp} is fitted to the data to extrapolate values at arbitrary SPD. The result of this 
+analysis for all energies and zenith angles is shown in \autoref{fig:lateral-particle-probability}. The best fit parameters are listed in 
+\autoref{app:lpp-fit-parameters}.
 
 \begin{figure}
 	\centering
 	\includegraphics[width=1\textwidth]{./plots/LPP.png}
-	\caption{The probability of a station receiving a particle in relation to its' separation from the shower core axis. The probability at a constant SPD 
-	increases with increasing primary energy, but decreases with increasing zenith angle.}
+	\caption{The probability of a station receiving a particle in relation to its separation from the shower axis. The probability at a constant SPD with 
+	increasing primary energy, but decreases with increasing zenith angle.}
 	\label{fig:lateral-particle-probability}
 \end{figure}
 
@@ -209,12 +212,13 @@ the LTP allows for an easy comparison of neural network triggers to the algorith
 \subsection{Calculation of T3 efficiency}
 \label{ssec:t3-calculation}
 
-When transitioning from station- to event-level, the important variable becomes the T3 efficiency. It states the probability of a shower not only being detected
-in individual stations, but also identified as such by the CDAS T3 triggers. In the end, the only measured data that is available comes from extensive air showers
-which passed this final hurdle.
+When transitioning from station- to event-level, the important variable becomes the T3 efficiency. It states the probability of a shower being detected in multiple
+SD stations in such a way that a spatial/temporal pattern is recognized in CDAS and a T3 trigger is raised. In the end, the only measured data that is available 
+for higher level analysis comes from extensive air showers which passed this final hurdle.
 
 With the lateral trigger probability at hand, a simple Monte-Carlo simulation can recover the T3 efficiency. Recall that the probability of a single station $i$
-detecting a shower at distance $r_i$, with energy $E$ and arrival direction $(\theta, \phi$) is given by \autoref{eq:station-trigger-probability}.
+detecting a shower with energy $E$ and arrival direction $(\theta, \phi$) at distance distance $r_i$ (which is a function of core position, zenith and azimuth) 
+from the shower axis is given by \autoref{eq:station-trigger-probability}.
 
 \begin{equation}
 	\label{eq:station-trigger-probability}
@@ -246,7 +250,7 @@ efficiencies for classical triggers are shown in \autoref{fig:t3-mc-simulation} 
 
 The \textbf{Th}reshold trigger (Th) is the simplest, as well as longest operating trigger algorithm \cite{triggerGuide} in the field. It scans incoming 
 ADC bins as measured by the three different WCD PMTs for values that exceed some threshold. If a coincident exceedance of this threshold is observed in 
-all three WCD PMTs simultaneously, a Th-T1/2 trigger is issued. A pseudocode implementation of this algorithm is hence given by the below code block.
+all three WCD PMTs simultaneously, a Th-T1/2 trigger is issued. A pseudocode implementation of this algorithm is hence given by the code block below.
 
 \begin{lstlisting}
  th1 = 1.75  // Th1 level threshold above baseline, in VEM   
@@ -264,12 +268,12 @@ all three WCD PMTs simultaneously, a Th-T1/2 trigger is issued. A pseudocode imp
          continue
 \end{lstlisting}
 
-Logically, with increasing signal strength $S$ in the PMTs, the likelihood of having observed an extensive air shower raises. This is reflected in the trigger 
+Logically, with increasing signal strength $S$ in the PMTs, the likelihood of having observed an extensive air shower increases. This is reflected in the trigger
 level logic, where a coincident signal of $S\leq\SI{3.20}{\Peak}$ is immediately forwarded to CDAS, whereas a signal $\SI{1.75}{\Peak}\leq S<\SI{3.20}{\Peak}$ 
 only raises a Th-T1 trigger. The algorithm is insensitive to signals that do not exceed at least $\SI{1.75}\Peak$ in all three PMTs.
 
 In the case of faulty electronics, where only a subset of the WCD PMTs are available, the trigger thresholds (in units of \SI{}{\Peak}) are updated according to 
-\autoref{tab:trigger-thresholds}.
+\autoref{tab:trigger-thresholds} in order to keep trigger frequencies constant.
 
 \begin{table}[h]
 	\begin{center}
@@ -295,14 +299,15 @@ this to the nominal T3 trigger rate at CDAS level ($\approx\SI{0.03}{\hertz}$ \c
 background events pass this threshold. Consequently, the trigger has a very high false discovery rate on a station to station level
 $\text{FDR}\approx\frac{\SI{20}{\hertz} - \SI{0.03}{\hertz}/1600}{\SI{20}{\hertz} + \SI{0.03}{\hertz}/1600}=0.999998$.
 
-The efficiency of the threshold trigger is comparably poor. Only every fifth trace ($\epsilon = 0.2$) is detected as such. This number must however be taken with 
-context. In \autoref{chap:neural-network-data}, a signal is considered to be any kind of detector response from an extensive air shower. This includes single muons
-injected into WCDs faraway from the shower core. As such, the dataset that triggers are being tested on contain a lot of information algorithms were designed to 
-ignore. This drops the efficiency considerably. Nevertheless, it serves as a gauge to compare this trigger to the ones discussed on the following pages.
+The efficiency of the threshold trigger is comparably poor. Only every fifth trace ($\epsilon = 0.2$) in the training set (c.f. \autoref{sec:signal-dataset}) 
+results in a T2. This number must however be taken with context. In \autoref{chap:neural-network-data}, a signal is considered to be any kind of detector response 
+from an extensive air shower. This includes single muons injected into WCDs faraway from the shower core. As such, the dataset that triggers are being tested on 
+contain a lot of information algorithms were designed to ignore. This drops the efficiency considerably. Nevertheless, it serves as a gauge to compare this trigger
+to the ones discussed on the following pages.
 
-While this may seem like an indigent method of shower detection, the threshold trigger is invaluable in the search for neutrino cosmic rays. The EM component of 
-such showers is heavily attenuated due to their inclination ($\theta \geq 65^\circ$). Only the muonic component reaches the SD detector. The threshold trigger 
-ensures the array is sensitive to such events, at the cost of a high background noise. 
+While this may seem like an indigent method of shower detection, the threshold trigger plays a central role in T3 formation and is invaluable in the search for 
+neutrino cosmic rays. The EM component of many such neutrino showers is heavily attenuated due to their inclination ($\theta \geq 65^\circ$). The muonic component
+is the only signal that reaches the SD detector. The threshold trigger ensures the array is sensitive to such events, at the cost of a high background noise. 
 
 The lateral trigger probability for the Th-T2 type trigger is shown in \autoref{fig:th2-ltp-comparison}
 
@@ -318,10 +323,10 @@ The lateral trigger probability for the Th-T2 type trigger is shown in \autoref{
 \label{ssec:time-over-threshold-trigger}
 
 The \textbf{T}ime \textbf{o}ver \textbf{T}hreshold trigger (ToT) is sensitive to much smaller signals than the Threshold trigger discussed in 
-\autoref{ssec:threshold-trigger}. For each PMT in the water tank, the past 120 bins are examined for values that exceed $\SI{0.2}{\Peak}$. If 13 or more bins
-above the threshold are found in the window - ordering or succession do not matter - the PMT is considered to have an elevated pedestal. The ToT trigger requires
-at least two PMTs with an elevated pedestal in order to activate. As such, the algorithm is theoretically sensitive to events that deposit just $~\SI{0.5}{\Charge}$ 
-A pseudocode example is given below.
+\autoref{ssec:threshold-trigger}. For each PMT in the water tank, the past 120 bins ($\approx \SI{1}{\micro\second}$) are examined for values that exceed 
+$\SI{0.2}{\Peak}$. If 13 or more bins above the threshold are found in the window - ordering or succession do not matter - the PMT is considered to be active. The
+ToT trigger requires at least two PMTs to be active in order to issue a T2. As such, the algorithm is theoretically sensitive to events that deposit just 
+$\approx\SI{0.5}{\Charge}$. A pseudocode example is given below.
 
 \begin{lstlisting}
  threshold   = 0.2  // pedestal threshold, in VEM
@@ -356,9 +361,9 @@ A pseudocode example is given below.
 The nominal operation of the ToT algorithm sees a trigger rate of \SI{2}{\hertz}. While this still corresponds to a relatively large $\text{FDR}$, the signal to 
 noise ratio is at least an order of magnitude better than Th-T2, simply by arguments of trigger frequency. Moreover, coincidences between neighbouring stations are
 likely to be extensive air showers. Events selected from ToT issued T3s have a purity of 90\%, and are the main detection channel for showers with inclination 
-$\theta < 60^\circ$ \cite{abraham2010trigger}. The ToT trigger itself has an efficiency of $\epsilon = 0.3969$ when evaluated over the neural network training 
-dataset. The trigger probability w.r.t shower plane distance is shown for different primary energies and different arrival directions in 
-\autoref{fig:tot-ltp-comparison}.
+$\theta < 60^\circ$ \cite{abraham2010trigger}. The ToT trigger itself has an efficiency of $\epsilon = 0.3969$ when evaluated over the complete neural network 
+training dataset (\autoref{sec:signal-dataset}). The trigger probability w.r.t shower plane distance is shown for different primary energies and different arrival 
+directions in \autoref{fig:tot-ltp-comparison}.
 
 \begin{figure}
 	\centering
@@ -414,7 +419,7 @@ Once such a positive step has been identified, a (MoPS) trigger veto is applied 
     n_\text{skip} = \lfloor \left( \log_2(\Delta y) + 1 \right) - 3\rceil
 \end{equation}
 
-bins, where $\Delta y$ refers to the total vertical increase in the step from first to last bin. Note that in \autoref{eq:MoPS-veto} the notation 
+bins, where $\Delta y$ refers to the total vertical increase in the step from first to last bin. Note that in \autoref{eq:MoPS-veto}, the notation 
 $\lfloor x \rceil$ is used as shorthand notation to round $x$ to the nearest integer. If $\Delta y$ is bigger than $y_\text{min} = \SI{3}{\ADC}$ (to filter random 
 fluctuations), but does not exceed $y_\text{max} = \SI{31}{\ADC}$ (to prevent triggering on muonic coincidences), it is added to a ledger. If the number of rising 
 flanks in the ledger is bigger than $m>4$ for at least two PMTs, a final check regarding the integral of the FADC trace is performed. If this check passes, a 
@@ -434,7 +439,8 @@ By examining monitoring data, it follows that $1-2$ MoPS triggers are issued per
 $\SIrange[range-phrase = \,\text{to}\,]{0.02}{0.03}{\hertz}$. This is orders of magnitude lower than other discussed trigger mechanisms. While the MoPS trigger 
 consequently can be seen as a relatively noise free trigger, events in which a MoPS is critically required to form a T3 are extremely sparse. From a total of 
 $20000$ (simulated) showers at lower energies, none had a three-fold coincidence where at least one station only detected a MoPS T2 trigger. Considering this 
-result, it is expected that T3 efficiencies are largely independant of the fact whether MoPS is considered or not.
+result, it is expected that T3 efficiencies are largely independant of the fact whether MoPS is considered or not. This is consistent with previous analysis
+on proton primaries in \autoref{MOPST3}.
 
 \subsection{Combined performance}
 \label{ssec:combined-performance}
@@ -442,8 +448,8 @@ result, it is expected that T3 efficiencies are largely independant of the fact 
 In the field, all above discussed algorithms are run simultaneously. That is, a T2 trigger is issued whenever any of the Th-T2, ToT, ToTd, or MoPS trigger become 
 active. This results in an overall trigger rate of roughly \SIrange[range-phrase = \,\text{to}\,]{22}{23}{\hertz}, with a combined efficiency of 
 $\epsilon = 0.4070$. The combined lateral trigger probability with respect to shower plane distance is shown in \autoref{fig:all-triggers-ltp}. The overall T3 
-efficiency as calculated in \autoref{ssec:t3-calculation} is shown in \autoref{fig:ideal-efficiency-comparison}. As can be seen in the plot, detection of air 
-showers is guaranteed at primary energies of around $10^{18}\,\SI{}{\electronvolt}$ and upwards.
+efficiency as calculated in \autoref{ssec:t3-calculation} is shown in \autoref{fig:classical-trigger-performance}. As can be seen in the plot, detection of air 
+showers is guaranteed at primary energies of around $10^{18.5}\,\SI{}{\electronvolt}$ and upwards.
 
 \begin{figure}
 	\centering

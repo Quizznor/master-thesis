@@ -5,8 +5,8 @@
 
 
 From bit flips in computer hardware giving one candidate an impossible number of votes in a federal election \cite{cosmicraybitshift}, to full-scale extinction 
-events reducing the biodiversity on earth considerably during prehistoric times \cite{melott2004did, fields2020supernova}, the possible influence that cosmic rays
-have on our day-to-day life ranges from the smallest to biggest imaginable scales.
+events considerably reducing the biodiversity on earth  during prehistoric times \cite{melott2004did, fields2020supernova}, the influence that cosmic rays have on
+our day-to-day life ranges from the smallest to biggest imaginable scales.
 
 These incredibly energetic particles are of singular interest to physicists. Not only is this because of to the information they carry about the environment near 
 distant stars and galaxies, but also due to their unmatched energy distribution, which is unachievable with earth-based particle accelerators. The relativistic 
@@ -16,11 +16,11 @@ neighbourhood.
 The Pierre Auger Observatory is a world-leading experiment designed to detect cosmic rays of the highest energies. It achieves this by observing extensive air 
 showers in the atmosphere and drawing conclusions based on measured data. A hybrid detection approach refines the accuracy with which arrival direction, energy, 
 and the type of a primary particle are reconstructed. The larger of the two available detectors is the surface detector, which is sensitive to the shower footprint
-on earth. It consists of 1600 individually operating stations in a hexagonal grid with side lengths \SI{1.5}{\kilo\meter}.
+on earth. It consists of 1600 individually operating stations in an isometric triangular grid with unit spacing \SI{1.5}{\kilo\meter}.
 
-Due to the compartmentalized structure of the surface detector, each station must determine autonomously which information to forward to a central data acquisition
-system. Currently, this is realised via a hierarchy of trigger algorithms that scan measured data for certain features. While these triggers are fully efficient at
-the tail end of the energy spectrum, shower cascades of lower energies $E \lesssim 10^{18}$ are often not detected due to a smaller overall detector response. 
+With this compartmentalized structure, each station determines autonomously which information to forward to a central data acquisition system. This is realised via
+a hierarchy of trigger algorithms that scan the measured data locally for each detector. While these triggers are fully efficient at the tail end of the energy 
+spectrum, shower cascades of lower energies $E \lesssim 10^{18}$ are seldomly detected. 
 
 In an attempt to extend the sensitivity of the surface detector to lower energies, the following thesis revisits the current trigger algorithms. Possible 
 designs of new triggers based on deep neural networks are discussed, and the overall detection sensitivity is examined with a focus on implementability in the 
@@ -30,12 +30,10 @@ With more sensitive triggers, more candidate shower events will be recorded. Thi
 enable detection of exotic primaries like photon- or neutrino cosmic rays. Such discoveries will be certain to send waves through the community of astroparticle 
 physics.
 
-The structure of this thesis offers a summary of cosmic ray physics in \autoref{chap:physical-background}. The phenomenology of particle cascades originating from 
-high-energy interactions in the upper atmosphere is discussed in \autoref{chap:extensive-air-showers}. How the Pierre Auger Observatory detects such extensive air 
-showers is detailed in \autoref{chap:auger-observatory}. As final supplementary information, the mathematical implementation of neural networks is explained in 
-\autoref{chap:neural-networks}. \autoref{chap:neural-network-data} and \autoref{chap:classical-triggers} are dedicated to an in-depth description of the data and 
-trigger implementations for each station. On top of this, the method with which different triggers will be compared can be found here. In 
-\autoref{chap:neural-network-triggers} possible implementations of new triggers are discussed, and their performance examined. The results of the analysis are 
-summarized in \autoref{chap:summary-and-conclusions}
+The structure of this thesis offers a summary of cosmic ray physics and atmospheric particle cascades in \autoref{chap:physical-background} and 
+\autoref{chap:extensive-air-showers}. The Pierre Auger Observatory is introduced in \autoref{chap:auger-observatory}. Supplementary information regarding the 
+implementation of neural networks and discussion of training data can be found in  \autoref{chap:neural-networks} and \autoref{chap:neural-network-data}. 
+\autoref{chap:classical-triggers} and \autoref{chap:neural-network-triggers} are dedicated to an in-depth description of the current trigger implementations and 
+newly developed triggers based on machine learning. The results of the analysis are summarized in \autoref{chap:summary-and-conclusions}
 
 
