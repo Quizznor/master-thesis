@@ -2,10 +2,12 @@
 
 \chapter*{Abstract}
 
-This thesis tests the potential of station-level triggers for the surface detector of the Pierre Auger Observatory. With the development of an extensive python 
-framework to create realistic WCD time traces, a novel approach for the development of classification algorithms based on concepts of machine learning becomes 
-possible. An in-depth discussion and evaluation of several candidate algorithms reveals the potential of neural networks in detecting extensive air showers. One 
-particularly promising trigger are LSTM networks. Using a multi-layer instance of this type of recurrent neural network, and training it with a charge cut of 
-$t_S = \SI{0.5}{\Charge}$, the overall efficiency of station-level triggers can be increase from $\sim8\%$ to $\sim18\%$ for primary particles of energies 
-$\SI{10}{\peta\electronvolt} < E \leq \SI{32}{\exa\electronvolt}$. This results in T3 efficiency gains of up to $15.7$ percentage points at the highest examined
-zenith angles.
+This thesis investigates the potential of station-level triggers for the surface detector of the Pierre Auger Observatory. The development of an extensive software
+framework to generate realistic WCD time traces from measured background and simulated air showers enables the development of novel classification algorithms based
+on concepts of machine learning. An in-depth evaluation of several candidate algorithms demonstrates the particular promise of LSTM networks, whose performance 
+exceeds those of classical triggers. A multi-layer instance of this LSTM type neural network increases the efficiency of station-level triggers from $\sim8\%$ to 
+$\sim18\%$ for triggering on stations with incident secondaries for proton primaries ranging from \SI{10}{\peta\electronvolt} to \SI{32}{\exa\electronvolt}. This 
+results in gains in event detection efficiency of up to 15.7 percentage points at the highest examined zenith angles of $65^\circ$. The gains in efficiency with 
+LSTMs were achieved without increasing the rate of background triggers, and only using 44 parameters. As such, LSTMs appear to be viable candidates for improving 
+the trigger efficiencies of Water-Cherenkov detectors to extensive air showers without increasing demands on bandwidth between individual stations and central data
+acquisition, and without requiring more powerful FPGAs than those used in modern air shower arrays. 

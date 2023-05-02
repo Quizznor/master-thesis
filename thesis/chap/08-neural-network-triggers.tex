@@ -307,7 +307,10 @@ random-trace trigger rate. Furthermore, a larger input size slightly positively 
 \autoref{tab:network-parameters}). This is expected. A larger input size will result in a larger number of trainable parameters. With more trainable parameters, 
 the training loss can be minimized further simply by arguments of fit dimensionality. 
 
-
+In conclusion, for neural networks whose size must be restricted, filtered \& downsampled input traces yield better performance compared to full bandwidth input. 
+The shown comparisons are not entirely fair, as the former encompasses a longer span in time, and thus more information, compared to the latter at equal input 
+size. In order to completely clarify whether filtering \& downsampling is preferable, the same tests should be run on networks of much, much larger size. This is
+however out of the relevant scope for this thesis.
 
 \begin{figure}
 	\centering
@@ -400,7 +403,7 @@ for inclined showers (compare \autoref{fig:LSTM-LTP}). A resulting overall incre
 	\includegraphics[width=0.9\textwidth]{./plots/LSTM_charge_TPR.png}
 	\caption{The sensitivity of the best performing LSTM trained with $t_S = \SI{0.5}{\Charge}$ is superior to that of classical triggers for all deposited 
 	signals. This is true both for the currently used classical trigger thresholds, for which $f_\text{random} = \SI{20}{\hertz}$, as well as for the direct 
-	comparison of classical triggers with thresholds that yield the same trigger rate $f\text{random} \approx \SI{10}{\hertz}$ as the considered LSTM. Full 
+	comparison of classical triggers with thresholds that yield the same trigger rate $f_\text{random} \approx \SI{10}{\hertz}$ as the considered LSTM. Full 
 	sensitivity, where all signals raise a T2 is reached at approximately $\SI{0.5}{\Charge}$.}
 	\label{fig:LSTM-charge-TPR}
 \end{figure}
