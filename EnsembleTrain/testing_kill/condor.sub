@@ -1,14 +1,14 @@
 JobBatchName    = test_condor_issues
 Executable      = /cr/users/filip/EnsembleTrain/testing_kill/test_job.py
 
-error           = /cr/users/filip/EnsembleTrain/testing_kill/test.err
-output          = /cr/users/filip/EnsembleTrain/testing_kill/test.out
-log             = /cr/users/filip/EnsembleTrain/testing_kill/test.log
+error           = /cr/users/filip/EnsembleTrain/testing_kill/test-$(Process).err
+output          = /cr/users/filip/EnsembleTrain/testing_kill/test-$(Process).out
+log             = /cr/users/filip/EnsembleTrain/testing_kill/test-$(Process).log
 
 arguments       = $(Process)
 request_memory  = 5G
 max_idle        = 150
-max_retries     = 50
+max_retries     = 30
                                                             
 should_transfer_files = YES                      
 
@@ -16,4 +16,4 @@ Requirements = (OpSysName == "Ubuntu" && OpSysMajorVer == 22)
 transfer_input_files  = /cr/work/filip/Binaries
 
 +Testing = true
-queue 1
+queue 150

@@ -305,9 +305,9 @@ class Trace(Signal):
         axis.plot(x, self.pmt_2, c = "orange", label = f"PMT \#2{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[1])}", lw = 1, **kwargs)
         axis.plot(x, self.pmt_3, c = "green", label = f"PMT \#3{' - downsampled' if self.downsampled else ''}, {sig(self.deposited_signal[2])}", lw = 1, **kwargs)
 
-        if self.has_signal:
-            axis.axvline(self.signal_start, ls = "--", c = "red", lw = 2)
-            axis.axvline(self.signal_end, ls = "--", c = "red", lw = 2)
+        # if self.has_signal:
+        #     axis.axvline(self.signal_start, ls = "--", c = "red", lw = 2)
+        #     axis.axvline(self.signal_end, ls = "--", c = "red", lw = 2)
 
         if self.has_accidentals:
             for start, stop in zip(self.injections_start, self.injections_end):
@@ -317,7 +317,7 @@ class Trace(Signal):
         axis.set_xlim(0, self.trace_length)
         axis.set_ylabel("Signal strength / $\mathrm{VEM}_\mathrm{Peak}$")
         axis.set_xlabel("Bin / 25 ns" if self.downsampled else "Bin / $8.3\,\mathrm{ns}$")
-        # axis.legend()
+        axis.legend()
         # plt.show()
 
 # container for reading signal files
